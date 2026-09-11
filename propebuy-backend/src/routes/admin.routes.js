@@ -13,6 +13,7 @@ import {
   addCategory,
   toggleCategory,
   rerunOCR,
+  getUserOCRDetails,
 } from "../controllers/admin.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 import {
@@ -48,6 +49,15 @@ adminRoutes.get(
   protect,
   authorize("ADMIN"),
   getPendingVerifications,
+);
+
+// Get OCR details for a specific user
+adminRoutes.get(
+  "/users/:id/ocr-details",
+  protect,
+  authorize("ADMIN"),
+  validateIdParam,
+  getUserOCRDetails,
 );
 
 // ── APPROVE or REJECT a USER REGISTRATION ───────────────────────────────────

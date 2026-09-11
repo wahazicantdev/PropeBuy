@@ -88,6 +88,126 @@ export const rerunOCR = async (req, res) => {
   });
 };
 
+// ── GET OCR DETAILS FOR ANY USER ──────────────────────
+// Admin can view full OCR verification details
+// for any user — whether VERIFIED, PENDING, or REJECTED
+// Useful for audit trail and dispute resolution
+export const getUserOCRDetails = async (req, res) => {
+  const { id } = req.params;
+
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(id) },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      accountStatus: true,
+      idDocumentUrl: true,
+      certDocumentUrl: true,
+      ocrResult: true,
+      ocrConfidence: true,
+      ocrIssues: true,
+      ocrExtractedData: true,
+      createdAt: true,
+      barangay: {
+        select: { id: true, name: true },
+      },
+    },
+  });
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  // Parse JSON strings to objects
+  const ocrIssues = user.ocrIssues ? JSON.parse(user.ocrIssues) : [];
+
+  const ocrExtractedData = user.ocrExtractedData
+    ? JSON.parse(user.ocrExtractedData)
+    : null;
+
+  res.status(200).json({
+    success: true,
+    data: {
+      // User info
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      accountStatus: user.accountStatus,
+      registeredAt: user.createdAt,
+      claimedBarangay: user.barangay,
+
+      // Document URLs — admin can open and view manually
+      documents: {
+        governmentId: user.idDocumentUrl,
+        barangayCertificate: user.certDocumentUrl,
+      },
+
+      // Full OCR verification result
+      ocrVerification: {
+        result: user.ocrResult,
+        confidence: user.ocrConfidence,
+        issues: ocrIssues,
+        extractedData: ocrExtractedData,
+
+        // Human readable summary
+        summary: buildOCRSummary(
+          user.ocrResult,
+          user.ocrConfidence,
+          ocrIssues,
+          ocrExtractedData,
+        ),
+      },
+    },
+  });
+};
+
+// ── BUILD OCR SUMMARY ──────────────────────────────────
+// Creates a human-readable summary of OCR results
+// Makes it easier for admin to understand what happened
+const buildOCRSummary = (result, confidence, issues, extractedData) => {
+  if (!result) {
+    return "No OCR verification data available for this user.";
+  }
+
+  const resultLabels = {
+    AUTO_APPROVED: "✅ Automatically Approved",
+    MANUAL_REVIEW: "⚠️ Flagged for Manual Review",
+    AUTO_REJECTED: "❌ Automatically Rejected",
+  };
+
+  let summary = `OCR Result: ${resultLabels[result] || result}\n`;
+  summary += `Confidence Score: ${confidence}%\n\n`;
+
+  if (extractedData) {
+    summary += "Extracted from Government ID:\n";
+    summary += `  Name: ${extractedData.fromID?.name || "Not detected"}\n`;
+    summary += `  Address: ${extractedData.fromID?.address || "Not detected"}\n`;
+    summary += `  Barangay: ${extractedData.fromID?.barangay || "Not detected"}\n\n`;
+
+    summary += "Extracted from Barangay Certificate:\n";
+    summary += `  Name: ${extractedData.fromCertificate?.name || "Not detected"}\n`;
+    summary += `  Barangay: ${extractedData.fromCertificate?.barangay || "Not detected"}\n`;
+    summary += `  Date Issued: ${extractedData.fromCertificate?.dateIssued || "Not detected"}\n\n`;
+  }
+
+  if (issues && issues.length > 0) {
+    summary += "Issues Found:\n";
+    issues.forEach((issue, index) => {
+      summary += `  ${index + 1}. ${issue}\n`;
+    });
+  } else {
+    summary += "No issues found — all checks passed.";
+  }
+
+  return summary;
+};
+
 // ── GET ALL PENDING VERIFICATIONS ──────────────────────
 // Returns all users with PENDING account status
 // These are users who registered but not yet reviewed by admin
@@ -275,6 +395,13 @@ export const getUser = async (req, res) => {
       idDocumentUrl: true,
       certDocumentUrl: true,
       createdAt: true,
+
+      // OCR fields — now included in single user view
+      ocrResult: true,
+      ocrConfidence: true,
+      ocrIssues: true,
+      ocrExtractedData: true,
+
       barangay: {
         select: { id: true, name: true },
       },
@@ -299,9 +426,18 @@ export const getUser = async (req, res) => {
     });
   }
 
+  // Parse OCR JSON strings back to objects
+  const parsedUser = {
+    ...user,
+    ocrIssues: user.ocrIssues ? JSON.parse(user.ocrIssues) : [],
+    ocrExtractedData: user.ocrExtractedData
+      ? JSON.parse(user.ocrExtractedData)
+      : null,
+  };
+
   res.status(200).json({
     success: true,
-    data: user,
+    data: parsedUser,
   });
 };
 
