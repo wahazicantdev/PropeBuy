@@ -1,5 +1,4 @@
 import prisma from "../config/prismaClient.js";
-import { notifyOrderStatus } from "../utils/notification.helper.js";
 import {
   extractTextFromImage,
   extractIDFields,

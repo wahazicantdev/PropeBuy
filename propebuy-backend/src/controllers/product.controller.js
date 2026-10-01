@@ -1,7 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
 import { cleanInt, cleanPrice } from "../utils/format.helper.js";
-import { notifyLowStock } from "../utils/notification.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 
 // ── CREATE PRODUCT ─────────────────────────────────────
