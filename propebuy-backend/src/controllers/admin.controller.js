@@ -565,6 +565,13 @@ export const removeProduct = async (req, res) => {
     });
   }
 
+  if (!product.isActive) {
+    return res.status(404).json({
+      success: false,
+      message: "Product is already remove!",
+    });
+  }
+
   // Soft delete the product — sets isActive to false
   // Product remains in database for order history purposes
   await prisma.product.update({
