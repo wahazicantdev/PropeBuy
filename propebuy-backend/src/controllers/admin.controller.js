@@ -565,7 +565,7 @@ export const removeProduct = async (req, res) => {
     });
   }
 
-  if (!product.isActive) {
+  if (!product.isActivea) {
     return res.status(404).json({
       success: false,
       message: "Product is already remove!",
