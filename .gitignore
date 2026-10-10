@@ -21,3 +21,6 @@ logs
 # OS junk
 .DS_Store
 Thumbs.db
+
+# AGENT
+AGENTS.md
