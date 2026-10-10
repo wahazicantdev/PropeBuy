@@ -5,10 +5,10 @@ import { PrismaClient } from "@prisma/client";
 // In development — log all queries, info, warnings, and errors
 // In production — log errors only to keep console clean
 const prisma = new PrismaClient({
-  log:
-    process.env.NODE_ENV === "development"
-      ? ["query", "info", "warn", "error"]
-      : ["error"],
+  // log:
+  //   process.env.NODE_ENV === "development"
+  //     ? ["query", "info", "warn", "error"]
+  //     : ["error"],
 
   // Initialize Prisma Client with custom transaction timeout
   // Default timeout is 5000ms — too short for Neon's cold starts

@@ -1,1 +1,43 @@
+/* Lato for body — Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap");
+/* Tailwind v4 entry */
 @import "tailwindcss";
+
+/* Norwester for headers — download .otf to src/assets/fonts/norwester.otf */
+@font-face {
+  font-family: "Norwester";
+  src: url("./assets/fonts/norwester.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Design tokens — single source of truth */
+@theme {
+  --color-primary: #05829a; /* main brand + success */
+  --color-passive: #6b7280; /* gray for non-important */
+  --color-danger: #e05252; /* soft red, not harsh */
+  --font-header: "Norwester", sans-serif; /* headers + logo */
+  --font-body: "Lato", sans-serif; /* descriptions */
+}
+
+/* Base defaults — minimalist */
+body {
+  background-color: white; /* clean bg */
+  color: #1f2937; /* readable dark gray */
+  font-family: var(--font-body); /* Lato everywhere */
+  overflow-x: hidden; /* kill horizontal scroll on phone */
+}
+
+/* Responsive images — never overflow card */
+img {
+  max-width: 100%; /* shrink on small screens */
+  height: auto; /* keep ratio */
+}
+
+/* Responsive headers — smaller on phone, big on desktop */
+h1,
+h2,
+h3 {
+  font-family: var(--font-header); /* Norwester */
+  line-height: 1.2; /* tight minimalist */
+}
