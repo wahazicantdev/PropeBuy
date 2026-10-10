@@ -1,2 +1,23 @@
 propebuy-backend/note
 propebuy-backend/note.txt
+
+# Personal notes — never commit
+NOTES.md
+*.personal.md
+
+# Root deps and build output
+node_modules
+dist
+build
+
+# Secrets at any level
+.env
+.env.*
+
+# Logs
+*.log
+logs
+
+# OS junk
+.DS_Store
+Thumbs.db
