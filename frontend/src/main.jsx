@@ -11,12 +11,13 @@ createRoot(document.getElementById("root")).render(
     {/* Router for all pages */}
     <BrowserRouter>
       <App />
-      {/* Toast — primary color styling, top center */}
+      {/* Toast — primary popups, bottom right */}
       <Toaster
-        position="top-center"
+        position="bottom-right"
         toastOptions={{
-          style: { fontFamily: "Lato, sans-serif" },
-          success: { iconTheme: { primary: "#05829a", secondary: "white" } },
+          style: { background: "#05829a", color: "white", fontFamily: "Lato, sans-serif" },
+          success: { iconTheme: { primary: "white", secondary: "#05829a" } },
+          error: { style: { background: "#e05252", color: "white" }, iconTheme: { primary: "white", secondary: "#e05252" } },
         }}
       />
     </BrowserRouter>

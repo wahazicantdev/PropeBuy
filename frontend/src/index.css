@@ -41,3 +41,127 @@ h3 {
   font-family: var(--font-header); /* Norwester */
   line-height: 1.2; /* tight minimalist */
 }
+
+/* Make Norwester always bold — professional minimalist */
+h1,
+h2,
+h3,
+.font-header {
+  font-family: "Norwester", sans-serif; /* headers + logo */
+  font-weight: 700; /* bold every time */
+  line-height: 1.2; /* tight */
+}
+
+/* Global buttons - press motion on every button automatically */
+button {
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease;
+}
+button:active {
+  transform: scale(0.97);
+}
+button:disabled {
+  cursor: not-allowed;
+  transform: none;
+}
+/* Shared button skins - use on PropeBuy call-to-action buttons */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+.btn-outline {
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  background-color: white;
+}
+
+/* Micro-interactions — transform plus opacity only, GPU friendly */
+.btn-active {
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease; /* cheap props only */
+}
+.btn-active:active {
+  transform: scale(0.97); /* press feedback, no layout shift */
+}
+/* Page entrance — subtle rise, runs once on mount */
+.page-enter {
+  animation: pageIn 0.25s ease both; /* fast, barely noticeable */
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  } /* start slightly low */
+  to {
+    opacity: 1;
+    transform: none;
+  } /* settle into place */
+}
+/* Popup entrance — for cards and modals */
+.pop-enter {
+  animation: popIn 0.18s ease both; /* quicker than page */
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  } /* start slightly small */
+  to {
+    opacity: 1;
+    transform: none;
+  } /* settle into place */
+}
+/* Tiny spinner — border trick, no images or JS timers */
+.spinner {
+  width: 16px;
+  height: 16px; /* compact inline size */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* faint ring */
+  border-top-color: white; /* bright segment spins */
+  border-radius: 9999px; /* circle */
+  animation: spin 0.7s linear infinite; /* constant rotation */
+  display: inline-block; /* sits inside buttons */
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  } /* full turn per cycle */
+}
+/* Respect users who prefer no motion */
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .btn-active,
+  .page-enter,
+  .pop-enter,
+  .spinner {
+    animation: none; /* kill motion */
+    transition: none; /* kill transitions */
+  }
+}
+
+/* Global selector - one design for every dropdown in PropeBuy */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  padding-right: 1rem; /* no room needed for background icon */
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: #1f2937;
+  background-color: white;
+  background-position:
+    calc(100% - 1.25rem) center,
+    calc(100% - 0.9rem) center;
+  background-size: 0.4rem 0.4rem;
+  background-repeat: no-repeat;
+}
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(5, 130, 154, 0.15);
+}
