@@ -1,7 +1,7 @@
 import prisma from "../config/prismaClient.js";
 import { cleanInt, cleanPrice } from "../utils/format.helper.js";
 import {
-  createGCashPaymentLink,
+  createCheckoutSession,
   verifyPaymentStatus,
 } from "../utils/paymongo.helper.js";
 import {
@@ -122,16 +122,17 @@ export const processCheckout = async (
   // PayMongo called OUTSIDE transaction — intentional
   // External API calls must never be inside atomic transactions
   if (paymentMethod === "GCASH") {
-    const payment = await createGCashPaymentLink(
+    const payment = await createCheckoutSession(
       order.totalAmount,
       order.id,
       `PropeBuy Order #${order.id} — ${order.orderItems.length} item(s)`,
     );
 
-    // Save PayMongo link ID for webhook tracking
+    // Save PayMongo session ID for webhook and status tracking
+    // Reuses the paymongoLinkId column so no migration is needed
     await prisma.order.update({
       where: { id: order.id },
-      data: { paymongoLinkId: payment.linkId },
+      data: { paymongoLinkId: payment.sessionId },
     });
 
     // Return order with GCash payment URL
@@ -323,7 +324,12 @@ export const confirmPaymentStatus = async (orderId) => {
 export const processWebhookEvent = async (event) => {
   const eventType = event.data?.attributes?.type;
 
-  if (eventType === "payment.paid" || eventType === "link.payment.paid") {
+  // Checkout sessions emit their own paid event alongside legacy ones
+  if (
+    eventType === "payment.paid" ||
+    eventType === "link.payment.paid" ||
+    eventType === "checkout_session.payment.paid"
+  ) {
     const order = await prisma.order.findFirst({
       where: {
         paymongoLinkId: { not: null },

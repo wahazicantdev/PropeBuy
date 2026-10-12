@@ -10,3 +10,7 @@ export const getPayMongoAuthHeader = () => {
   const encoded = Buffer.from(`${PAYMONGO_SECRET_KEY}:`).toString("base64");
   return `Basic ${encoded}`;
 };
+
+// PayMongo Checkout Sessions base URL (v2, current API)
+// Legacy Links (/v1/links) is deprecated and has no redirect support
+export const PAYMONGO_V2_URL = "https://api.paymongo.com/v2";
