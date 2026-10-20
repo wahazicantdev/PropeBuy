@@ -265,14 +265,33 @@ export const updateProduct = async (req, res) => {
     imageUrl = upload.secure_url;
   }
 
+  // ── FIELD PATCHING RULE ───────────────────────────────
+  // "0" and "" are falsy — plain `||` was silently ignoring
+  // stock resets to zero and description clears. Explicit
+  // undefined checks decide: sent → update, absent → keep.
   const updatedProduct = await prisma.product.update({
     where: { id: cleanInt(id) },
     data: {
+      // Bug fix: cleanInts did not exist — every edit with a
+      // category crashed with ReferenceError
+      // Bug fix: explicit check lets stock reach 0 (sold out)
       name: name || product.name,
-      description: description || product.description,
-      price: price ? cleanPrice(price) : product.price,
-      stock: stock ? cleanInt(stock) : product.stock,
-      categoryId: categoryId ? cleanInts(categoryId) : product.categoryId,
+      description:
+        description !== undefined && description !== null
+          ? description || null // empty string clears it, on purpose
+          : product.description,
+      price:
+        price !== undefined && price !== null && price !== ""
+          ? cleanPrice(price)
+          : product.price,
+      stock:
+        stock !== undefined && stock !== null && stock !== ""
+          ? cleanInt(stock)
+          : product.stock,
+      categoryId:
+        categoryId !== undefined && categoryId !== null && categoryId !== ""
+          ? cleanInt(categoryId)
+          : product.categoryId,
       imageUrl,
     },
     include: {

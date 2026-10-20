@@ -108,8 +108,27 @@ export const getOrder = async (req, res) => {
     });
   }
 
-  // Security — buyer can only view their own orders
-  if (order.buyerId !== req.user.id) {
+  // ── ACCESS RULES BY ROLE ──────────────────────────────
+  // BUYER  — only their own orders
+  // SELLER — only orders containing at least one of their items
+  // ADMIN  — platform oversight, sees everything
+  // Without the seller branch Phase D order detail 403s forever
+  let allowed = false;
+
+  if (req.user.role === "ADMIN") {
+    // Admin oversight — full access
+    allowed = true;
+  } else if (req.user.role === "SELLER") {
+    // Seller sees orders that include their own products
+    allowed = order.orderItems.some(
+      (item) => item.product && item.product.sellerId === req.user.id,
+    );
+  } else if (order.buyerId === req.user.id) {
+    // Buyer sees only their own orders
+    allowed = true;
+  }
+
+  if (!allowed) {
     return res.status(403).json({
       success: false,
       message: "Not authorized to view this order",
