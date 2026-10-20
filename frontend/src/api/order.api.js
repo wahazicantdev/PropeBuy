@@ -29,8 +29,9 @@ export const fetchMyOrders = async () => {
 };
 
 // Single order with items and buyer info
+// Seller access allowed as of Step 1 backend patch
 export const fetchOrder = async (id) => {
-  // Backend blocks buyers from opening other buyers orders
+  // Buyers see own, sellers see orders with their items, admin all
   const res = await api.get(`/orders/${id}`);
   // Returns { success, data: order }
   return res.data;
@@ -41,5 +42,22 @@ export const checkPayment = async (id) => {
   // Asks PayMongo directly through the backend
   const res = await api.get(`/orders/${id}/payment-status`);
   // Returns { success, message, data: { paymentStatus } }
+  return res.data;
+};
+
+// Orders touching this seller — only own items inside each
+export const fetchSellerOrders = async () => {
+  // GET /orders/seller/received, SELLER role only
+  const res = await api.get("/orders/seller/received");
+  // Returns { success, count, data: [...buyer, orderItems filtered] }
+  return res.data;
+};
+
+// Status transition — seller action button, buyer gets socket ping
+export const updateOrderStatus = async (id, status) => {
+  // Valid: PROCESSING | FULFILLED | CANCELLED
+  // CANCELLED restores stock atomically server-side
+  const res = await api.put(`/orders/${id}/status`, { status });
+  // Returns { success, message, data: updated order }
   return res.data;
 };
