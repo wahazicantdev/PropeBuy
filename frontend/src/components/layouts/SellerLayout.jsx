@@ -9,8 +9,8 @@ import VerifiedBadge from "../VerifiedBadge.jsx";
 const SellerLayout = () => {
   // Drawer state for phone
   const [open, setOpen] = useState(false);
-  // Live user — name plate + verification status on the sidebar
-  const { user } = useAuthStore();
+  // Live user + logout — logout wipes token, user, and localStorage
+  const { user, logout } = useAuthStore();
   // Shared links — single source, reused by both views
   // NavLink highlights the active one in both places
   const links = [
@@ -21,6 +21,18 @@ const SellerLayout = () => {
     { to: "/seller/inventory", label: "Inventory" },
     { to: "/seller/profile", label: "Profile" },
   ];
+
+  // ── LOGOUT ──
+  // Why window.location instead of navigate: the seller guard would
+  // bounce unauthenticated users to /login/buyer — wrong door for a seller.
+  // A hard reload to /login/seller has zero redirect races, and matches
+  // the same pattern the axios 401 interceptor already uses.
+  const handleLogout = () => {
+    // Wipes zustand state + both localStorage keys
+    logout();
+    // Full reload — clean app state on the seller login page
+    window.location.href = "/login/seller";
+  };
 
   return (
     // Row on desktop, column on phone
@@ -75,6 +87,13 @@ const SellerLayout = () => {
                   : "Not verified"}
               </span>
             )}
+            {/* Logout — every seller page has an exit door now */}
+            <button
+              onClick={handleLogout}
+              className="mt-3 font-body text-sm font-bold text-gray-500 hover:text-danger transition-colors"
+            >
+              Log Out
+            </button>
           </div>
         </nav>
       )}
@@ -116,6 +135,13 @@ const SellerLayout = () => {
                 : "Not verified"}
             </span>
           )}
+          {/* Logout — same exit door on desktop */}
+          <button
+            onClick={handleLogout}
+            className="mt-3 font-body text-sm font-bold text-gray-500 hover:text-danger transition-colors"
+          >
+            Log Out
+          </button>
         </div>
       </aside>
       {/* Content — min-w-0 lets it shrink, inner cap keeps it readable */}
