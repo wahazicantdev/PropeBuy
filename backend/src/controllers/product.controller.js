@@ -3,6 +3,8 @@ import { uploadToCloudinary } from "../config/cloudinary.js";
 import { cleanInt, cleanPrice } from "../utils/format.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 
+console.log("Testing")
+
 // ── CREATE PRODUCT ─────────────────────────────────────
 // Seller only
 export const createProduct = async (req, res) => {
