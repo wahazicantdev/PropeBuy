@@ -114,6 +114,20 @@ button:disabled {
     transform: none;
   } /* settle into place */
 }
+
+/* Overlay entrance — fade for modal backdrops, pairs with pop-enter */
+.fade-enter {
+  animation: fadeIn 0.18s ease both; /* same speed family as pop */
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  } /* start invisible */
+  to {
+    opacity: 1;
+  } /* settle fully */
+}
+
 /* Tiny spinner — border trick, no images or JS timers */
 .spinner {
   width: 16px;
@@ -135,6 +149,7 @@ button:disabled {
   .btn-active,
   .page-enter,
   .pop-enter,
+  .fade-enter,
   .spinner {
     animation: none; /* kill motion */
     transition: none; /* kill transitions */

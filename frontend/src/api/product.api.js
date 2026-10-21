@@ -47,8 +47,9 @@ const buildProductForm = ({ data, image }) => {
   form.append("price", data.price);
   form.append("stock", data.stock);
   form.append("categoryId", data.categoryId);
-  // Optional field — skip when empty so update falls back server-side
-  if (data.description) form.append("description", data.description);
+  // Description ALWAYS appended — empty string clears it on edit,
+  // create maps "" to null server-side (STEP 1 patch handles this)
+  form.append("description", data.description || "");
   // Image optional — edit keeps old photo when skipped
   if (image) form.append("image", image);
   return form;

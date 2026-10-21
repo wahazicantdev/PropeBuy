@@ -23,8 +23,12 @@ import PaymentFailed from "./pages/buyer/PaymentFailed.jsx";
 import OrderHistory from "./pages/buyer/OrderHistory.jsx";
 import OrderDetail from "./pages/buyer/OrderDetail.jsx";
 import BuyerProfile from "./pages/buyer/BuyerProfile.jsx";
+// Seller pages - Phase D, listings wired first
+import MyProducts from "./pages/seller/MyProducts.jsx";
+import AddProduct from "./pages/seller/AddProduct.jsx";
+import EditProduct from "./pages/seller/EditProduct.jsx";
 
-// Temp placeholder - seller and admin pages still Phase D-E
+// Temp placeholder - remaining seller pages STEP 5-6, admin Phase E
 const Placeholder = ({ label }) => (
   // Responsive centered text
   <div className="min-h-[50vh] flex items-center justify-center px-4 text-center">
@@ -65,6 +69,18 @@ const App = () => {
           <Route
             path="/seller/dashboard"
             element={<Placeholder label="Seller Dashboard" />}
+          />
+          {/* Listings - live as of STEP 4 */}
+          <Route path="/seller/products" element={<MyProducts />} />
+          <Route path="/seller/add-product" element={<AddProduct />} />
+          <Route path="/seller/products/:id/edit" element={<EditProduct />} />
+          <Route
+            path="/seller/orders"
+            element={<Placeholder label="Orders Received" />}
+          />
+          <Route
+            path="/seller/inventory"
+            element={<Placeholder label="Inventory" />}
           />
           <Route
             path="/seller/profile"
