@@ -119,11 +119,12 @@ app.use("/api/admin", adminRoutes);
 // Health check route
 app.get("/", (req, res) => {
   res.json({
-    message: "PropeBuy API is running!",
+    message: "PropeBuy API is running! Visit /api/docs for API documentation.",
     status: "OK",
   });
 });
 
+console.log(`PropeBuy backend running in ${process.env.NODE_ENV} mode`);
 // Error handler — must be last
 app.use(errorHandler);
 
