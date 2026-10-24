@@ -8,6 +8,8 @@ import rateLimit from "express-rate-limit";
 // Imported config/middleware
 import { CLIENT_URL, PORT } from "./config/env.js";
 import { errorHandler } from "./middleware/error.middleware.js";
+// Prisma client — shutdown handlers disconnect the DB cleanly through this
+import prisma from "./config/prismaClient.js";
 // Imported Routes
 import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
