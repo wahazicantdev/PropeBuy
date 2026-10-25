@@ -139,22 +139,22 @@ const Browse = () => {
                 className="border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
               >
  
-              {/* Fixed square image area keeps every product card aligned. */}
-              <div className="relative aspect-square overflow-hidden bg-gray-50">
-                {p.imageUrl ? (
-                  /* Absolute positioning makes the image fill the entire square. */
-                  <img
-                    src={p.imageUrl}
-                    alt={p.name}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                ) : (
-                  /* The placeholder fills the same square when no photo exists. */
-                  <div className="absolute inset-0 flex items-center justify-center font-body text-xs text-passive">
-                    No photo
-                  </div>
-                )}
-              </div>
+
+<div className="relative aspect-square overflow-hidden bg-gray-50">
+  {p.imageUrl ? (
+    <img
+      src={p.imageUrl}
+      alt={p.name}
+      className="absolute inset-0 object-cover object-center"
+      style={{ width: "100%", height: "100%" }}
+    />
+  ) : (
+    <div className="absolute inset-0 flex items-center justify-center font-body text-xs text-passive">
+      No photo
+    </div>
+  )}
+</div>
+
 
                 <div className="p-3">
                   {/* Price first, Shopee habit */}
