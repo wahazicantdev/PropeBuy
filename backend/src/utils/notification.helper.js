@@ -25,7 +25,7 @@ export const notifyOrderStatus = (userId, orderId, status, message) => {
 export const notifyPaymentConfirmed = (userId, orderId) => {
   io.to(`user_${userId}`).emit("payment_confirmed", {
     orderId,
-    message: "Your GCash payment has been confirmed!",
+    message: "Your payment has been confirmed!",
     timestamp: new Date().toISOString(),
   });
 };
