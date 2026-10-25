@@ -138,20 +138,24 @@ const Browse = () => {
                 to={`/product/${p.id}`}
                 className="border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
               >
-                {/* Image with fixed ratio, gray fallback */}
-                <div className="aspect-square bg-gray-50">
-                  {p.imageUrl ? (
-                    <img
-                      src={p.imageUrl}
-                      alt={p.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-body text-xs text-passive">
-                      No photo
-                    </div>
-                  )}
-                </div>
+ 
+
+<div className="relative aspect-square overflow-hidden bg-gray-50">
+  {p.imageUrl ? (
+    <img
+      src={p.imageUrl}
+      alt={p.name}
+      className="absolute inset-0 object-cover object-center"
+      style={{ width: "100%", height: "100%" }}
+    />
+  ) : (
+    <div className="absolute inset-0 flex items-center justify-center font-body text-xs text-passive">
+      No photo
+    </div>
+  )}
+</div>
+
+
                 <div className="p-3">
                   {/* Price first, Shopee habit */}
                   <p className="font-body font-bold text-primary">
