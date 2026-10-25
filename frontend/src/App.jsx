@@ -23,12 +23,17 @@ import PaymentFailed from "./pages/buyer/PaymentFailed.jsx";
 import OrderHistory from "./pages/buyer/OrderHistory.jsx";
 import OrderDetail from "./pages/buyer/OrderDetail.jsx";
 import BuyerProfile from "./pages/buyer/BuyerProfile.jsx";
-// Seller pages - Phase D, listings wired first
+// Seller pages - Phase D, listings + fulfillment wired
 import MyProducts from "./pages/seller/MyProducts.jsx";
 import AddProduct from "./pages/seller/AddProduct.jsx";
 import EditProduct from "./pages/seller/EditProduct.jsx";
+import OrdersReceived from "./pages/seller/OrdersReceived.jsx";
+import OrderDetailSeller from "./pages/seller/OrderDetailSeller.jsx";
+import Dashboard from "./pages/seller/Dashboard.jsx";
+import InventoryMonitor from "./pages/seller/InventoryMonitor.jsx";
+import SellerProfile from "./pages/seller/SellerProfile.jsx";
 
-// Temp placeholder - remaining seller pages STEP 5-6, admin Phase E
+// Temp placeholder - admin pages Phase E only now
 const Placeholder = ({ label }) => (
   // Responsive centered text
   <div className="min-h-[50vh] flex items-center justify-center px-4 text-center">
@@ -66,26 +71,16 @@ const App = () => {
       {/* Seller - sidebar shell */}
       <Route element={<SellerRoute />}>
         <Route element={<SellerLayout />}>
-          <Route
-            path="/seller/dashboard"
-            element={<Placeholder label="Seller Dashboard" />}
-          />
+          <Route path="/seller/dashboard" element={<Dashboard />} />
           {/* Listings - live as of STEP 4 */}
           <Route path="/seller/products" element={<MyProducts />} />
           <Route path="/seller/add-product" element={<AddProduct />} />
           <Route path="/seller/products/:id/edit" element={<EditProduct />} />
-          <Route
-            path="/seller/orders"
-            element={<Placeholder label="Orders Received" />}
-          />
-          <Route
-            path="/seller/inventory"
-            element={<Placeholder label="Inventory" />}
-          />
-          <Route
-            path="/seller/profile"
-            element={<Placeholder label="Seller Profile" />}
-          />
+          {/* Fulfillment - live as of STEP 5 */}
+          <Route path="/seller/orders" element={<OrdersReceived />} />
+          <Route path="/seller/orders/:id" element={<OrderDetailSeller />} />
+          <Route path="/seller/inventory" element={<InventoryMonitor />} />
+          <Route path="/seller/profile" element={<SellerProfile />} />
         </Route>
       </Route>
       {/* Admin - top nav shell */}

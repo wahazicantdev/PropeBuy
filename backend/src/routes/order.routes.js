@@ -5,6 +5,7 @@ import {
   getOrder,
   getSellerOrders,
   updateOrderStatus,
+  updatePaymentStatus,
   handlePaymongoWebhook,
   checkPaymentStatus,
 } from "../controllers/order.controller.js";
@@ -69,6 +70,16 @@ orderRoutes.put(
   authorize("SELLER"),
   validateIdParam,
   updateOrderStatus,
+);
+
+// Mark cash payment received — CASH orders only, GCash is PayMongo-owned
+orderRoutes.put(
+  "/:id/payment-status",
+  protect,
+  authorize("SELLER"),
+  validateIdParam,
+  updatePaymentStatus,
+  
 );
 
 export default orderRoutes;

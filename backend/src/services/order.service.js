@@ -321,6 +321,28 @@ export const confirmPaymentStatus = async (orderId) => {
   return { paymentStatus: order.paymentStatus, updated: false };
 };
 
+// ── MARK CASH PAYMENT RECEIVED ─────────────────────────
+// Seller confirms in-person cash collection on a CASH order
+export const setPaymentStatus = async (orderId) => {
+  // Flip payment status only — order status stays seller-controlled
+  const updated = await prisma.order.update({
+    where: { id: cleanInt(orderId) },
+    data: { paymentStatus: "PAID" },
+    include: {
+      orderItems: {
+        include: {
+          product: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  // Real-time ping to the buyer — money state changed
+  notifyPaymentConfirmed(updated.buyerId, updated.id);
+
+  return updated;
+};
+
 // ── PROCESS WEBHOOK EVENT SERVICE ─────────────────────
 export const processWebhookEvent = async (event) => {
   const eventType = event.data?.attributes?.type;
