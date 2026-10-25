@@ -114,20 +114,17 @@ const ProductDetail = () => {
         </nav>
         {/* Stacked on phone, split on desktop */}
         <div className="mt-4 grid gap-8 md:grid-cols-2">
-          {/* Image panel */}
-          <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-            {product.imageUrl ? (
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center font-body text-sm text-passive">
-                No photo
-              </div>
-            )}
-          </div>
+
+        {/* Fixed square container for the product detail hero image. */}
+        <div className="relative aspect-square overflow-hidden bg-gray-50">
+          {/* Fill the square and crop excess image content. */}
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+        
           {/* Info panel */}
           <div>
             <h1 className="font-header font-bold text-2xl md:text-3xl text-gray-900">
