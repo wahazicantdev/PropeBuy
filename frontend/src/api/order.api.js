@@ -61,3 +61,13 @@ export const updateOrderStatus = async (id, status) => {
   // Returns { success, message, data: updated order }
   return res.data;
 };
+
+// Seller confirms cash received — CASH orders only
+export const markCashPaid = async (id) => {
+  // PUT /orders/:id/payment-status, minimal PENDING → PAID move
+  const res = await api.put(`/orders/${id}/payment-status`, {
+    paymentStatus: "PAID",
+  });
+  // Returns { success, message, data: updated order }
+  return res.data;
+};

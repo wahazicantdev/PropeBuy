@@ -5,6 +5,7 @@ import {
   getOrdersBySeller,
   changeOrderStatus,
   confirmPaymentStatus,
+  setPaymentStatus,
   processWebhookEvent,
 } from "../services/order.service.js";
 
@@ -170,6 +171,69 @@ export const updateOrderStatus = async (req, res) => {
   res.status(200).json({
     success: true,
     message: `Order status updated to ${status}`,
+    data: updatedOrder,
+  });
+};
+
+// ── UPDATE PAYMENT STATUS — SELLER, CASH ONLY ──────────
+// Lets the seller confirm money received in person for cash orders.
+// GCash truth comes from PayMongo — never overridden here.
+export const updatePaymentStatus = async (req, res) => {
+  const { paymentStatus } = req.body;
+
+  // Minimal and honest: this endpoint only marks PAID
+  if (paymentStatus !== "PAID") {
+    return res.status(400).json({
+      success: false,
+      message: "Only marking as PAID is supported for cash orders",
+    });
+  }
+
+  // Shared read — items carry product.sellerId for the ownership check
+  const order = await getOrderById(req.params.id);
+
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: "Order not found",
+    });
+  }
+
+  // Seller must own at least one item in this order
+  const isSellerOrder = order.orderItems.some(
+    (item) => item.product && item.product.sellerId === req.user.id,
+  );
+
+  if (!isSellerOrder) {
+    return res.status(403).json({
+      success: false,
+      message: "Not authorized to update this order",
+    });
+  }
+
+  // GCash confirms through PayMongo — manual marking is CASH only
+  if (order.paymentMethod !== "CASH") {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Only cash orders can be marked manually — GCash confirms through PayMongo",
+    });
+  }
+
+  // Already confirmed — nothing to do
+  if (order.paymentStatus === "PAID") {
+    return res.status(400).json({
+      success: false,
+      message: "Payment is already confirmed",
+    });
+  }
+
+  // Mutate + buyer socket ping live in the service
+  const updatedOrder = await setPaymentStatus(order.id, req.user.id);
+
+  res.status(200).json({
+    success: true,
+    message: "Payment marked as received",
     data: updatedOrder,
   });
 };

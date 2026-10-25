@@ -29,22 +29,24 @@ export const getSellerAnalytics = async (req, res) => {
     _count: { status: true },
   });
 
-  // ── TOTAL REVENUE ─────────────────────────────────
-  // Sum of all fulfilled order items for this seller
-  // Only counts FULFILLED orders — not pending or cancelled
-  const revenueData = await prisma.orderItem.aggregate({
+  // ── TOTAL REVENUE + ITEMS SOLD ────────────────────
+  // Fulfilled items only — pending and cancelled never count
+  // Rows instead of aggregate so each line multiplies price × qty
+  // (bare _sum price adds unit prices and ignores quantity entirely)
+  const revenueItems = await prisma.orderItem.findMany({
     where: {
       product: { sellerId },
       order: { status: "FULFILLED" },
     },
-    _sum: {
-      // price * quantity = item revenue
-      price: true,
-    },
-    _count: {
-      id: true,
-    },
+    select: { price: true, quantity: true },
   });
+  // Revenue — every fulfilled line at price × quantity
+  const totalRevenue = revenueItems.reduce(
+    (sum, item) => sum + parseFloat(item.price) * item.quantity,
+    0,
+  );
+  // Items sold — real unit count, not row count
+  const totalItemsSold = revenueItems.reduce((sum, item) => sum + item.quantity, 0);
 
   // ── TOP SELLING PRODUCTS ──────────────────────────
   // Find the seller's best performing products
@@ -180,8 +182,8 @@ export const getSellerAnalytics = async (req, res) => {
       // Summary cards
       summary: {
         totalOrders,
-        totalRevenue: parseFloat(revenueData._sum.price || 0),
-        totalItemsSold: revenueData._count.id || 0,
+        totalRevenue,
+        totalItemsSold,
         lowStockCount: lowStockProducts.length,
       },
       // Order pipeline breakdown
