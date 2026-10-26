@@ -15,6 +15,7 @@ createRoot(document.getElementById("root")).render(
       <Toaster
         position="bottom-right"
         toastOptions={{
+          duration: 6000,
           style: { background: "#05829a", color: "white", fontFamily: "Lato, sans-serif" },
           success: { iconTheme: { primary: "white", secondary: "#05829a" } },
           error: { style: { background: "#e05252", color: "white" }, iconTheme: { primary: "white", secondary: "#e05252" } },
