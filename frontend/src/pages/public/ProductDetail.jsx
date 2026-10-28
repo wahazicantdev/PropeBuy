@@ -121,7 +121,8 @@ const ProductDetail = () => {
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 object-cover object-center"
+            style={{ width: "100%", height: "100%" }}
           />
         </div>
         

@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 // Custom dropdown + spinner — house components
 import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
+import Field from "../../components/Field.jsx";
 import { createProduct, fetchCategories } from "../../api/product.api.js";
 
 // AddProduct — new listing, ALL fields required including photo
@@ -91,48 +92,47 @@ const AddProduct = () => {
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         {/* Name — backend wants 2 to 255 chars */}
-        <div>
+        <Field label="Product name" error={errors.name?.message}>
           <input
             {...register("name", {
               required: "Product name is required",
               minLength: { value: 2, message: "At least 2 characters" },
             })}
-            placeholder="Product name"
+            placeholder="e.g. Bamboo Storage Basket"
             className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
           />
-          {errors.name && (
-            <p className="text-danger text-xs mt-1">{errors.name.message}</p>
-          )}
-        </div>
+        </Field>
         {/* Category — custom dropdown, state-driven */}
-        <div>
+        <Field label="Category">
           <Select
             value={categoryId}
             onChange={setCategoryId}
             options={categoryOptions}
             ariaLabel="Select category"
           />
-        </div>
-        {/* Price and stock — grid pair, numeric keyboards on phone */}
+        </Field>
+        {/* Price and stock — labels above, ₱ prefix on price */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <input
-              {...register("price", {
-                required: "Price is required",
-                validate: (v) =>
-                  parseFloat(v) > 0 || "Price must be greater than 0",
-              })}
-              type="number"
-              min="1"
-              step="0.01"
-              placeholder="Price (₱)"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
-            />
-            {errors.price && (
-              <p className="text-danger text-xs mt-1">{errors.price.message}</p>
-            )}
-          </div>
-          <div>
+          <Field label="Price" error={errors.price?.message}>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-body text-sm text-passive">
+                ₱
+              </span>
+              <input
+                {...register("price", {
+                  required: "Price is required",
+                  validate: (v) =>
+                    parseFloat(v) > 0 || "Price must be greater than 0",
+                })}
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="e.g. 249.75"
+                className="w-full border border-gray-200 rounded-lg pl-9 pr-4 py-3 font-body text-sm focus:outline-primary"
+              />
+            </div>
+          </Field>
+          <Field label="Stock" error={errors.stock?.message}>
             <input
               {...register("stock", {
                 required: "Stock is required",
@@ -144,16 +144,13 @@ const AddProduct = () => {
               })}
               type="number"
               min="1"
-              placeholder="Stock"
+              placeholder="e.g. 12"
               className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
             />
-            {errors.stock && (
-              <p className="text-danger text-xs mt-1">{errors.stock.message}</p>
-            )}
-          </div>
+          </Field>
         </div>
         {/* Description — REQUIRED, 1000 char ceiling mirrors backend */}
-        <div>
+        <Field label="Description" error={errors.description?.message}>
           <textarea
             {...register("description", {
               required: "Description is required",
@@ -163,15 +160,10 @@ const AddProduct = () => {
               },
             })}
             rows={4}
-            placeholder="Describe the item — condition, size, what is included"
+            placeholder="e.g. Condition, size, what is included"
             className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary resize-y"
           />
-          {errors.description && (
-            <p className="text-danger text-xs mt-1">
-              {errors.description.message}
-            </p>
-          )}
-        </div>
+        </Field>
         {/* Photo — REQUIRED, dashed picker, instant preview */}
         <div>
           <label className="border border-dashed border-gray-300 rounded-lg p-4 font-body text-sm text-passive cursor-pointer block">

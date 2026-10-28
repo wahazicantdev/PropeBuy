@@ -133,7 +133,9 @@ const OrderDetail = () => {
                 <img
                   src={it.product.imageUrl}
                   alt={it.product?.name}
-                  className="w-full h-full object-cover"
+                  className="object-cover"
+                  style={{ width: "100%", height: "100%" }}
+
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center font-body text-xs text-passive">
@@ -146,6 +148,11 @@ const OrderDetail = () => {
               <div className="min-w-0">
                 <p className="font-body font-bold text-sm text-gray-900 truncate">
                   {it.product?.name || "Item"}
+                </p>
+                                {/* Vendor plus barangay, per item */}
+                <p className="font-body text-xs text-passive mt-1 truncate">
+                  {it.product?.seller?.name || "-"} ·{" "}
+                  {it.product?.barangay?.name || "-"}
                 </p>
                 <p className="font-body text-xs text-passive mt-1">
                   Qty {it.quantity}

@@ -96,12 +96,29 @@ const OrderHistory = () => {
                 <span className="text-passive">{fmtDate(o.createdAt)}</span>
               </div>
               {/* Item line - first product plus overflow count */}
-              <p className="font-body text-sm text-gray-700 mt-2 truncate">
-                {o.orderItems?.[0]?.product?.name || "Items"}
-                {o.orderItems?.length > 1
-                  ? ` +${o.orderItems.length - 1} more`
-                  : ""}
-              </p>
+              <div className="mt-2 flex items-center gap-3 min-w-0">
+                {/* Thumb with fallback, first product image */}
+                <div className="w-12 h-12 shrink-0 bg-gray-50 rounded-lg overflow-hidden">
+                  {o.orderItems?.[0]?.product?.imageUrl ? (
+                    <img
+                      src={o.orderItems[0].product.imageUrl}
+                      alt={o.orderItems[0].product.name}
+                      className="object-cover"
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center font-body text-xs text-passive text-center leading-tight">
+                      No photo
+                    </div>
+                  )}
+                </div>
+                <p className="flex-1 min-w-0 font-body text-sm text-gray-700 truncate">
+                  {o.orderItems?.[0]?.product?.name || "Items"}
+                  {o.orderItems?.length > 1
+                    ? ` +${o.orderItems.length - 1} more`
+                    : ""}
+                </p>
+              </div>
               {/* Bottom row - total plus pills */}
               <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-body font-bold text-primary">

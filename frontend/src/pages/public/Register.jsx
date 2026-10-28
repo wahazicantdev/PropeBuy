@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import PublicNav from "../../components/PublicNav.jsx";
 import Select from "../../components/Select.jsx";
+import Field from "../../components/Field.jsx";
 import { registerUser } from "../../api/auth.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
@@ -105,59 +106,52 @@ const Register = () => {
         </p>
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           {/* Name */}
-          <div>
+          <Field label="Full name" error={errors.name?.message}>
             <input
               {...register("name", { required: "Name required" })}
-              placeholder="Full name"
+              placeholder="e.g. Juan Dela Cruz"
               className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
             />
-            {errors.name && (
-              <p className="text-danger text-xs mt-1">{errors.name.message}</p>
-            )}
-          </div>
+          </Field>
           {/* Email */}
-          <div>
+          <Field label="Email" error={errors.email?.message}>
             <input
               {...register("email", { required: "Email required" })}
               type="email"
-              placeholder="Email"
+              placeholder="e.g. juan@email.com"
               className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
             />
-            {errors.email && (
-              <p className="text-danger text-xs mt-1">{errors.email.message}</p>
-            )}
-          </div>
+          </Field>
           {/* Password */}
-          <div>
+          <Field label="Password" error={errors.password?.message}>
             <input
               {...register("password", {
                 required: "Password required",
                 minLength: { value: 6, message: "Min 6 chars" },
               })}
               type="password"
-              placeholder="Password (min 6)"
+              placeholder="At least 6 characters"
               className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
             />
-            {errors.password && (
-              <p className="text-danger text-xs mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
+          </Field>
           {/* Role plus barangay — custom dropdowns */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              value={role}
-              onChange={setRole}
-              options={roleOptions}
-              ariaLabel="Select role"
-            />
-            <Select
-              value={barangayId}
-              onChange={setBarangayId}
-              options={barangayOptions}
-              ariaLabel="Select barangay"
-            />
+            <Field label="Register as">
+              <Select
+                value={role}
+                onChange={setRole}
+                options={roleOptions}
+                ariaLabel="Select role"
+              />
+            </Field>
+            <Field label="Barangay">
+              <Select
+                value={barangayId}
+                onChange={setBarangayId}
+                options={barangayOptions}
+                ariaLabel="Select barangay"
+              />
+            </Field>
           </div>
           {/* File pickers */}
           <div className="grid gap-4">

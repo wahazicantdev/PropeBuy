@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import PublicNav from "../../components/PublicNav.jsx";
+import Field from "../../components/Field.jsx";
 import { loginUser } from "../../api/auth.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 
@@ -55,18 +56,22 @@ const SellerLogin = () => {
           Unverified sellers land on profile status.
         </p>
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-          <input
-            {...register("email", { required: true })}
-            type="email"
-            placeholder="Email"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm"
-          />
-          <input
-            {...register("password", { required: true })}
-            type="password"
-            placeholder="Password"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm"
-          />
+          <Field label="Email">
+            <input
+              {...register("email", { required: true })}
+              type="email"
+              placeholder="e.g. juan@email.com"
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm"
+            />
+          </Field>
+          <Field label="Password">
+            <input
+              {...register("password", { required: true })}
+              type="password"
+              placeholder="Your password"
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm"
+            />
+          </Field>
           <button
             disabled={loading}
             className="w-full bg-primary text-white py-3 rounded-lg font-body disabled:opacity-50"

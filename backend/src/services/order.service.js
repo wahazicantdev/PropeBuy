@@ -178,7 +178,15 @@ export const getOrderById = async (orderId) => {
         include: {
           product: {
             // sellerId added so getSellerOrder access check works
-            select: { id: true, name: true, imageUrl: true, sellerId: true },
+          select: {
+              id: true,
+              name: true,
+              imageUrl: true,
+              sellerId: true,
+              // Vendor plus barangay, per item
+              seller: { select: { id: true, name: true } },
+              barangay: { select: { name: true } },
+            },          
           },
         },
       },
