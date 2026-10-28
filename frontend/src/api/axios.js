@@ -1,4 +1,6 @@
 import axios from "axios";
+import toast from "react-hot-toast";
+import { useAuthStore } from "../stores/auth.store.js";
 
 // Base URL — from .env, fallback to localhost:5000
 const api = axios.create({
@@ -21,7 +23,9 @@ api.interceptors.request.use(
 );
 
 // ── RESPONSE INTERCEPTOR ──
-// Central 401/403 handling — auto logout on expired token
+// Dedupe flag — parallel dying requests must not double-toast
+let expiring = false;
+
 api.interceptors.response.use(
   (response) => response, // backend already returns { success, message, data }
   (error) => {
@@ -30,13 +34,30 @@ api.interceptors.response.use(
       error.message = "Cannot reach server. Check if backend is running.";
       return Promise.reject(error);
     }
-    // 401 = expired/invalid token → wipe + redirect to login
-    if (error.response.status === 401) {
-      localStorage.removeItem("propebuy_token");
-      localStorage.removeItem("propebuy_user");
-      // Avoid loop if already on login page
-      if (!window.location.pathname.includes("login"))
-        window.location.href = "/login/buyer";
+    // 401 on a request that CARRIED a token = session died mid-use.
+    // Login/register calls are skipped so a wrong password never logs out.
+    const carriedToken = Boolean(error.config?.headers?.Authorization);
+    const isAuthCall = error.config?.url?.includes("/auth/");
+    if (error.response.status === 401 && carriedToken && !isAuthCall) {
+      if (!expiring) {
+        expiring = true;
+        // Remember the role before logout wipes it
+        const role = useAuthStore.getState().user?.role;
+        sessionStorage.setItem(
+          "propebuy_login_redirect",
+          role === "SELLER" ? "/login/seller" : "/login/buyer",
+        );
+        // Wipes zustand + localStorage; guards then redirect on their own
+        useAuthStore.getState().logout();
+        toast.error("Your session expired — log in again", {
+          id: "session-expired",
+        });
+        // Re-arm after the dust settles
+        setTimeout(() => {
+          expiring = false;
+        }, 2000);
+      }
+      return new Promise(() => {});
     }
     return Promise.reject(error);
   },
