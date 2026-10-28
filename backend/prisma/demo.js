@@ -105,83 +105,194 @@ async function main() {
   await prisma.user.createMany({ data: userRows });
   console.log(`Created ${userRows.length} demo accounts (8 sellers + 3 buyers, all VERIFIED).`);
 
-  // ── STEP 6 — 7 PRODUCTS PER SELLER (one per category) ────
+  // ── STEP 6 — 21 PRODUCTS PER SELLER (3 per category) ─────
   // Fetch sellers fresh so every product links to the right seller + barangay
   const sellers = await prisma.user.findMany({
     where: { role: "SELLER" },
     include: { barangay: true },
   });
 
-  // One realistic product template per category — price in PHP
-  const PRODUCT_TEMPLATE = {
-    "Automotive Supplies": {
-      name: "Microfiber Car Cloth",
-      price: 99.5,
-      description:
-        "Lint-free microfiber cloth for wiping cars, motorcycles, and bikes. Washable and reusable.",
-    },
-    "Clothing and Apparel": {
-      name: "Comfy Cotton Shirt",
-      price: 249.75,
-      description:
-        "Breathable cotton shirt, everyday use. Pre-owned store stock in brand-new condition.",
-    },
-    "Electronics and Gadgets": {
-      name: "Mini Desk Fan",
-      price: 449.25,
-      description:
-        "USB rechargeable mini desk fan. Quiet motor, foldable stand, perfect for hot afternoons.",
-    },
-    "Food and Packaged Goods": {
-      name: "Sardines Pack",
-      price: 85.5,
-      description:
-        "Sealed canned sardines in tomato sauce. Long shelf life, perfect pantry or sari-sari stock.",
-    },
-    "Health and Beauty": {
-      name: "Herbal Soap Bar",
-      price: 65,
-      description:
-        "Handmade herbal soap for sensitive skin. Light scent, no harsh chemicals added.",
-    },
-    "Home and Living": {
-      name: "Bamboo Storage Basket",
-      price: 129,
-      description:
-        "Woven bamboo storage basket for household items. Sturdy handles, natural finish.",
-    },
-    Others: {
-      name: "Capiz Shell Keychain",
-      price: 79,
-      description:
-        "Handmade capiz shell keychain from local craftsmen. Lightweight with a metal clasp.",
-    },
+  // Vendor price variance — same goods, honest different vendor prices.
+  // Deterministic ±10% spread per seller so Browse shows priced competition
+  const PRICE_VARIANCE = [0.90, 0.95, 1.00, 1.05, 1.10];
+
+  // 21-template catalog — 3 products per category, prices in PHP.
+  // The original 7 templates KEEP their names so old test flows stay valid
+  const PRODUCT_CATALOG = {
+    "Food and Packaged Goods": [
+      {
+        name: "Sardines Pack",
+        price: 85.5,
+        description:
+          "Sealed canned sardines in tomato sauce. Long shelf life, perfect pantry or sari-sari stock.",
+      },
+      {
+        name: "Rice 5kg Sack",
+        price: 275,
+        description:
+          "Well-milled 5kg rice in a sealed sack. Everyday family staple.",
+      },
+      {
+        name: "Instant Coffee Sticks (10s)",
+        price: 55,
+        description:
+          "Box of 10 instant coffee sticks for quick morning brews.",
+      },
+    ],
+    "Clothing and Apparel": [
+      {
+        name: "Comfy Cotton Shirt",
+        price: 249.75,
+        description:
+          "Breathable cotton shirt, everyday use. Pre-owned store stock in brand-new condition.",
+      },
+      {
+        name: "Everyday Jogger Shorts",
+        price: 199,
+        description:
+          "Light jogger shorts with drawstring waist and side pockets.",
+      },
+      {
+        name: "Uniform White Polo",
+        price: 289.5,
+        description:
+          "Crisp white school polo that keeps its shape through washes.",
+      },
+    ],
+    "Electronics and Gadgets": [
+      {
+        name: "Mini Desk Fan",
+        price: 449.25,
+        description:
+          "USB rechargeable mini desk fan. Quiet motor, foldable stand, perfect for hot afternoons.",
+      },
+      {
+        name: "USB Charging Cable 1m",
+        price: 45,
+        description:
+          "Durable 1-meter charging cable for phones and power banks.",
+      },
+      {
+        name: "LED Emergency Bulb",
+        price: 129,
+        description:
+          "Rechargeable LED bulb that keeps rooms lit during brownouts.",
+      },
+    ],
+    "Home and Living": [
+      {
+        name: "Bamboo Storage Basket",
+        price: 129,
+        description:
+          "Woven bamboo storage basket for household items. Sturdy handles, natural finish.",
+      },
+      {
+        name: "Clothes Hanger Set (5s)",
+        price: 89.75,
+        description:
+          "Set of 5 plastic hangers with non-slip bars for shirts and pants.",
+      },
+      {
+        name: "Plastic Storage Bin 15L",
+        price: 149.25,
+        description:
+          "Stackable 15-liter bin with lock lid. Keeps clothes and toys dust-free.",
+      },
+    ],
+    "Health and Beauty": [
+      {
+        name: "Herbal Soap Bar",
+        price: 65,
+        description:
+          "Handmade herbal soap for sensitive skin. Light scent, no harsh chemicals added.",
+      },
+      {
+        name: "Toothpaste Family Size (150g)",
+        price: 99,
+        description:
+          "Family-size toothpaste with cavity protection, lasts a household a month.",
+      },
+      {
+        name: "Sanitizing Alcohol 500ml",
+        price: 88.75,
+        description:
+          "All-purpose sanitizing alcohol, 70% solution in a spray-ready bottle.",
+      },
+    ],
+    "Automotive Supplies": [
+      {
+        name: "Microfiber Car Cloth",
+        price: 99.5,
+        description:
+          "Lint-free microfiber cloth for wiping cars, motorcycles, and bikes. Washable and reusable.",
+      },
+      {
+        name: "Motorcycle Basic Tool Set",
+        price: 185,
+        description:
+          "Compact wrench and screwdriver set that fits under most motorcycle seats.",
+      },
+      {
+        name: "Tire Pressure Gauge",
+        price: 79.25,
+        description:
+          "Analog tire pressure gauge with an easy-read dial, works on cars and scooters.",
+      },
+    ],
+    Others: [
+      {
+        name: "Capiz Shell Keychain",
+        price: 79,
+        description:
+          "Handmade capiz shell keychain from local craftsmen. Lightweight with a metal clasp.",
+      },
+      {
+        name: "Souvenir Ref Magnet",
+        price: 39,
+        description:
+          "Fridge magnet printed with local Muntinlupa designs. Gift-ready finish.",
+      },
+      {
+        name: "Handmade Woven Wallet",
+        price: 159,
+        description:
+          "Native woven wallet with a zip pocket that holds cards and small bills.",
+      },
+    ],
   };
 
   const productRows = [];
   sellers.forEach((s, si) => {
-    // Name carries the barangay so Browse/MyProducts rows stay unambiguous
-    for (let ci = 0; ci < categories.length; ci++) {
-      const tpl = PRODUCT_TEMPLATE[categories[ci].name];
-      productRows.push({
-        sellerId: s.id,
-        barangayId: s.barangayId,
-        categoryId: categories[ci].id,
-        name: tpl.name,
-        description: tpl.description,
-        price: tpl.price,
-        // Deterministic stock spread: 0 / 3 / 6 / 9 / 12
-        // Covers every StockPill state + low-stock analytics nicely
-        stock: ((si + ci * 2) % 5) * 3,
-        // No image on purpose — yoy adds photos via Edit Product
-        imageUrl: null,
-        isActive: true,
-      });
+    // Vendor price multiplier — deterministic cycle, same goods vary ±10%
+    const variance = PRICE_VARIANCE[si % PRICE_VARIANCE.length];
+
+    // pi = running index inside this seller's 21 — drives the stock cycle
+    let pi = 0;
+    for (const cat of categories) {
+      // Every template of this category becomes one row for this seller
+      for (const tpl of PRODUCT_CATALOG[cat.name]) {
+        productRows.push({
+          sellerId: s.id,
+          barangayId: s.barangayId,
+          categoryId: cat.id,
+          name: tpl.name,
+          description: tpl.description,
+          // Vendor price = base × variance, cleaned to 2 decimals
+          price: Math.round(tpl.price * variance * 100) / 100,
+          // Deterministic stock spread 0 / 3 / 6 / 9 / 12 cycling across
+          // the 21 → all StockPill states + low-stock analytics covered
+          stock: ((si + pi) % 5) * 3,
+          // No image on purpose — demoImage attaches photos right after
+          imageUrl: null,
+          isActive: true,
+        });
+        pi += 1;
+      }
     }
   });
 
   await prisma.product.createMany({ data: productRows });
-  console.log(`Created ${productRows.length} products (8 sellers x 7 categories, no images).`);
+  console.log(`Created ${productRows.length} products (8 sellers × 21, 3 per category, no images).`);
 
   // ── STEP 7 — FINAL STATE REPORT ──────────────────────────
   const users = await prisma.user.groupBy({
@@ -204,7 +315,7 @@ async function main() {
     console.log(`  Buyer ${p.n}  →  buyer${p.n}.${p.barangay.toLowerCase()}@demo.com  (${p.barangay})`);
   });
   console.log("  Admin (untouched) →  admin@propebuy.com / admin123");
-  console.log("\nDone. Analytics shows zeros until yoy creates fresh test orders.");
+  console.log("\nDone. Run npm run demoPurchases to seed the purchase history.");
 }
 
 // Run + clean shutdown, same shape as the base seed
