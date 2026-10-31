@@ -64,13 +64,13 @@ const AdminDashboard = () => {
         <div className="flex gap-2 ml-auto flex-wrap">
           <Link
             to="/admin/pending"
-            className="btn-primary rounded-lg px-3 py-2 font-body text-xs font-bold"
+            className="btn-primary rounded-full px-3 py-2 font-body text-xs font-bold"
           >
             Review verifications
           </Link>
           <Link
             to="/admin/orders"
-            className="btn-active border border-gray-200 rounded-lg px-3 py-2 font-body text-xs font-bold text-gray-900"
+            className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
           >
             Orders
           </Link>
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
       {/* ── SUMMARY CARDS ── */}
       <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Platform revenue — fulfilled orders only, same rule as seller side */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Revenue
           </p>
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
           </p>
         </div>
         {/* Orders — every status counted */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Orders
           </p>
@@ -121,7 +121,7 @@ const AdminDashboard = () => {
         {/* Live listings — active products only */}
         <Link
           to="/admin/products"
-          className="border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
+          className="border border-black/10 rounded-xl p-4 hover:border-gray-200 transition-colors"
         >
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Listings
@@ -136,7 +136,7 @@ const AdminDashboard = () => {
         {/* Pending — red when work waits, neutral when the queue is clear */}
         <Link
           to="/admin/pending"
-          className="border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
+          className="border border-black/10 rounded-xl p-4 hover:border-gray-200 transition-colors"
         >
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Pending
@@ -157,7 +157,7 @@ const AdminDashboard = () => {
       {/* ── PEOPLE SPLIT ── */}
       <div className="mt-3 grid grid-cols-3 gap-3">
         {/* Total accounts */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Accounts
           </p>
@@ -166,7 +166,7 @@ const AdminDashboard = () => {
           </p>
         </div>
         {/* Buyers */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Buyers
           </p>
@@ -175,7 +175,7 @@ const AdminDashboard = () => {
           </p>
         </div>
         {/* Vendors */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Vendors
           </p>
@@ -186,7 +186,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* ── ORDER PIPELINE CHIPS ── */}
-      <div className="mt-3 border border-gray-100 rounded-xl p-4">
+      <div className="mt-3 border border-black/10 rounded-xl p-4">
         <p className="font-body font-bold text-sm text-gray-900">
           Orders by status
         </p>
@@ -211,8 +211,8 @@ const AdminDashboard = () => {
 
       {/* ── TOP BARANGAYS ── */}
       {/* Plain div bars — relative widths, zero chart library needed */}
-      <div className="mt-3 border border-gray-100 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+      <div className="mt-3 border border-black/10 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-black/10 bg-surface flex items-center justify-between gap-3">
           <p className="font-body font-bold text-sm text-gray-900">
             Top barangays by listings
           </p>
@@ -258,7 +258,7 @@ const AdminDashboard = () => {
 
       {/* Honest zero-state banner for a fresh database */}
       {orders.total === 0 && (
-        <p className="mt-4 font-body text-sm text-passive border border-gray-100 rounded-xl p-4">
+        <p className="mt-4 font-body text-sm text-passive border border-black/10 rounded-xl p-4">
           Empty numbers right now — register a vendor, approve them, list a
           product, then buy it as a buyer and watch this page fill up live.
         </p>

@@ -55,13 +55,13 @@ const Dashboard = () => {
         <div className="flex gap-2 ml-auto flex-wrap">
           <Link
             to="/seller/add-product"
-            className="btn-primary rounded-lg px-3 py-2 font-body text-xs font-bold"
+            className="btn-primary rounded-full px-3 py-2 font-body text-xs font-bold"
           >
             Add product
           </Link>
           <Link
             to="/seller/orders"
-            className="btn-active border border-gray-200 rounded-lg px-3 py-2 font-body text-xs font-bold text-gray-900"
+            className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
           >
             Orders
           </Link>
@@ -71,7 +71,7 @@ const Dashboard = () => {
       {/* ── SUMMARY CARDS ── */}
       <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Revenue card */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Revenue
           </p>
@@ -83,7 +83,7 @@ const Dashboard = () => {
           </p>
         </div>
         {/* Orders card */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Orders
           </p>
@@ -95,7 +95,7 @@ const Dashboard = () => {
           </p>
         </div>
         {/*.Items sold card */}
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Items sold
           </p>
@@ -109,7 +109,7 @@ const Dashboard = () => {
         {/* Low stock card — links straight to the monitor */}
         <Link
           to="/seller/inventory"
-          className="border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
+          className="border border-black/10 rounded-xl p-4 hover:border-gray-200 transition-colors"
         >
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Low stock
@@ -134,7 +134,7 @@ const Dashboard = () => {
       </div>
 
       {/* ── ORDER PIPELINE CHIPS ── */}
-      <div className="mt-3 border border-gray-100 rounded-xl p-4">
+      <div className="mt-3 border border-black/10 rounded-xl p-4">
         <p className="font-body font-bold text-sm text-gray-900">
           Orders by status
         </p>
@@ -160,8 +160,8 @@ const Dashboard = () => {
       {/* ── TOP PRODUCTS + RECENT ORDERS ── */}
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         {/* Top products */}
-        <div className="border border-gray-100 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+        <div className="border border-black/10 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-black/10 bg-surface">
             <p className="font-body font-bold text-sm text-gray-900">
               Top products
             </p>
@@ -171,12 +171,12 @@ const Dashboard = () => {
               No sales yet — your best sellers land here.
             </p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-black/10">
               {topProducts.map((t) => (
                 <li key={t.product.id}>
                   <Link
                     to={`/seller/products/${t.product.id}/edit`}
-                    className="p-3 flex gap-3 items-center hover:bg-gray-50 transition-colors overflow-hidden"
+                    className="p-3 flex gap-3 items-center hover:bg-surface transition-colors overflow-hidden"
                   >
                     {/* Thumb or letter fallback — no photos never breaks layout */}
                     {t.product.imageUrl ? (
@@ -212,8 +212,8 @@ const Dashboard = () => {
         </div>
 
         {/* Recent orders */}
-        <div className="border border-gray-100 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+        <div className="border border-black/10 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-black/10 bg-surface flex items-center justify-between">
             <p className="font-body font-bold text-sm text-gray-900">
               Recent orders
             </p>
@@ -230,7 +230,7 @@ const Dashboard = () => {
             </p>
           ) : (
             // Rows carry YOUR slice subtotal — totalAmount includes other sellers
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-black/10">
               {recentOrders.map((o) => {
                 // Seller-slice subtotal from own items only
                 const slice = o.orderItems.reduce(
@@ -241,7 +241,7 @@ const Dashboard = () => {
                   <li key={o.id}>
                     <Link
                       to={`/seller/orders/${o.id}`}
-                      className="p-3 flex gap-3 items-center hover:bg-gray-50 transition-colors overflow-hidden"
+                      className="p-3 flex gap-3 items-center hover:bg-surface transition-colors overflow-hidden"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="font-body font-bold text-sm text-gray-900">
@@ -269,7 +269,7 @@ const Dashboard = () => {
 
       {/* Honest zero-state banner for a brand-new shop */}
       {!hasSales && (
-        <p className="mt-4 font-body text-sm text-passive border border-gray-100 rounded-xl p-4">
+        <p className="mt-4 font-body text-sm text-passive border border-black/10 rounded-xl p-4">
           Empty numbers right now — make a test order as a buyer and watch this
           page fill up live.
         </p>

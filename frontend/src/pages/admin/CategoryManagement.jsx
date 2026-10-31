@@ -102,7 +102,7 @@ const CategoryManagement = () => {
 
       {/* Scope reminder — physical deliverable goods only, straight from
           the documentation. Stops a new admin inviting services in. */}
-      <p className="mt-4 font-body text-xs text-passive border border-gray-100 rounded-xl p-3">
+      <p className="mt-4 font-body text-xs text-passive border border-black/10 rounded-xl p-3">
         PropeBuy carries physical deliverable goods only. Services, dine-in
         food and fresh palengke produce are out of scope — the 7 seeded
         categories match the documentation.
@@ -111,7 +111,7 @@ const CategoryManagement = () => {
       {/* ── ADD FORM ── */}
       <form
         onSubmit={handleSubmit(onAdd)}
-        className="mt-3 border border-gray-100 rounded-xl p-4"
+        className="mt-3 border border-black/10 rounded-xl p-4"
       >
         <p className="font-body font-bold text-sm text-gray-900">
           Add a category
@@ -125,7 +125,7 @@ const CategoryManagement = () => {
                 maxLength: { value: 100, message: "At most 100 characters" },
               })}
               placeholder="Category name"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
+              className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
             />
             {/* Client rules mirror the express-validator ones */}
             {errors.name && (
@@ -137,7 +137,7 @@ const CategoryManagement = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-primary rounded-lg px-5 py-3 font-body text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+            className="btn-primary rounded-full px-5 py-3 font-body text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
           >
             {isSubmitting ? (
               <>
@@ -176,7 +176,7 @@ const CategoryManagement = () => {
             // Disabled rows gray out — same language as barangays
             <li
               key={c.id}
-              className={`border border-gray-100 rounded-xl p-4 flex gap-3 items-center overflow-hidden ${
+              className={`border border-black/10 rounded-xl p-4 flex gap-3 items-center overflow-hidden ${
                 c.isActive ? "" : "opacity-60"
               }`}
             >
@@ -203,7 +203,7 @@ const CategoryManagement = () => {
               </div>
               <button
                 onClick={() => setToggleTarget(c)}
-                className={`rounded-lg px-3 py-2 font-body text-xs font-bold whitespace-nowrap shrink-0 ${
+                className={`rounded-full px-3 py-2 font-body text-xs font-bold whitespace-nowrap shrink-0 ${
                   c.isActive
                     ? "text-danger border border-danger/30 hover:bg-danger/10"
                     : "btn-outline"

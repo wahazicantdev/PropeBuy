@@ -194,7 +194,7 @@ const PendingVerifications = () => {
             setLoading(true);
             load();
           }}
-          className="btn-active ml-auto border border-gray-200 rounded-lg px-3 py-2 font-body text-xs font-bold text-gray-900"
+          className="btn-active ml-auto border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
         >
           Refresh
         </button>
@@ -202,7 +202,7 @@ const PendingVerifications = () => {
 
       {/* How-to strip — OCR recommends, human decides. Says the policy
           out loud so a panelist reading the screen gets the framing. */}
-      <p className="mt-4 font-body text-xs text-passive border border-gray-100 rounded-xl p-3">
+      <p className="mt-4 font-body text-xs text-passive border border-black/10 rounded-xl p-3">
         OCR reads both documents and recommends a result. You decide. Open the
         documents yourself before approving — the score is assistance, not
         proof.
@@ -223,7 +223,7 @@ const PendingVerifications = () => {
             // min-w-0 + overflow-hidden — the responsive trio on every card
             <li
               key={u.id}
-              className="border border-gray-100 rounded-xl p-4 overflow-hidden"
+              className="border border-black/10 rounded-xl p-4 overflow-hidden"
             >
               {/* Identity row */}
               <div className="flex items-start gap-3 flex-wrap">
@@ -254,7 +254,7 @@ const PendingVerifications = () => {
               {/* OCR issues — the reason the engine hesitated.
                   Shown inline because it drives the admin's decision. */}
               {u.ocrIssues?.length > 0 && (
-                <ul className="mt-3 border border-gray-100 rounded-lg p-3 flex flex-col gap-1">
+                <ul className="mt-3 border border-black/10 rounded-lg p-3 flex flex-col gap-1">
                   {u.ocrIssues.map((issue, i) => (
                     <li
                       key={i}
@@ -274,7 +274,7 @@ const PendingVerifications = () => {
                     href={u.idDocumentUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn-outline rounded-lg px-3 py-2 font-body text-xs font-bold"
+                    className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                   >
                     Open government ID
                   </a>
@@ -288,7 +288,7 @@ const PendingVerifications = () => {
                     href={u.certDocumentUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn-outline rounded-lg px-3 py-2 font-body text-xs font-bold"
+                    className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                   >
                     Open barangay certificate
                   </a>
@@ -303,19 +303,19 @@ const PendingVerifications = () => {
               <div className="mt-3 flex gap-2 flex-wrap">
                 <button
                   onClick={() => openApprove(u)}
-                  className="btn-primary rounded-lg px-4 py-2 font-body text-xs font-bold"
+                  className="btn-primary rounded-full px-4 py-2 font-body text-xs font-bold"
                 >
                   Approve
                 </button>
                 <button
                   onClick={() => setRejectTarget(u)}
-                  className="rounded-lg px-4 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10"
+                  className="rounded-full px-4 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10"
                 >
                   Reject
                 </button>
                 <button
                   onClick={() => toggleAudit(u.id)}
-                  className="btn-active border border-gray-200 rounded-lg px-3 py-2 font-body text-xs font-bold text-gray-900"
+                  className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
                 >
                   {auditId === u.id ? "Hide OCR details" : "OCR details"}
                 </button>
@@ -323,7 +323,7 @@ const PendingVerifications = () => {
                 <button
                   onClick={() => handleRerun(u.id)}
                   disabled={rerunId === u.id}
-                  className="btn-active border border-gray-200 rounded-lg px-3 py-2 font-body text-xs font-bold text-gray-900 disabled:opacity-50 flex items-center gap-2"
+                  className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900 disabled:opacity-50 flex items-center gap-2"
                 >
                   {rerunId === u.id ? (
                     <>
@@ -340,7 +340,7 @@ const PendingVerifications = () => {
                   whitespace-pre-line keeps its newlines, overflow-x-auto
                   stops long extracted lines from widening the card. */}
               {auditId === u.id && (
-                <div className="mt-3 border border-gray-100 rounded-lg bg-gray-50 p-3 overflow-hidden">
+                <div className="mt-3 border border-black/10 rounded-lg bg-surface p-3 overflow-hidden">
                   {auditLoading ? (
                     <p className="flex items-center gap-2 font-body text-xs text-passive">
                       <Spinner />

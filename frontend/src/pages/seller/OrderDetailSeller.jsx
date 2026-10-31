@@ -171,13 +171,13 @@ const OrderDetailSeller = () => {
       </p>
 
       {/* ── YOUR ITEMS ── */}
-      <div className="mt-6 border border-gray-100 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+      <div className="mt-6 border border-black/10 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-black/10 bg-surface">
           <p className="font-body font-bold text-sm text-gray-900">
             Your items
           </p>
         </div>
-        <ul className="divide-y divide-gray-100">
+        <ul className="divide-y divide-black/10">
           {ownItems.map((i) => (
             <li
               key={i.id}
@@ -212,7 +212,7 @@ const OrderDetailSeller = () => {
           ))}
         </ul>
         {/* Subtotal line — own items only */}
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-3 border-t border-black/10 flex items-center justify-between">
           <span className="font-body text-sm text-passive">
             Your items subtotal
           </span>
@@ -224,8 +224,8 @@ const OrderDetailSeller = () => {
 
       {/* ── OTHER SELLERS' ITEMS (shared orders only) ── */}
       {hasOtherSellers && (
-        <div className="mt-3 border border-gray-100 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
+        <div className="mt-3 border border-black/10 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-black/10 bg-surface flex items-center justify-between gap-2">
             <p className="font-body font-bold text-sm text-gray-500">
               Other sellers' items
             </p>
@@ -233,7 +233,7 @@ const OrderDetailSeller = () => {
               Shared order
             </span>
           </div>
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-black/10">
             {otherItems.map((i) => (
               <li
                 key={i.id}
@@ -251,7 +251,7 @@ const OrderDetailSeller = () => {
             ))}
           </ul>
           {/* Honesty note — order total includes them */}
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+          <div className="px-4 py-3 border-t border-black/10 flex items-center justify-between">
             <span className="font-body text-xs text-passive">
               Order total (all sellers)
             </span>
@@ -263,7 +263,7 @@ const OrderDetailSeller = () => {
       )}
 
       {/* ── BUYER + PAYMENT + DELIVERY ── */}
-      <div className="mt-3 border border-gray-100 rounded-xl p-4 grid gap-4 sm:grid-cols-3">
+      <div className="mt-3 border border-black/10 rounded-xl p-4 grid gap-4 sm:grid-cols-3">
         {/* Buyer contact — coordination happens here, no address field exists */}
         <div className="min-w-0">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
@@ -316,7 +316,7 @@ const OrderDetailSeller = () => {
             <button
               onClick={() => setConfirmPaid(true)}
               disabled={busyPay || busy !== null}
-              className="btn-primary rounded-lg px-3 py-2 font-body text-xs font-bold mt-3 disabled:opacity-50 flex items-center gap-2"
+              className="btn-primary rounded-full px-3 py-2 font-body text-xs font-bold mt-3 disabled:opacity-50 flex items-center gap-2"
             >
               {busyPay && <Spinner />}
               {busyPay ? "Confirming..." : "Mark payment as received"}
@@ -341,8 +341,8 @@ const OrderDetailSeller = () => {
                 }
                 className={
                   a.kind === "danger"
-                    ? "rounded-lg px-4 py-2.5 font-body text-sm font-bold text-danger border border-danger/30 hover:bg-danger/10 disabled:opacity-50 flex items-center gap-2"
-                    : "btn-primary rounded-lg px-4 py-2.5 font-body text-sm font-bold disabled:opacity-50 flex items-center gap-2"
+                    ? "rounded-full px-4 py-2.5 font-body text-sm font-bold text-danger border border-danger/30 hover:bg-danger/10 disabled:opacity-50 flex items-center gap-2"
+                    : "btn-primary rounded-full px-4 py-2.5 font-body text-sm font-bold disabled:opacity-50 flex items-center gap-2"
                 }
               >
                 {busy === a.status && <Spinner />}
@@ -352,7 +352,7 @@ const OrderDetailSeller = () => {
           </div>
         ) : (
           // Terminal states — plain honest note, no fake buttons
-          <p className="font-body text-sm text-passive border border-gray-100 rounded-xl p-4">
+          <p className="font-body text-sm text-passive border border-black/10 rounded-xl p-4">
             {order.status === "FULFILLED"
               ? "This order is complete — nothing left to do."
               : "This order was cancelled. Reserved stock went back automatically."}
