@@ -14,6 +14,8 @@ import {
   toggleCategory,
   rerunOCR,
   getUserOCRDetails,
+  getAllBarangays,
+  getAllCategories,
 } from "../controllers/admin.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 import {
@@ -107,6 +109,10 @@ adminRoutes.put(
 adminRoutes.get("/orders", protect, authorize("ADMIN"), getAllOrders);
 
 // ── BARANGAY MANAGEMENT ────────────────────────────────
+// Get every barangay — active AND disabled, with product/user counts
+// Public /products/barangays hides disabled rows, admin needs them all
+adminRoutes.get("/barangays", protect, authorize("ADMIN"), getAllBarangays);
+
 // Add new barangay — body: { name: string, city: string }
 adminRoutes.post(
   "/barangays",
@@ -126,6 +132,9 @@ adminRoutes.put(
 );
 
 // ── CATEGORY MANAGEMENT ────────────────────────────────
+// Get every category — active AND disabled, with product counts
+adminRoutes.get("/categories", protect, authorize("ADMIN"), getAllCategories);
+
 // Add new category — body: { name: string }
 adminRoutes.post(
   "/categories",
