@@ -49,7 +49,7 @@ const ConfirmModal = ({
     >
       {/* Card — pop-enter, stopPropagation so taps inside never close it */}
       <div
-        className={`pop-enter bg-white rounded-lg shadow-lg ${cardWidth} w-full p-6 overflow-hidden max-h-[90vh] overflow-y-auto`}
+        className={`pop-enter bg-white rounded-xl shadow-lg ${cardWidth} w-full p-6 md:p-7 overflow-hidden max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -67,7 +67,7 @@ const ConfirmModal = ({
           <button
             onClick={onConfirm}
             disabled={busy || confirmDisabled}
-            className={`flex-1 ${confirmSkin} font-body text-sm font-bold rounded-lg py-2.5 hover:opacity-90 disabled:opacity-50`}
+            className={`flex-1 ${confirmSkin} font-body text-sm font-bold rounded-full py-3 hover:opacity-90 disabled:opacity-50`}
           >
             {busy ? "Working..." : confirmLabel}
           </button>
@@ -75,7 +75,7 @@ const ConfirmModal = ({
           <button
             onClick={onCancel}
             disabled={busy}
-            className="flex-1 bg-gray-100 text-gray-700 font-body text-sm font-bold rounded-lg py-2.5 hover:bg-gray-200 disabled:opacity-50"
+            className="flex-1 bg-surface text-black font-body text-sm font-bold rounded-full py-3 hover:bg-black/10 disabled:opacity-50"
           >
             {cancelLabel}
           </button>

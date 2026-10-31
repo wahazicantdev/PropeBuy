@@ -147,7 +147,7 @@ const EditProduct = () => {
               minLength: { value: 2, message: "At least 2 characters" },
             })}
             placeholder="Product name"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
+            className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
           />
           {errors.name && (
             <p className="text-danger text-xs mt-1">{errors.name.message}</p>
@@ -175,7 +175,7 @@ const EditProduct = () => {
               min="1"
               step="0.01"
               placeholder="Price (₱)"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
+              className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.price && (
               <p className="text-danger text-xs mt-1">{errors.price.message}</p>
@@ -194,7 +194,7 @@ const EditProduct = () => {
               type="number"
               min="0"
               placeholder="Stock"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary"
+              className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.stock && (
               <p className="text-danger text-xs mt-1">{errors.stock.message}</p>
@@ -212,7 +212,7 @@ const EditProduct = () => {
             })}
             rows={4}
             placeholder="Describe the item (optional)"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-primary resize-y"
+            className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary resize-y"
           />
           {errors.description && (
             <p className="text-danger text-xs mt-1">
@@ -238,14 +238,14 @@ const EditProduct = () => {
             <img
               src={preview}
               alt="New preview"
-              className="mt-3 h-40 w-full object-cover rounded-lg border border-gray-100"
+              className="mt-3 h-40 w-full object-cover rounded-lg border border-black/10"
             />
           ) : (
             product?.imageUrl && (
               <img
                 src={product.imageUrl}
                 alt={product.name}
-                className="mt-3 h-40 w-full object-cover rounded-lg border border-gray-100"
+                className="mt-3 h-40 w-full object-cover rounded-lg border border-black/10"
               />
             )
           )}

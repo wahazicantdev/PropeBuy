@@ -2,8 +2,12 @@ import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 // Auth store — same source every other shell reads, always live state
 import { useAuthStore } from "../../stores/auth.store.js";
+import Icon from "../Icon.jsx";
 
-// Admin shell — top horizontal, wraps on phone
+// Admin shell — top horizontal, SHOP.CO language: black bar on top,
+// white header, black active pill with Material icons. Seven links do
+// not fit at tablet width, so the row shows from lg up and a drawer
+// takes over below that.
 const AdminLayout = () => {
   // Mobile toggle
   const [open, setOpen] = useState(false);
@@ -13,13 +17,13 @@ const AdminLayout = () => {
   // Shared links — single source, reused by desktop row and phone grid.
   // All 7 Phase E pages live here, nothing reachable by URL only.
   const links = [
-    { to: "/admin/dashboard", label: "Dashboard" },
-    { to: "/admin/pending", label: "Verifications" },
-    { to: "/admin/users", label: "Users" },
-    { to: "/admin/products", label: "Products" },
-    { to: "/admin/orders", label: "Orders" },
-    { to: "/admin/barangays", label: "Barangays" },
-    { to: "/admin/categories", label: "Categories" },
+    { to: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
+    { to: "/admin/pending", label: "Verifications", icon: "how_to_reg" },
+    { to: "/admin/users", label: "Users", icon: "group" },
+    { to: "/admin/products", label: "Products", icon: "inventory_2" },
+    { to: "/admin/orders", label: "Orders", icon: "receipt_long" },
+    { to: "/admin/barangays", label: "Barangays", icon: "location_on" },
+    { to: "/admin/categories", label: "Categories", icon: "category" },
   ];
 
   // ── LOGOUT ──
@@ -33,83 +37,89 @@ const AdminLayout = () => {
     window.location.href = "/login/buyer";
   };
 
+  // Pill link look — black fill when active
+  const linkClass = ({ isActive }) =>
+    `flex items-center gap-2 rounded-full px-3.5 py-2 font-body text-sm transition-colors whitespace-nowrap ${
+      isActive ? "bg-primary text-white font-medium" : "text-black/60 hover:bg-surface hover:text-black"
+    }`;
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Top bar — same pattern as buyer, different links */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-          <Link
-            to="/admin/dashboard"
-            className="font-header text-xl text-primary shrink-0"
+      {/* Black identity strip — who is signed in, like the reference top bar */}
+      <div className="bg-primary text-white">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3 font-body text-xs md:text-sm">
+          <span className="flex items-center gap-1.5 min-w-0">
+            <Icon name="admin_panel_settings" size={18} />
+            <span className="truncate">Admin · {user?.name || "Administrator"}</span>
+          </span>
+          <Link to="/browse" className="flex items-center gap-1 underline shrink-0">
+            View the shop
+            <Icon name="open_in_new" size={14} />
+          </Link>
+        </div>
+      </div>
+
+      {/* Main header — sticky white */}
+      <header className="sticky top-0 z-50 bg-white border-b border-black/10">
+        <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center gap-3">
+          {/* Drawer toggle — below lg */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="lg:hidden p-1 -ml-1"
+            aria-label={open ? "Close menu" : "Open menu"}
           >
-            PROPEBUY ADMIN
+            <Icon name={open ? "close" : "menu"} size={24} />
+          </button>
+          <Link to="/admin/dashboard" className="font-header text-xl md:text-2xl text-black shrink-0">
+            PropeBuy <span className="text-black/40">Admin</span>
           </Link>
           {/* Desktop row — NavLink marks the page you are on */}
-          <nav className="hidden md:flex items-center gap-5 font-body text-sm">
+          <nav className="hidden lg:flex items-center gap-1 ml-auto">
             {links.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                className={({ isActive }) =>
-                  isActive
-                    ? "text-primary font-bold"
-                    : "text-gray-600 hover:text-primary"
-                }
-              >
+              <NavLink key={l.to} to={l.to} className={linkClass}>
+                <Icon name={l.icon} size={18} />
                 {l.label}
               </NavLink>
             ))}
             {/* Logout — exit door on every admin page */}
             <button
               onClick={handleLogout}
-              className="font-body text-sm font-bold text-gray-500 hover:text-danger transition-colors"
+              className="ml-2 p-2 rounded-full text-black/60 hover:text-danger hover:bg-danger/5"
+              aria-label="Log out"
+              title="Log out"
             >
-              Log Out
+              <Icon name="logout" size={20} />
             </button>
           </nav>
-          <button
-            onClick={() => setOpen(!open)}
-            className="md:hidden p-2 text-2xl"
-            aria-label="Menu"
-          >
-            {open ? "✕" : "☰"}
-          </button>
         </div>
-        {/* Phone stack — 2-col grid to save scroll */}
+        {/* Drawer — 2-col grid of pills to save scroll */}
         {open && (
-          <nav className="md:hidden px-4 pb-4 pt-3 grid grid-cols-2 gap-3 font-body text-sm border-t border-gray-100">
+          <nav className="lg:hidden px-4 pb-4 pt-3 grid grid-cols-2 gap-1 border-t border-black/10 pop-enter">
             {links.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  isActive ? "text-primary font-bold" : "text-gray-600"
-                }
-              >
+              <NavLink key={l.to} to={l.to} onClick={() => setOpen(false)} className={linkClass}>
+                <Icon name={l.icon} size={18} />
                 {l.label}
               </NavLink>
             ))}
             {/* Admin plate + logout — spans both columns */}
-            <div className="col-span-2 mt-2 pt-3 border-t border-gray-100">
-              <p className="font-body text-sm font-bold text-gray-800 truncate">
-                {user?.name}
-              </p>
-              <p className="font-body text-xs text-gray-500 truncate">
-                {user?.email}
-              </p>
+            <div className="col-span-2 mt-2 pt-3 border-t border-black/10 flex items-center gap-3">
+              <div className="min-w-0">
+                <p className="font-body text-sm font-bold text-black truncate">{user?.name}</p>
+                <p className="font-body text-xs text-black/60 truncate">{user?.email}</p>
+              </div>
               <button
                 onClick={handleLogout}
-                className="mt-2 font-body text-sm font-bold text-gray-500 hover:text-danger transition-colors"
+                className="ml-auto flex items-center gap-1.5 font-body text-sm font-bold text-black/60 hover:text-danger"
               >
-                Log Out
+                <Icon name="logout" size={18} />
+                Log out
               </button>
             </div>
           </nav>
         )}
       </header>
       {/* min-w-0 + overflow-x-hidden — the responsive trio, grids can shrink */}
-      <main className="flex-1 min-w-0 w-full max-w-7xl mx-auto px-4 py-6 overflow-x-hidden">
+      <main className="flex-1 min-w-0 w-full max-w-7xl mx-auto px-4 py-6 md:py-8 overflow-x-hidden">
         <Outlet />
       </main>
     </div>

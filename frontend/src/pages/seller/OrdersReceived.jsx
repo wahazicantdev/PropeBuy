@@ -129,7 +129,7 @@ const OrdersReceived = () => {
               <li key={o.id}>
                 <Link
                   to={`/seller/orders/${o.id}`}
-                  className="block border border-gray-100 rounded-xl p-3 md:p-4 hover:border-primary/40 transition-colors overflow-hidden"
+                  className="block border border-black/10 rounded-xl p-3 md:p-4 hover:border-primary/40 transition-colors overflow-hidden"
                 >
                   {/* Top line — order id + date + pills */}
                   <div className="flex items-center gap-2 flex-wrap">
