@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import Icon from "../../components/Icon.jsx";
 
 // Payment failure page - PayMongo sends cancelled GCash attempts here
 const PaymentFailed = () => {
@@ -12,13 +13,17 @@ const PaymentFailed = () => {
 
   return (
     <div className="min-h-screen bg-white page-enter">
-      <main className="max-w-md mx-auto px-4 py-16 text-center">
+      <main className="max-w-md mx-auto px-4 py-20 text-center">
+        {/* State icon — soft red, honest but calm */}
+        <span className="inline-flex w-20 h-20 rounded-full bg-danger/10 items-center justify-center mb-6">
+          <Icon name="error" size={40} className="text-danger" />
+        </span>
         {/* Bold header, plain bad news */}
-        <h1 className="font-header font-bold text-2xl text-gray-900">
+        <h1 className="text-2xl md:text-3xl text-black">
           Payment did not push through
         </h1>
         {/* Honest plain words, no blame */}
-        <p className="font-body text-sm text-passive mt-2">
+        <p className="font-body text-sm text-black/60 mt-3">
           No money was taken by us. Your order is still reserved while stock
           lasts. Try again or pay cash instead.
         </p>
@@ -27,18 +32,18 @@ const PaymentFailed = () => {
           {orderId && (
             <Link
               to={`/orders/${orderId}`}
-              className="bg-primary text-white font-body py-3 rounded-lg"
+              className="btn-primary btn-active font-body font-medium py-3.5"
             >
               View My Order
             </Link>
           )}
           <Link
             to="/cart"
-            className="border border-gray-200 font-body py-3 rounded-lg text-gray-900"
+            className="btn-outline btn-active font-body font-medium py-3.5"
           >
             Back to Cart
           </Link>
-          <Link to="/browse" className="font-body text-sm text-primary">
+          <Link to="/browse" className="font-body text-sm text-black/60 hover:text-black">
             Back to browse
           </Link>
         </div>

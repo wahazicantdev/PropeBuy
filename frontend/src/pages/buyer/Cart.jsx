@@ -1,7 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCartStore } from "../../stores/cart.store.js";
+import Icon from "../../components/Icon.jsx";
+import { formatPeso } from "../../utils/format.js";
 
-// Cart - phone-first cards, guarded by BuyerRoute outside
+// Cart — SHOP.CO "YOUR CART": one bordered card of line items with
+// dividers, quantity pills and a red trash icon, plus an order summary
+// card. Guarded by BuyerRoute outside. Totals stay derived from the
+// store — never stored, never stale.
 const Cart = () => {
   // Lines plus writers plus derived totals
   const items = useCartStore((s) => s.items);
@@ -13,136 +18,127 @@ const Cart = () => {
   // Empty state - no lines yet
   if (items.length === 0) {
     return (
-      <div className="py-16 text-center px-4">
-        <h1 className="font-header font-bold text-2xl text-gray-900">
-          Your cart is empty
-        </h1>
-        <p className="font-body text-sm text-passive mt-2">
+      <div className="py-20 text-center px-4 page-enter">
+        <span className="inline-flex w-20 h-20 rounded-full bg-surface items-center justify-center">
+          <Icon name="shopping_cart" size={36} />
+        </span>
+        <h1 className="mt-5 text-2xl md:text-3xl text-black">Your cart is empty</h1>
+        <p className="font-body text-sm text-black/60 mt-2">
           Find something good from nearby vendors.
         </p>
-        <Link
-          to="/browse"
-          className="btn-active inline-block mt-6 bg-primary text-white font-body px-6 py-3 rounded-lg"
-        >
-          Browse goods
+        <Link to="/browse" className="btn-primary btn-active inline-block mt-6 px-12 py-3.5 font-body font-medium">
+          Shop now
         </Link>
       </div>
     );
   }
 
+  // Unit count for the summary line — lines can hold several units
+  const units = items.reduce((sum, i) => sum + i.quantity, 0);
+
   return (
     <div className="page-enter">
-      {/* Bold header with line count */}
-      <h1 className="font-header font-bold text-2xl text-gray-900">
-        Your cart
-      </h1>
-      <p className="font-body text-sm text-passive mt-1">
-        {items.length} item type{items.length > 1 ? "s" : ""} from local
-        vendors.
-      </p>
-      {/* Single column on phone, split on desktop, min-w-0 lets tracks shrink */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {/* Lines take two thirds, min-w-0 stops long names pushing wide */}
-        <div className="lg:col-span-2 min-w-0 space-y-3">
+      {/* Breadcrumb */}
+      <nav className="font-body text-sm text-black/60 flex items-center gap-1" aria-label="Breadcrumb">
+        <Link to="/" className="hover:text-black">Home</Link>
+        <Icon name="chevron_right" size={16} />
+        <span className="text-black">Cart</span>
+      </nav>
+      <h1 className="mt-4 text-3xl md:text-4xl text-black">Your cart</h1>
+
+      {/* Lines left, summary right — stacked on phone, min-w-0 trio */}
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_400px] items-start">
+        {/* ── LINE ITEMS — one card, divided rows ── */}
+        <ul className="min-w-0 border border-black/10 rounded-xl px-4 md:px-6 divide-y divide-black/10">
           {items.map((i) => (
-            // Card clips everything inside, never wider than screen
-            <div
-              key={i.productId}
-              className="border border-gray-100 rounded-xl p-3 overflow-hidden"
-            >
-              {/* Top row - thumb plus name plus price */}
-              <div className="flex gap-3 min-w-0">
-                {/* Smaller thumb on phones */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-gray-50 rounded-lg overflow-hidden">
-                  {i.imageUrl ? (
-                    <img
-                      src={i.imageUrl}
-                      alt={i.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-body text-xs text-passive">
-                      No photo
-                    </div>
-                  )}
-                </div>
-                {/* Name wraps two lines max, never runs off screen */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-body font-bold text-sm text-gray-900 line-clamp-2">
+            <li key={i.productId} className="py-4 md:py-6 flex gap-4 min-w-0">
+              {/* Thumb — card gray tile */}
+              <Link to={`/product/${i.productId}`} className="relative w-24 h-24 md:w-32 md:h-32 shrink-0 bg-card rounded-xl overflow-hidden">
+                {i.imageUrl ? (
+                  <img src={i.imageUrl} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center text-black/25">
+                    <Icon name="image" size={28} />
+                  </span>
+                )}
+              </Link>
+
+              {/* Name, unit price, controls */}
+              <div className="flex-1 min-w-0 flex flex-col">
+                <div className="flex items-start gap-2">
+                  <Link to={`/product/${i.productId}`} className="font-body font-bold text-base md:text-xl text-black line-clamp-2 hover:underline">
                     {i.name}
-                  </p>
-                  <p className="font-body font-bold text-primary mt-1">
-                    P{Number(i.price).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-              {/* Bottom row - stepper left, remove right, wraps when tight */}
-              <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                {/* Stepper capped at known stock */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQty(i.productId, i.quantity - 1)}
-                    className="border border-gray-200 rounded-lg w-9 h-9 font-body"
-                    aria-label="Decrease"
-                  >
-                    -
-                  </button>
-                  <span className="font-body font-bold text-sm w-6 text-center">
-                    {i.quantity}
-                  </span>
-                  <button
-                    onClick={() => updateQty(i.productId, i.quantity + 1)}
-                    className="border border-gray-200 rounded-lg w-9 h-9 font-body"
-                    aria-label="Increase"
-                  >
-                    +
-                  </button>
-                </div>
-                {/* Line total plus remove */}
-                <div className="flex items-center gap-3">
-                  <span className="font-body font-bold text-sm text-gray-900">
-                    P{(Number(i.price) * i.quantity).toLocaleString()}
-                  </span>
+                  </Link>
+                  {/* Trash — red, the reference's delete affordance */}
                   <button
                     onClick={() => removeItem(i.productId)}
-                    className="font-body text-xs text-danger hover:underline"
+                    className="ml-auto p-1 text-danger shrink-0"
+                    aria-label={`Remove ${i.name}`}
                   >
-                    Remove
+                    <Icon name="delete" size={22} />
                   </button>
                 </div>
+                <p className="font-body text-xs md:text-sm text-black/60 mt-1">
+                  {formatPeso(i.price)} each · {i.stock} in stock
+                </p>
+                {/* Line total + quantity pill, pinned to the bottom */}
+                <div className="mt-auto pt-3 flex items-center justify-between gap-3 flex-wrap">
+                  <p className="font-body font-bold text-xl md:text-2xl text-black">
+                    {formatPeso(Number(i.price) * i.quantity)}
+                  </p>
+                  {/* Pill stepper — capped at known stock by the store */}
+                  <div className="h-10 md:h-11 bg-surface rounded-full flex items-center gap-4 px-4">
+                    <button onClick={() => updateQty(i.productId, i.quantity - 1)} aria-label="Decrease" className="disabled:opacity-30" disabled={i.quantity <= 1}>
+                      <Icon name="remove" />
+                    </button>
+                    <span className="font-body font-medium text-sm w-5 text-center">{i.quantity}</span>
+                    <button onClick={() => updateQty(i.productId, i.quantity + 1)} aria-label="Increase" className="disabled:opacity-30" disabled={i.quantity >= i.stock}>
+                      <Icon name="add" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
-        {/* Summary card takes one third, shrink-proof too */}
-        <div className="min-w-0 border border-gray-100 rounded-xl p-5 h-fit lg:sticky lg:top-20">
-          <h2 className="font-header font-bold text-lg text-gray-900">
-            Summary
+        </ul>
+
+        {/* ── ORDER SUMMARY ── */}
+        <aside className="min-w-0 border border-black/10 rounded-xl p-5 md:p-6 lg:sticky lg:top-28">
+          <h2 className="heading-body text-xl md:text-2xl text-black">
+            Order Summary
           </h2>
-          {/* Total row wraps on narrow screens */}
-          <div className="flex justify-between gap-2 flex-wrap mt-3 font-body text-sm">
-            <span className="text-passive">Total</span>
-            <span className="font-bold text-primary text-lg">
-              P{Number(getTotalAmount()).toLocaleString()}
-            </span>
-          </div>
-          <p className="font-body text-xs text-passive mt-2">
-            Pay cash on pickup or delivery, or GCash online at checkout.
+          <dl className="mt-5 space-y-4 font-body text-base">
+            <div className="flex justify-between gap-2">
+              <dt className="text-black/60">Subtotal ({units} item{units === 1 ? "" : "s"})</dt>
+              <dd className="font-bold text-black">{formatPeso(getTotalAmount())}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-black/60">Delivery fee</dt>
+              <dd className="font-bold text-black">Arranged with vendor</dd>
+            </div>
+            <hr className="border-black/10" />
+            <div className="flex justify-between gap-2 text-lg">
+              <dt className="text-black">Total</dt>
+              <dd className="font-bold text-2xl text-black">{formatPeso(getTotalAmount())}</dd>
+            </div>
+          </dl>
+          {/* How you can pay — set expectations before checkout */}
+          <p className="mt-4 font-body text-xs text-black/60 flex items-start gap-2">
+            <Icon name="info" size={16} className="mt-0.5" />
+            Pay cash on pickup or delivery, or GCash online at checkout. Stock is
+            locked the moment you place the order.
           </p>
-          {/* Forward to checkout */}
           <button
             onClick={() => navigate("/checkout")}
-            className="btn-active w-full mt-4 bg-primary text-white font-body py-3 rounded-lg"
+            className="btn-primary btn-active w-full mt-6 py-4 font-body font-medium flex items-center justify-center gap-2"
           >
-            Proceed to Checkout
+            Go to Checkout
+            <Icon name="arrow_forward" />
           </button>
-          <Link
-            to="/browse"
-            className="block text-center font-body text-sm text-primary mt-3"
-          >
-            Continue browsing
+          <Link to="/browse" className="block text-center font-body text-sm text-black/60 hover:text-black mt-4">
+            Continue shopping
           </Link>
-        </div>
+        </aside>
       </div>
     </div>
   );

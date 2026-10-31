@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
 import { fetchMyOrders } from "../../api/order.api.js";
+import Icon from "../../components/Icon.jsx";
+import { formatPeso } from "../../utils/format.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
 
@@ -49,93 +51,95 @@ const OrderHistory = () => {
 
   return (
     <div className="page-enter">
-      {/* Bold header */}
-      <h1 className="font-header font-bold text-2xl text-gray-900">
-        My orders
-      </h1>
-      <p className="font-body text-sm text-passive mt-1">
-        Track every purchase in one place.
+      {/* Breadcrumb */}
+      <nav className="font-body text-sm text-black/60 flex items-center gap-1" aria-label="Breadcrumb">
+        <Link to="/" className="hover:text-black">Home</Link>
+        <Icon name="chevron_right" size={16} />
+        <span className="text-black">My orders</span>
+      </nav>
+      <h1 className="mt-4 text-3xl md:text-4xl text-black">My orders</h1>
+      <p className="font-body text-sm text-black/60 mt-2">
+        Track every purchase in one place. Updates arrive live.
       </p>
-      {/* Filter chips */}
-      <div className="mt-4 flex flex-wrap gap-2">
+
+      {/* Filter chips — black when active, gray pills otherwise */}
+      <div className="mt-5 flex flex-wrap gap-2">
         {filters.map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`btn-active font-body text-xs rounded-full px-4 py-2 border ${filter === f ? "bg-primary text-white border-primary" : "border-gray-200 text-passive"}`}
+            className={`btn-active font-body text-sm rounded-full px-5 py-2 ${filter === f ? "bg-primary text-white" : "bg-surface text-black/60 hover:text-black"}`}
           >
             {filterLabels[f]}
           </button>
         ))}
       </div>
+
       {/* List */}
       {loading ? (
-        <p className="text-center py-16 font-body text-passive">Loading...</p>
+        <div className="py-20 flex justify-center">
+          <span className="spinner" />
+        </div>
       ) : shown.length === 0 ? (
-        <div className="py-16 text-center">
-          <p className="font-header font-bold text-lg text-gray-900">
-            No orders here
+        <div className="py-20 text-center">
+          <span className="inline-flex w-20 h-20 rounded-full bg-surface items-center justify-center">
+            <Icon name="receipt_long" size={36} />
+          </span>
+          <p className="mt-5 font-header text-xl text-black">No orders here</p>
+          <p className="font-body text-sm text-black/60 mt-1">
+            Your placed orders will show up here.
           </p>
-          <p className="font-body text-sm text-passive mt-1">
-            Your placed orders will show up.
-          </p>
-          <Link
-            to="/browse"
-            className="btn-active inline-block mt-6 bg-primary text-white font-body px-6 py-3 rounded-lg"
-          >
-            Browse goods
+          <Link to="/browse" className="btn-primary btn-active inline-block mt-6 px-12 py-3.5 font-body font-medium">
+            Shop now
           </Link>
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
+        // One bordered card, divided rows — same language as the cart
+        <ul className="mt-6 border border-black/10 rounded-xl px-4 md:px-6 divide-y divide-black/10">
           {shown.map((o) => (
-            // Whole card opens the detail
-            <Link
-              key={o.id}
-              to={`/orders/${o.id}`}
-              className="block border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow"
-            >
-              {/* Top row - id plus date */}
-              <div className="flex justify-between font-body text-sm">
-                <span className="font-bold text-gray-900">Order #{o.id}</span>
-                <span className="text-passive">{fmtDate(o.createdAt)}</span>
-              </div>
-              <div className="mt-2 flex items-center gap-3 min-w-0">
-                {/* Thumb with fallback, first product image */}
-                <div className="w-12 h-12 shrink-0 bg-gray-50 rounded-lg overflow-hidden">
+            <li key={o.id}>
+              {/* Whole row opens the detail */}
+              <Link to={`/orders/${o.id}`} className="py-4 md:py-5 flex gap-4 items-center min-w-0 group">
+                {/* Thumb — first product image */}
+                <span className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 bg-card rounded-xl overflow-hidden">
                   {o.orderItems?.[0]?.product?.imageUrl ? (
                     <img
                       src={o.orderItems[0].product.imageUrl}
                       alt={o.orderItems[0].product.name}
-                      className="object-cover"
-                      style={{ width: "100%", height: "100%" }}
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center font-body text-xs text-passive text-center leading-tight">
-                      No photo
-                    </div>
+                    <span className="absolute inset-0 flex items-center justify-center text-black/25">
+                      <Icon name="image" />
+                    </span>
                   )}
-                </div>
-                <p className="flex-1 min-w-0 font-body text-sm text-gray-700 truncate">
-                  {o.orderItems?.[0]?.product?.name || "Items"}
-                  {o.orderItems?.length > 1
-                    ? ` +${o.orderItems.length - 1} more`
-                    : ""}
-                </p>
-              </div>
-              {/* Bottom row - total plus pills */}
-              <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                <span className="font-body font-bold text-primary">
-                  P{Number(o.totalAmount).toLocaleString()}
                 </span>
-                <span className="flex gap-2">
-                  <OrderPill status={o.status} />
-                  <PaymentPill status={o.paymentStatus} />
+                {/* Middle — id, items, pills */}
+                <span className="flex-1 min-w-0">
+                  <span className="flex items-center gap-2 flex-wrap">
+                    <span className="font-body font-bold text-base text-black">Order #{o.id}</span>
+                    <span className="font-body text-xs text-black/60">{fmtDate(o.createdAt)}</span>
+                  </span>
+                  <span className="block font-body text-sm text-black/60 truncate mt-0.5">
+                    {o.orderItems?.[0]?.product?.name || "Items"}
+                    {o.orderItems?.length > 1 ? ` +${o.orderItems.length - 1} more` : ""}
+                  </span>
+                  <span className="mt-2 flex gap-2 flex-wrap">
+                    <OrderPill status={o.status} />
+                    <PaymentPill status={o.paymentStatus} />
+                  </span>
                 </span>
-              </div>
-            </Link>
+                {/* Right — total and chevron */}
+                <span className="flex items-center gap-2 shrink-0">
+                  <span className="font-body font-bold text-lg md:text-xl text-black">
+                    {formatPeso(o.totalAmount)}
+                  </span>
+                  <Icon name="chevron_right" className="text-black/30 group-hover:text-black hidden sm:block" />
+                </span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

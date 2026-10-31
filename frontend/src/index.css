@@ -79,6 +79,22 @@ h3,
   line-height: 1.1; /* tight display leading */
 }
 
+/* In-card headings — the reference uses Satoshi bold for small titles
+   like "Order Summary" and "Filters". Keeps the h2/h3 semantics while
+   opting out of the display face. Declared after the display rule so it
+   wins at equal specificity. */
+h1.heading-body,
+h2.heading-body,
+h3.heading-body,
+.heading-body {
+  font-family: var(--font-body);
+  font-stretch: normal;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 /* Global buttons - press motion on every button automatically */
 button {
   cursor: pointer;
