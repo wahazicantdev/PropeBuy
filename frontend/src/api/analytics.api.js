@@ -16,4 +16,16 @@ export const fetchSellerAnalytics = async () => {
   return res.data;
 };
 
-// Admin platform analytics lives here in Phase E — placeholder noted
+// Platform analytics — admin dashboard, one call powers the whole page
+export const fetchPlatformAnalytics = async () => {
+  // GET /analytics/platform, ADMIN role only
+  const res = await api.get("/analytics/platform");
+  // data: {
+  //   users: { total, buyers, sellers, pendingVerifications },
+  //   products: { total },
+  //   orders: { total, byStatus: [{ status, _count: { status } }] },
+  //   revenue: { total },          <- fulfilled orders only, already parseFloat
+  //   topBarangays: [{ barangay, productCount }]
+  // }
+  return res.data;
+};

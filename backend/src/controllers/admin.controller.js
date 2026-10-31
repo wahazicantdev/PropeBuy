@@ -565,10 +565,14 @@ export const removeProduct = async (req, res) => {
     });
   }
 
-  if (!product.isActivea) {
-    return res.status(404).json({
+  // Already soft-deleted — block double removal
+  // BUGFIX Phase E: was product.isActivea (typo) which is always undefined,
+  // so !undefined made EVERY removal return this 404. Admin moderation
+  // was fully broken until this line was corrected.
+  if (!product.isActive) {
+    return res.status(400).json({
       success: false,
-      message: "Product is already remove!",
+      message: "Product is already removed from the platform",
     });
   }
 
@@ -779,5 +783,49 @@ export const toggleCategory = async (req, res) => {
     success: true,
     message: `Category ${updated.isActive ? "enabled" : "disabled"} successfully`,
     data: updated,
+  });
+};
+
+// ── GET ALL BARANGAYS — ADMIN ──────────────────────────
+// Phase E addition. The public /products/barangays route filters to
+// isActive:true, so a disabled barangay disappears from it completely —
+// admin could never see it again to re-enable it. This route returns
+// EVERY barangay plus a live count of how many products sit inside,
+// so the management page can warn before disabling a busy barangay.
+export const getAllBarangays = async (req, res) => {
+  const barangays = await prisma.barangay.findMany({
+    // Include product + user counts — context for the toggle decision
+    include: {
+      _count: {
+        select: { products: true, users: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  res.status(200).json({
+    success: true,
+    count: barangays.length,
+    data: barangays,
+  });
+};
+
+// ── GET ALL CATEGORIES — ADMIN ─────────────────────────
+// Same reason as barangays above — disabled categories must stay
+// visible to the admin so the toggle can be reversed.
+export const getAllCategories = async (req, res) => {
+  const categories = await prisma.category.findMany({
+    include: {
+      _count: {
+        select: { products: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  res.status(200).json({
+    success: true,
+    count: categories.length,
+    data: categories,
   });
 };
