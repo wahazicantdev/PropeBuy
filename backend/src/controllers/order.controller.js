@@ -8,6 +8,8 @@ import {
   setPaymentStatus,
   processWebhookEvent,
 } from "../services/order.service.js";
+// Webhook HMAC — proves a callback really came from PayMongo
+import { verifyWebhookSignature } from "../utils/paymongo.helper.js";
 
 // ── CHECKOUT ───────────────────────────────────────────
 // Validates request then delegates to service
@@ -70,6 +72,16 @@ export const handlePaymongoWebhook = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Missing PayMongo signature",
+      });
+    }
+
+    // HMAC check against the raw body — before this, ANY request with
+    // a signature header of any value could mark orders as PAID.
+    // 401 + nothing processed on a forged or tampered payload.
+    if (!verifyWebhookSignature(req.rawBody, signature)) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid PayMongo signature",
       });
     }
 

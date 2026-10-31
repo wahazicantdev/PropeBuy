@@ -3,7 +3,14 @@ import {
   PAYMONGO_V2_URL,
   getPayMongoAuthHeader,
 } from "../config/paymongo.js";
-import { PAYMENT_SUCCESS_URL, PAYMENT_FAILED_URL } from "../config/env.js";
+import {
+  PAYMENT_SUCCESS_URL,
+  PAYMENT_FAILED_URL,
+  PAYMONGO_SECRET_KEY,
+  PAYMONGO_WEBHOOK_SECRET,
+} from "../config/env.js";
+// HMAC + constant-time compare for webhook signatures
+import crypto from "crypto";
 
 // ── CREATE CHECKOUT SESSION ──────────────────────────
 // Hosted Checkout is the current PayMongo API for online payment
@@ -116,4 +123,39 @@ export const verifyPaymentStatus = async (sessionId) => {
 
   // Anything else means money has not arrived yet
   return "unpaid";
+};
+
+// ── VERIFY WEBHOOK SIGNATURE ─────────────────────────
+// PayMongo signs every webhook. Header format:
+//   Paymongo-Signature: t=<unix ts>,te=<test sig>,li=<live sig>
+// Expected sig = HMAC-SHA256(webhook secret, "<t>.<raw body>") in hex.
+// te is filled in test mode, li in live mode — the secret key prefix
+// tells us which one applies. rawBody MUST be the exact bytes PayMongo
+// sent; re-stringified JSON can differ by whitespace and never matches.
+// Returns true only on a valid signature — callers reject everything else.
+export const verifyWebhookSignature = (rawBody, header) => {
+  // Fail closed — no secret, header or body means no trust
+  if (!PAYMONGO_WEBHOOK_SECRET || !header || !rawBody) return false;
+
+  // "t=1,te=abc,li=" → { t: "1", te: "abc", li: "" }
+  const parts = Object.fromEntries(
+    header.split(",").map((kv) => {
+      const i = kv.indexOf("=");
+      return [kv.slice(0, i).trim(), kv.slice(i + 1).trim()];
+    }),
+  );
+  const isTest = (PAYMONGO_SECRET_KEY || "").startsWith("sk_test_");
+  const provided = isTest ? parts.te : parts.li;
+  if (!parts.t || !provided) return false;
+
+  const expected = crypto
+    .createHmac("sha256", PAYMONGO_WEBHOOK_SECRET)
+    .update(`${parts.t}.${rawBody}`)
+    .digest("hex");
+
+  // timingSafeEqual throws on length mismatch — compare lengths first.
+  // Constant-time compare so the response time leaks nothing.
+  const a = Buffer.from(expected, "utf8");
+  const b = Buffer.from(provided, "utf8");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
