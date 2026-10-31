@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Spinner from "../../components/Spinner.jsx";
+import Icon from "../../components/Icon.jsx";
+import { formatPeso } from "../../utils/format.js";
 import Select from "../../components/Select.jsx";
 import { useCartStore } from "../../stores/cart.store.js";
 import { checkoutOrder } from "../../api/order.api.js";
@@ -84,23 +86,35 @@ const Checkout = () => {
     }
   };
 
+  // Payment choices — big tappable cards, method decides the whole flow
+  const payOptions = [
+    { key: "CASH", icon: "payments", title: "Cash", text: "Pay in cash on pickup or delivery." },
+    { key: "GCASH", icon: "account_balance_wallet", title: "GCash", text: "Pay online now through a secure PayMongo page." },
+  ];
+
   return (
     <div className="page-enter">
-      {/* Bold header */}
-      <h1 className="font-header font-bold text-2xl text-gray-900">Checkout</h1>
-      <p className="font-body text-sm text-passive mt-1">
+      {/* Breadcrumb */}
+      <nav className="font-body text-sm text-black/60 flex items-center gap-1" aria-label="Breadcrumb">
+        <Link to="/cart" className="hover:text-black">Cart</Link>
+        <Icon name="chevron_right" size={16} />
+        <span className="text-black">Checkout</span>
+      </nav>
+      <h1 className="mt-4 text-3xl md:text-4xl text-black">Checkout</h1>
+      <p className="font-body text-sm text-black/60 mt-2">
         Pick how you get it and how you pay.
       </p>
-      {/* Single column on phone, split on desktop, min-w-0 lets tracks shrink */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {/* Picks take two thirds, shrink-proof */}
-        <div className="lg:col-span-2 min-w-0 space-y-5">
+
+      {/* Choices left, pay card right — stacked on phone, min-w-0 trio */}
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_400px] items-start">
+        <div className="min-w-0 space-y-5">
           {/* Delivery pick */}
-          <div className="min-w-0">
-            <h2 className="font-header font-bold text-lg text-gray-900">
+          <section className="border border-black/10 rounded-xl p-5 md:p-6">
+            <h2 className="heading-body text-lg md:text-xl text-black flex items-center gap-2">
+              <Icon name="local_shipping" />
               How do you get it
             </h2>
-            <div className="mt-2">
+            <div className="mt-4">
               <Select
                 value={deliveryType}
                 onChange={setDeliveryType}
@@ -108,74 +122,86 @@ const Checkout = () => {
                 ariaLabel="Delivery type"
               />
             </div>
-          </div>
-          {/* Payment pick - radio cards stack on phones */}
-          <div className="min-w-0">
-            <h2 className="font-header font-bold text-lg text-gray-900">
+          </section>
+
+          {/* Payment pick — radio cards, black border on the chosen one */}
+          <section className="border border-black/10 rounded-xl p-5 md:p-6">
+            <h2 className="heading-body text-lg md:text-xl text-black flex items-center gap-2">
+              <Icon name="payments" />
               How do you pay
             </h2>
-            <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              {/* Cash card */}
-              <button
-                onClick={() => setPaymentMethod("CASH")}
-                className={`min-w-0 text-left border rounded-xl p-4 ${paymentMethod === "CASH" ? "border-primary bg-primary/5" : "border-gray-200"}`}
-              >
-                <p className="font-body font-bold text-sm text-gray-900">
-                  Cash
-                </p>
-                <p className="font-body text-xs text-passive mt-1">
-                  Pay in cash on pickup or delivery.
-                </p>
-              </button>
-              {/* GCash card */}
-              <button
-                onClick={() => setPaymentMethod("GCASH")}
-                className={`min-w-0 text-left border rounded-xl p-4 ${paymentMethod === "GCASH" ? "border-primary bg-primary/5" : "border-gray-200"}`}
-              >
-                <p className="font-body font-bold text-sm text-gray-900">
-                  GCash
-                </p>
-                <p className="font-body text-xs text-passive mt-1">
-                  Pay online now through a secure link.
-                </p>
-              </button>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Payment method">
+              {payOptions.map((o) => {
+                const on = paymentMethod === o.key;
+                return (
+                  <button
+                    key={o.key}
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setPaymentMethod(o.key)}
+                    className={`min-w-0 text-left rounded-xl p-4 border-2 transition-colors flex gap-3 ${on ? "border-black bg-surface" : "border-black/10 hover:border-black/30"}`}
+                  >
+                    <span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${on ? "bg-primary text-white" : "bg-surface text-black"}`}>
+                      <Icon name={o.icon} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block font-body font-bold text-base text-black">{o.title}</span>
+                      <span className="block font-body text-xs text-black/60 mt-0.5">{o.text}</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          </section>
+
           {/* Lines review, read only here */}
-          <div className="min-w-0">
-            <h2 className="font-header font-bold text-lg text-gray-900">
+          <section className="border border-black/10 rounded-xl px-5 md:px-6">
+            <h2 className="heading-body text-lg md:text-xl text-black flex items-center gap-2 pt-5 md:pt-6">
+              <Icon name="shopping_bag" />
               Your items
             </h2>
-            <div className="mt-2 space-y-2">
+            <ul className="mt-2 divide-y divide-black/10">
               {items.map((i) => (
                 // Row clips long names, total never squeezes out
-                <div
-                  key={i.productId}
-                  className="flex justify-between gap-3 font-body text-sm border border-gray-100 rounded-lg px-4 py-3 overflow-hidden"
-                >
-                  <span className="text-gray-900 truncate min-w-0">
-                    {i.name} x {i.quantity}
+                <li key={i.productId} className="py-4 flex items-center gap-3 min-w-0">
+                  <span className="relative w-14 h-14 rounded-lg bg-card overflow-hidden shrink-0">
+                    {i.imageUrl && <img src={i.imageUrl} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />}
                   </span>
-                  <span className="font-bold text-primary shrink-0">
-                    P{(Number(i.price) * i.quantity).toLocaleString()}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-body font-bold text-sm text-black truncate">{i.name}</span>
+                    <span className="block font-body text-xs text-black/60">Qty {i.quantity} × {formatPeso(i.price)}</span>
                   </span>
-                </div>
+                  <span className="font-body font-bold text-base text-black shrink-0">
+                    {formatPeso(Number(i.price) * i.quantity)}
+                  </span>
+                </li>
               ))}
-            </div>
-          </div>
+            </ul>
+          </section>
         </div>
-        {/* Pay card takes one third, shrink-proof too */}
-        <div className="min-w-0 border border-gray-100 rounded-xl p-5 h-fit lg:sticky lg:top-20">
-          {/* Total row wraps on narrow screens */}
-          <div className="flex justify-between gap-2 flex-wrap font-body text-sm">
-            <span className="text-passive">Total to pay</span>
-            <span className="font-bold text-primary text-lg">
-              P{Number(getTotalAmount()).toLocaleString()}
-            </span>
-          </div>
+
+        {/* ── PAY CARD ── */}
+        <aside className="min-w-0 border border-black/10 rounded-xl p-5 md:p-6 lg:sticky lg:top-28">
+          <h2 className="heading-body text-xl md:text-2xl text-black">Order Summary</h2>
+          <dl className="mt-5 space-y-4 font-body text-base">
+            <div className="flex justify-between gap-2">
+              <dt className="text-black/60">Payment</dt>
+              <dd className="font-bold text-black">{paymentMethod === "GCASH" ? "GCash" : "Cash"}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-black/60">Delivery</dt>
+              <dd className="font-bold text-black">{deliveryType === "DELIVERY" ? "Delivery" : "Store pickup"}</dd>
+            </div>
+            <hr className="border-black/10" />
+            <div className="flex justify-between gap-2 text-lg">
+              <dt className="text-black">Total to pay</dt>
+              <dd className="font-bold text-2xl text-black">{formatPeso(getTotalAmount())}</dd>
+            </div>
+          </dl>
           {/* Unverified notice — explains the disabled button up front */}
           {!verified && (
-            <p className="font-body text-xs text-danger mt-4 border border-danger/30 bg-danger/5 rounded-lg p-3">
+            <p className="font-body text-xs text-danger mt-5 bg-danger/10 rounded-xl p-3 flex gap-2">
+              <Icon name="warning" size={18} className="shrink-0" />
               {accountStatus === "REJECTED"
                 ? "Your account is not verified, so orders are blocked. Contact your barangay administrator."
                 : "Your documents are still under review. You can order once an admin verifies your account."}
@@ -185,15 +211,15 @@ const Checkout = () => {
           <button
             onClick={placeOrder}
             disabled={loading || !verified}
-            className="w-full mt-4 bg-primary text-white font-body py-3 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
+            className="btn-primary btn-active w-full mt-6 py-4 font-body font-medium disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {loading ? <Spinner /> : null}
+            {loading ? <Spinner /> : <Icon name="lock" />}
             {loading ? "Placing order..." : "Place Order"}
           </button>
-          <p className="font-body text-xs text-passive mt-2 text-center">
+          <p className="font-body text-xs text-black/60 mt-3 text-center">
             Stock is locked the moment you tap this.
           </p>
-        </div>
+        </aside>
       </div>
     </div>
   );
