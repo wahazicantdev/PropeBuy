@@ -12,7 +12,7 @@ const BuyerLayout = () => {
       {/* Top bar — logo left, links right on desktop */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Text logo — Norwester */}
+          {/* Text logo — display font */}
           <Link
             to="/browse"
             className="font-header text-xl text-primary tracking-wide"

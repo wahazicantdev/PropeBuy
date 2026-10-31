@@ -9,9 +9,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Brand primary — single series, so one color and no legend (the card
-// title names the series). Contrast vs white passes the validator.
-const PRIMARY = "#05829a";
+// Brand black — single series, so one color and no legend (the card
+// title names the series). Reads the theme token, so it follows index.css.
+const PRIMARY = "var(--color-primary)";
 // Recessive ink for axes and grid — data marks carry the emphasis
 const GRID = "#f3f4f6";
 const AXIS_INK = "#6b7280";
@@ -149,14 +149,14 @@ const RevenueChart = ({ data = [] }) => {
                     tickFormatter={(k) => monthLabel(k)}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Lato, sans-serif" }}
+                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Satoshi, sans-serif" }}
                   />
                   <YAxis
                     tickFormatter={pesoCompact}
                     axisLine={false}
                     tickLine={false}
                     width={48}
-                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Lato, sans-serif" }}
+                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Satoshi, sans-serif" }}
                   />
                   {/* Hover layer — full-column hit area, gray band cursor */}
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: "#f9fafb" }} />
