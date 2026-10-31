@@ -188,7 +188,7 @@ const ProductModeration = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Product or vendor"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
+            className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -213,7 +213,7 @@ const ProductModeration = () => {
             // Removed rows gray out — history intact, honesty kept
             <li
               key={p.id}
-              className={`border border-gray-100 rounded-xl p-3 flex gap-3 items-start overflow-hidden ${
+              className={`border border-black/10 rounded-xl p-3 flex gap-3 items-start overflow-hidden ${
                 p.isActive ? "" : "opacity-60"
               }`}
             >
@@ -265,7 +265,7 @@ const ProductModeration = () => {
                 {p.isActive && (
                   <Link
                     to={`/product/${p.id}`}
-                    className="btn-outline rounded-lg px-3 py-2 font-body text-xs font-bold whitespace-nowrap"
+                    className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold whitespace-nowrap"
                   >
                     View
                   </Link>
@@ -277,7 +277,7 @@ const ProductModeration = () => {
                       setReason("");
                       setRemoveTarget(p);
                     }}
-                    className="rounded-lg px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10 whitespace-nowrap"
+                    className="rounded-full px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10 whitespace-nowrap"
                   >
                     Remove
                   </button>
@@ -317,7 +317,7 @@ const ProductModeration = () => {
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Example: prohibited item, not a physical good, misleading photo"
-          className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-none focus:border-primary resize-none"
+          className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary resize-none"
         />
         <p className="font-body text-xs text-passive mt-2">
           The reason is returned in the API response for the record. Vendor

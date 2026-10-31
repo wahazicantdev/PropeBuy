@@ -107,7 +107,7 @@ const BarangayManagement = () => {
       {/* Inline card, not a modal — adding is routine, not destructive */}
       <form
         onSubmit={handleSubmit(onAdd)}
-        className="mt-4 border border-gray-100 rounded-xl p-4"
+        className="mt-4 border border-black/10 rounded-xl p-4"
       >
         <p className="font-body font-bold text-sm text-gray-900">
           Add a barangay
@@ -121,7 +121,7 @@ const BarangayManagement = () => {
                 maxLength: { value: 100, message: "At most 100 characters" },
               })}
               placeholder="Barangay name"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
+              className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
             />
             {/* Field error — client rules mirror the express-validator ones */}
             {errors.name && (
@@ -137,7 +137,7 @@ const BarangayManagement = () => {
                 maxLength: { value: 100, message: "At most 100 characters" },
               })}
               placeholder="City (defaults to Muntinlupa City)"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
+              className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
             />
             {errors.city && (
               <p className="font-body text-xs text-danger mt-1">
@@ -149,7 +149,7 @@ const BarangayManagement = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-primary rounded-lg px-5 py-3 font-body text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+            className="btn-primary rounded-full px-5 py-3 font-body text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
           >
             {isSubmitting ? (
               <>
@@ -187,7 +187,7 @@ const BarangayManagement = () => {
             // products, so "switched off" always reads the same way
             <li
               key={b.id}
-              className={`border border-gray-100 rounded-xl p-4 flex gap-3 items-center overflow-hidden ${
+              className={`border border-black/10 rounded-xl p-4 flex gap-3 items-center overflow-hidden ${
                 b.isActive ? "" : "opacity-60"
               }`}
             >
@@ -221,7 +221,7 @@ const BarangayManagement = () => {
               {/* Toggle — one button, label follows current state */}
               <button
                 onClick={() => setToggleTarget(b)}
-                className={`rounded-lg px-3 py-2 font-body text-xs font-bold whitespace-nowrap shrink-0 ${
+                className={`rounded-full px-3 py-2 font-body text-xs font-bold whitespace-nowrap shrink-0 ${
                   b.isActive
                     ? "text-danger border border-danger/30 hover:bg-danger/10"
                     : "btn-outline"

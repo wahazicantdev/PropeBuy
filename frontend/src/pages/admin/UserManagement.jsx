@@ -172,7 +172,7 @@ const UserManagement = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Name or email"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
+            className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -203,7 +203,7 @@ const UserManagement = () => {
             return (
               <li
                 key={u.id}
-                className="border border-gray-100 rounded-xl p-4 overflow-hidden"
+                className="border border-black/10 rounded-xl p-4 overflow-hidden"
               >
                 {/* Identity row */}
                 <div className="flex items-start gap-3 flex-wrap">
@@ -248,7 +248,7 @@ const UserManagement = () => {
                 <div className="mt-3 flex gap-2 flex-wrap">
                   <button
                     onClick={() => toggleDetail(u.id)}
-                    className="btn-active border border-gray-200 rounded-lg px-3 py-2 font-body text-xs font-bold text-gray-900"
+                    className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
                   >
                     {detailId === u.id ? "Hide details" : "View details"}
                   </button>
@@ -257,7 +257,7 @@ const UserManagement = () => {
                   {!isMe && !isAdmin && u.accountStatus !== "REJECTED" && (
                     <button
                       onClick={() => setSuspendTarget(u)}
-                      className="rounded-lg px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10"
+                      className="rounded-full px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10"
                     >
                       Suspend
                     </button>
@@ -272,7 +272,7 @@ const UserManagement = () => {
 
                 {/* Detail drawer — documents, OCR verdict, live listings */}
                 {detailId === u.id && (
-                  <div className="mt-3 border border-gray-100 rounded-lg bg-gray-50 p-3 overflow-hidden">
+                  <div className="mt-3 border border-black/10 rounded-lg bg-surface p-3 overflow-hidden">
                     {detailLoading ? (
                       <p className="flex items-center gap-2 font-body text-xs text-passive">
                         <Spinner />
@@ -310,7 +310,7 @@ const UserManagement = () => {
                               href={detailData.idDocumentUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="btn-outline rounded-lg px-3 py-2 font-body text-xs font-bold"
+                              className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                             >
                               Government ID
                             </a>
@@ -320,7 +320,7 @@ const UserManagement = () => {
                               href={detailData.certDocumentUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="btn-outline rounded-lg px-3 py-2 font-body text-xs font-bold"
+                              className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                             >
                               Barangay certificate
                             </a>

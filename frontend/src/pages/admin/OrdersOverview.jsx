@@ -67,7 +67,7 @@ const OrdersOverview = () => {
 
       {/* ── VIEW TOTALS ── */}
       <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Order value
           </p>
@@ -78,7 +78,7 @@ const OrdersOverview = () => {
             this filtered view
           </p>
         </div>
-        <div className="border border-gray-100 rounded-xl p-4">
+        <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Collected
           </p>
@@ -87,7 +87,7 @@ const OrdersOverview = () => {
           </p>
           <p className="font-body text-xs text-passive mt-1">paid orders only</p>
         </div>
-        <div className="border border-gray-100 rounded-xl p-4 col-span-2 md:col-span-1">
+        <div className="border border-black/10 rounded-xl p-4 col-span-2 md:col-span-1">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Unpaid
           </p>
@@ -180,7 +180,7 @@ const OrdersOverview = () => {
           {orders.map((o) => (
             <li
               key={o.id}
-              className="border border-gray-100 rounded-xl p-4 overflow-hidden"
+              className="border border-black/10 rounded-xl p-4 overflow-hidden"
             >
               {/* Summary row */}
               <div className="flex items-start gap-3 flex-wrap">
@@ -216,7 +216,7 @@ const OrdersOverview = () => {
               {/* Toggle — items ride in the list payload already */}
               <button
                 onClick={() => setOpenId(openId === o.id ? null : o.id)}
-                className="btn-active mt-3 border border-gray-200 rounded-lg px-3 py-2 font-body text-xs font-bold text-gray-900"
+                className="btn-active mt-3 border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
               >
                 {openId === o.id
                   ? "Hide items"
@@ -227,7 +227,7 @@ const OrdersOverview = () => {
                   This is the multi-vendor proof: one order can hold
                   goods from several barangay sellers at once. */}
               {openId === o.id && (
-                <ul className="mt-3 border border-gray-100 rounded-lg divide-y divide-gray-100 overflow-hidden">
+                <ul className="mt-3 border border-black/10 rounded-lg divide-y divide-black/10 overflow-hidden">
                   {o.orderItems.map((i) => (
                     <li
                       key={i.id}
@@ -256,7 +256,7 @@ const OrdersOverview = () => {
       )}
 
       {/* Scope note — read-only by design, said out loud */}
-      <p className="mt-4 font-body text-xs text-passive border border-gray-100 rounded-xl p-3">
+      <p className="mt-4 font-body text-xs text-passive border border-black/10 rounded-xl p-3">
         Oversight view only. Fulfilment stays with the vendor who owns the
         goods and payment state stays with the gateway — no admin override
         exists, so the transaction audit trail cannot be edited after the
