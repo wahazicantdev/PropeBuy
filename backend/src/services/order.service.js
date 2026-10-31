@@ -355,30 +355,32 @@ export const setPaymentStatus = async (orderId) => {
 export const processWebhookEvent = async (event) => {
   const eventType = event.data?.attributes?.type;
 
-  // Checkout sessions emit their own paid event alongside legacy ones
-  if (
-    eventType === "payment.paid" ||
-    eventType === "link.payment.paid" ||
-    eventType === "checkout_session.payment.paid"
-  ) {
-    const order = await prisma.order.findFirst({
-      where: {
-        paymongoLinkId: { not: null },
-        paymentStatus: "PENDING",
-      },
-    });
+  // BUGFIX: this used to findFirst ANY pending GCash order and mark it
+  // PAID — a payment for order B could settle an older order A. Now the
+  // event must name the exact checkout session we stored at checkout.
+  // Only checkout_session.payment.paid carries that session id; legacy
+  // payment.paid / link.payment.paid events cannot be matched safely,
+  // so they are ignored and the polling fallback settles those orders.
+  if (eventType !== "checkout_session.payment.paid") return;
 
-    if (order) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          paymentStatus: "PAID",
-          status: "PROCESSING",
-        },
-      });
+  // event.data.attributes.data is the checkout session object (cs_...)
+  const sessionId = event.data?.attributes?.data?.id;
+  if (!sessionId) return;
 
-      // Real-time notification to buyer on payment confirmation
-      notifyPaymentConfirmed(order.buyerId, order.id);
-    }
-  }
+  // paymongoLinkId holds the session id saved right after commit
+  const order = await prisma.order.findFirst({
+    where: { paymongoLinkId: sessionId },
+  });
+
+  // Unknown session, or already settled — idempotent for PayMongo retries
+  if (!order || order.paymentStatus === "PAID") return;
+
+  // Same update as the polling path in confirmPaymentStatus
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { paymentStatus: "PAID", status: "PROCESSING" },
+  });
+
+  // Real-time notification to buyer on payment confirmation
+  notifyPaymentConfirmed(order.buyerId, order.id);
 };
