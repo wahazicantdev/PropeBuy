@@ -58,10 +58,16 @@ body {
   overflow-x: hidden; /* kill horizontal scroll on phone */
 }
 
-/* Responsive images — never overflow card */
-img {
-  max-width: 100%; /* shrink on small screens */
-  height: auto; /* keep ratio */
+/* Responsive images — never overflow card.
+   Inside @layer base on purpose: unlayered CSS beats every Tailwind
+   utility, so an unlayered height:auto silently overrode h-full and
+   left product photos filling only the top half of square tiles. In
+   the base layer, utilities like h-full / object-cover win again. */
+@layer base {
+  img {
+    max-width: 100%; /* shrink on small screens */
+    height: auto; /* keep ratio unless a utility says otherwise */
+  }
 }
 
 /* Display type — wide, heavy, uppercase, like the reference headings.
