@@ -9,6 +9,9 @@ import {
   fetchBarangays,
   fetchCategories,
 } from "../../api/product.api.js";
+// Home barangay lookup — the stored user carries no barangayId
+import { fetchMe } from "../../api/auth.api.js";
+import { useAuthStore } from "../../stores/auth.store.js";
 
 // Browse — public guest page, no login required to view goods
 const Browse = () => {
@@ -24,6 +27,12 @@ const Browse = () => {
   const [search, setSearch] = useState("");
   // Loading flag for grid
   const [loading, setLoading] = useState(true);
+  // Hyper-local default (manuscript p.6): logged-in buyers land on
+  // THEIR barangay, guests see all. homeReady holds the first product
+  // fetch until the lookup settles, so the grid never flashes "all".
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [homeId, setHomeId] = useState("");
+  const [homeReady, setHomeReady] = useState(!isAuthenticated);
 
   // Dropdown options with an All entry first
   const barangayOptions = [
@@ -45,8 +54,25 @@ const Browse = () => {
       .catch(() => toast.error("Failed to load filters"));
   }, []);
 
+  // Resolve the home barangay once for logged-in users.
+  // A ?category= deep link still applies on top — both filters combine.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchMe()
+      .then((res) => {
+        const id = res.data?.barangayId ? String(res.data.barangayId) : "";
+        setHomeId(id);
+        setBarangayId(id);
+      })
+      // Lookup failed — fall back to all barangays, never block browsing
+      .catch(() => {})
+      .finally(() => setHomeReady(true));
+  }, [isAuthenticated]);
+
   // Load products whenever a filter changes
   useEffect(() => {
+    // Wait for the home barangay so the first grid is already local
+    if (!homeReady) return;
     // Debounce search slightly so fast typing does not spam API
     const t = setTimeout(
       () => {
@@ -61,7 +87,7 @@ const Browse = () => {
     );
     // Cleanup timer on next keystroke
     return () => clearTimeout(t);
-  }, [barangayId, categoryId, search]);
+  }, [barangayId, categoryId, search, homeReady]);
 
   return (
     // Public page root with entrance animation
@@ -97,6 +123,18 @@ const Browse = () => {
             ariaLabel="Filter by category"
           />
         </div>
+        {/* Home barangay hint — says why the grid is local, one tap widens */}
+        {homeId && barangayId === homeId && (
+          <p className="mt-2 font-body text-xs text-passive">
+            Showing goods from your barangay first.{" "}
+            <button
+              onClick={() => setBarangayId("")}
+              className="text-primary font-bold"
+            >
+              See all barangays
+            </button>
+          </p>
+        )}
         {/* Category chips — quick tap filter */}
         <div className="mt-3 flex flex-wrap gap-2">
           <button
