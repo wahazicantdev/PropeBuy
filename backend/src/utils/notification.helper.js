@@ -43,3 +43,19 @@ export const notifyLowStock = (sellerId, product) => {
     timestamp: new Date().toISOString(),
   });
 };
+
+// ── SEND NEW ORDER ALERT ───────────────────────────────
+// Notifies a seller the moment a buyer's checkout commits with their
+// goods inside. One order can hold items from several sellers, so the
+// service calls this once per distinct seller with their item count.
+// sellerId  — the seller to notify
+// orderId   — the newly committed order
+// itemCount — how many of THIS seller's lines are in the order
+export const notifyNewOrder = (sellerId, orderId, itemCount) => {
+  io.to(`user_${sellerId}`).emit("new_order", {
+    orderId,
+    itemCount,
+    message: `New order #${orderId} — ${itemCount} item(s) from your shop`,
+    timestamp: new Date().toISOString(),
+  });
+};

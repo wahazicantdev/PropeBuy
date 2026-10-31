@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
 import { fetchMyOrders } from "../../api/order.api.js";
+// Live tick — socket events refetch this page, no manual refresh
+import { useLiveTick } from "../../hooks/useSocket.js";
 
 // Order history - buyer past orders with status filter
 const OrderHistory = () => {
@@ -24,12 +26,15 @@ const OrderHistory = () => {
   };
 
   // Load once on mount
+  // Bumps when a seller moves an order or a payment lands
+  const live = useLiveTick();
+
   useEffect(() => {
     fetchMyOrders()
       .then((res) => setOrders(res.data || []))
       .catch(() => toast.error("Failed to load orders"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [live]);
 
   // Client-side filter, backend has no status query here
   const shown = filter ? orders.filter((o) => o.status === filter) : orders;

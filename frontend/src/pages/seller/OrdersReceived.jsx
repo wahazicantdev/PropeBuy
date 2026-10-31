@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchSellerOrders } from "../../api/order.api.js";
+// Live tick — socket events refetch this page, no manual refresh
+import { useLiveTick } from "../../hooks/useSocket.js";
 
 // OrdersReceived — orders touching this seller, newest first
 const OrdersReceived = () => {
@@ -16,6 +18,9 @@ const OrdersReceived = () => {
   const [loading, setLoading] = useState(true);
 
   // Load orders once — no polling here, socket pings arrive in Phase F
+  // Bumps on new_order — fresh orders appear without a refresh
+  const live = useLiveTick();
+
   useEffect(() => {
     fetchSellerOrders()
       .then((res) => setOrders(res.data || []))
@@ -27,7 +32,7 @@ const OrdersReceived = () => {
         toast.error(msg);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [live]);
 
   // ── DATE HELPER ──
   // Backend sends ISO strings — show short local style

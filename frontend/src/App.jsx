@@ -1,4 +1,6 @@
 import { Routes, Route } from "react-router-dom";
+// Realtime — one socket for the whole app, connects only when logged in
+import { useSocket } from "./hooks/useSocket.js";
 import BuyerLayout from "./components/layouts/BuyerLayout.jsx";
 import SellerLayout from "./components/layouts/SellerLayout.jsx";
 import AdminLayout from "./components/layouts/AdminLayout.jsx";
@@ -42,6 +44,10 @@ import BarangayManagement from "./pages/admin/BarangayManagement.jsx";
 import CategoryManagement from "./pages/admin/CategoryManagement.jsx";
 
 const App = () => {
+  // Mount realtime once — before this, the hook existed but nothing
+  // called it, so objective 1e never reached the browser
+  useSocket();
+
   return (
     // Public routes render directly, protected nest in guard plus layout
     <Routes>
