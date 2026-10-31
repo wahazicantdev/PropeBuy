@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import PublicNav from "../../components/PublicNav.jsx";
+import AuthShell from "../../components/AuthShell.jsx";
+import Icon from "../../components/Icon.jsx";
 import { loginUser } from "../../api/auth.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 
@@ -45,43 +46,53 @@ const SellerLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <PublicNav />
-      <main className="max-w-md mx-auto px-4 py-10">
-        <h1 className="font-header font-bold text-2xl text-gray-900">
-          Seller login
-        </h1>
-        <p className="font-body text-sm text-passive mt-1">
-          Unverified sellers land on profile status.
-        </p>
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+    // Shared auth frame — pitch card on desktop, form everywhere
+    <AuthShell
+      variant="seller"
+      title="Seller login"
+      subtitle="Manage your listings, stock and orders. Sellers still under review land on their profile status."
+      footer={
+        <>
+          Want to sell on PropeBuy?{" "}
+          <Link to="/register" className="text-black font-bold underline">
+            Register your shop
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Email — icon inside the gray pill */}
+        <div className="relative">
+          <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
           <input
             {...register("email", { required: true })}
             type="email"
-            placeholder="Email"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm"
+            placeholder="Email address"
+            autoComplete="email"
+            className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
           />
+        </div>
+        {/* Password */}
+        <div className="relative">
+          <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
           <input
             {...register("password", { required: true })}
             type="password"
             placeholder="Password"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 font-body text-sm"
+            autoComplete="current-password"
+            className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
           />
-          <button
-            disabled={loading}
-            className="w-full bg-primary text-white py-3 rounded-lg font-body disabled:opacity-50"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-        <p className="font-body text-sm text-passive mt-4 text-center">
-          Want to sell?{" "}
-          <Link to="/register" className="text-primary">
-            Register
-          </Link>
-        </p>
-      </main>
-    </div>
+        </div>
+        {/* Submit — black pill, spinner while waiting */}
+        <button
+          disabled={loading}
+          className="btn-primary btn-active w-full py-3.5 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {loading ? <span className="spinner" /> : <Icon name="login" />}
+          {loading ? "Logging in..." : "Log in"}
+        </button>
+      </form>
+    </AuthShell>
   );
 };
 

@@ -38,6 +38,12 @@ material/
 │   ├── account_balance_wallet.svg
 │   ├── add_shopping_cart.svg
 │   ├── category.svg
+│   ├── grocery.svg   (category tile)
+│   ├── checkroom.svg   (category tile)
+│   ├── chair.svg   (category tile)
+│   ├── spa.svg   (category tile)
+│   ├── devices.svg   (category tile)
+│   ├── directions_car.svg   (category tile)
 │   ├── inventory_2.svg
 │   ├── local_mall.svg
 │   ├── local_shipping.svg
@@ -102,6 +108,8 @@ material/
 │   ├── settings.svg
 │   ├── toggle_off.svg
 │   ├── toggle_on.svg
+├── media/   ← pictures: image placeholder
+│   ├── image.svg
 ```
 
 ## Add an icon

@@ -88,7 +88,7 @@ export const createProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   // Extract query params for filtering
   // Example: /api/products?barangayId=5&categoryId=1&search=rice
-  const { barangayId, categoryId, search } = req.query;
+  const { barangayId, categoryId, search, sellerId } = req.query;
 
   // Build filter object dynamically
   // Only add filters that are actually provided
@@ -103,6 +103,11 @@ export const getProducts = async (req, res) => {
 
   if (categoryId) {
     where.categoryId = cleanInt(categoryId);
+  }
+
+  // Seller store page — one vendor's live listings
+  if (sellerId) {
+    where.sellerId = cleanInt(sellerId);
   }
 
   if (search) {
