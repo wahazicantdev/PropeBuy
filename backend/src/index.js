@@ -106,7 +106,18 @@ app.use(
   }),
 );
 // Parse JSON bodies for incoming requests, Example: { "task": "Buy groceries" }, and make it available in req.body
-app.use(express.json());
+app.use(
+  express.json({
+    // Keep the exact request bytes for the PayMongo webhook only —
+    // signature verification hashes the raw body, and re-stringified
+    // JSON can differ by a single space and fail every check
+    verify: (req, res, buf) => {
+      if (req.originalUrl.startsWith("/api/orders/webhook/paymongo")) {
+        req.rawBody = buf.toString("utf8");
+      }
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 
 // ── ROUTES ─────────────────────────────────────────────
