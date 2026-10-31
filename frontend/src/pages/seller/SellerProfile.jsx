@@ -62,7 +62,7 @@ const SellerProfile = () => {
         Your vendor account at a glance.
       </p>
       {/* Info card */}
-      <div className="mt-4 border border-gray-100 rounded-xl p-5 space-y-3 font-body text-sm">
+      <div className="mt-4 border border-black/10 rounded-xl p-5 space-y-3 font-body text-sm">
         {/* Name row */}
         <div className="flex justify-between gap-3">
           <span className="text-passive">Name</span>

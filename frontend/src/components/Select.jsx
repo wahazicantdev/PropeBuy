@@ -59,7 +59,7 @@ const Select = ({ value, onChange, options = [], ariaLabel = "Select" }) => {
       </button>
       {/* List — margin below trigger, same radius, pops in */}
       {open && (
-        <ul className="pop-enter absolute left-0 right-0 mt-2 rounded-lg border border-gray-200 bg-white shadow-lg z-30 max-h-64 overflow-y-auto">
+        <ul className="pop-enter absolute left-0 right-0 mt-2 rounded-xl border border-black/10 bg-white shadow-lg z-30 max-h-64 overflow-y-auto p-1.5">
           {options.map((o) => {
             // Active check for the current pick
             const active = String(o.value) === String(value);
@@ -71,7 +71,7 @@ const Select = ({ value, onChange, options = [], ariaLabel = "Select" }) => {
                     onChange(o.value);
                     setOpen(false);
                   }}
-                  className={`w-full text-left px-4 py-3 font-body text-sm transition-colors ${active ? "bg-primary text-white font-bold" : "text-gray-900 hover:bg-primary hover:text-white"}`}
+                  className={`w-full text-left px-4 py-2.5 rounded-lg font-body text-sm transition-colors ${active ? "bg-primary text-white font-bold" : "text-black hover:bg-surface"}`}
                 >
                   {o.label}
                 </button>

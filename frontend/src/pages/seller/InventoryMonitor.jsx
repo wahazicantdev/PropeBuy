@@ -105,7 +105,7 @@ const InventoryMonitor = () => {
 
       {/* List — worst stock first thanks to the sort */}
       {rows.length === 0 ? (
-        <div className="mt-4 border border-gray-100 rounded-xl p-6 text-center">
+        <div className="mt-4 border border-black/10 rounded-xl p-6 text-center">
           <p className="font-header font-bold text-lg text-gray-900">
             Nothing here
           </p>
@@ -116,7 +116,7 @@ const InventoryMonitor = () => {
           </p>
         </div>
       ) : (
-        <ul className="mt-4 border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100">
+        <ul className="mt-4 border border-black/10 rounded-xl overflow-hidden divide-y divide-black/10">
           {rows.map((p) => (
             <li
               key={p.id}

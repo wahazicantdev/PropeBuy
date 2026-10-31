@@ -107,7 +107,7 @@ const MyProducts = () => {
         </div>
         <Link
           to="/seller/add-product"
-          className="btn-primary rounded-lg px-4 py-2.5 font-body text-sm font-bold"
+          className="btn-primary rounded-full px-4 py-2.5 font-body text-sm font-bold"
         >
           + Add Product
         </Link>
@@ -144,7 +144,7 @@ const MyProducts = () => {
           </p>
           <Link
             to="/seller/add-product"
-            className="btn-outline inline-block rounded-lg px-4 py-2.5 font-body text-sm font-bold mt-4"
+            className="btn-outline inline-block rounded-full px-4 py-2.5 font-body text-sm font-bold mt-4"
           >
             Add your first product
           </Link>
@@ -162,7 +162,7 @@ const MyProducts = () => {
           {filtered.map((p) => (
             <li
               key={p.id}
-              className={`border border-gray-100 rounded-xl p-3 flex gap-3 items-center overflow-hidden ${
+              className={`border border-black/10 rounded-xl p-3 flex gap-3 items-center overflow-hidden ${
                 // Soft-deleted rows gray out — history intact, honesty kept
                 p.isActive ? "" : "opacity-60"
               }`}
@@ -208,13 +208,13 @@ const MyProducts = () => {
                   <Link
                     to={`/seller/products/${p.id}/edit`}
                     state={{ product: p }}
-                    className="btn-outline rounded-lg px-3 py-2 font-body text-xs font-bold whitespace-nowrap"
+                    className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold whitespace-nowrap"
                   >
                     Edit
                   </Link>
                   <button
                     onClick={() => setDeleteTarget(p)}
-                    className="rounded-lg px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10 whitespace-nowrap"
+                    className="rounded-full px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10 whitespace-nowrap"
                   >
                     Delete
                   </button>
