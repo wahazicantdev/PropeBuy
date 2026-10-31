@@ -85,11 +85,22 @@ app.use(helmet());
 // ── RATE LIMITERS ──────────────────────────────────────
 
 // General rate limiter — applies to all API routes
-// Allows 100 requests per 15 minutes per IP address
+// Allows 1000 requests per 15 minutes per IP address (~1 per second
+// sustained). 100 was too tight once orders started refetching live on
+// socket events — a normal shopping session plus React StrictMode in dev
+// could hit it. 1000 still stops scraping and request floods.
 // Prevents general API abuse and scraping
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes in milliseconds
-  max: 100, // max requests per window per IP
+  max: 1000, // max requests per window per IP
+  // Never throttle:
+  // - the PayMongo webhook: retries come from PayMongo's shared IPs, and
+  //   a 429 there means a paid order never gets its confirmation
+  // - CORS preflights: the browser sends one before many real requests,
+  //   counting them would charge every frontend call twice
+  skip: (req) =>
+    req.method === "OPTIONS" ||
+    req.originalUrl.startsWith("/api/orders/webhook/paymongo"),
   message: {
     success: false,
     message: "Too many requests — please try again after 15 minutes",
@@ -102,11 +113,15 @@ const generalLimiter = rateLimit({
 });
 
 // Auth rate limiter — stricter limit for login and register
-// Allows only 10 requests per 15 minutes per IP address
+// Allows only 10 FAILED attempts per 15 minutes per IP address
 // Prevents brute-force password attacks
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // only 10 auth attempts per window
+  max: 10, // only 10 failed auth attempts per window
+  // Count failures only (status >= 400). A guesser still hits the wall
+  // after 10 wrong passwords, but switching between real accounts —
+  // buyer, seller, admin during a demo — never burns the budget.
+  skipSuccessfulRequests: true,
   message: {
     success: false,
     message:
@@ -139,7 +154,18 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 
 // ── ROUTES ─────────────────────────────────────────────
-app.use("/api/auth", authLimiter, authRoutes);
+// General limiter — every API route. Defined since the backend phase but
+// never mounted until now, so the API had no request cap at all.
+app.use("/api", generalLimiter);
+
+// Brute-force guard only where credentials and documents are submitted.
+// It used to wrap the whole /api/auth router, so GET /auth/me (called by
+// Browse, Checkout and both profile pages, twice per visit under React
+// StrictMode in dev) spent the same 10-request budget and locked users
+// out of logging in without a single wrong password.
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/analytics", analyticsRoutes);
