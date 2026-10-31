@@ -218,6 +218,18 @@ export const login = async (req, res) => {
     });
   }
 
+  // ── REJECTED / SUSPENDED — no session at all ──────
+  // Checked AFTER the password so the message never confirms which
+  // emails exist. PENDING users still log in: sellers need their
+  // profile page to see review status, buyers can browse meanwhile.
+  if (user.accountStatus === "REJECTED") {
+    return res.status(403).json({
+      success: false,
+      message:
+        "This account was rejected or suspended. Contact your barangay administrator.",
+    });
+  }
+
   const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
   });
