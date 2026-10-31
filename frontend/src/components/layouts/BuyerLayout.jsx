@@ -1,70 +1,21 @@
-import { useState } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import PublicNav from "../PublicNav.jsx";
+import SiteFooter from "../SiteFooter.jsx";
 
-// Buyer shell — top horizontal nav, collapses on phone
+// Buyer shell — the SAME header and footer as the public pages.
+// Before the redesign buyers got a second, plainer nav the moment they
+// opened their cart; one header everywhere means one mental model:
+// search, cart badge and account icon never move.
 const BuyerLayout = () => {
-  // Mobile menu toggle state
-  const [open, setOpen] = useState(false);
-
   return (
-    // Full height column — nav on top, content below
+    // Full height column — nav on top, content, footer at the bottom
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Top bar — logo left, links right on desktop */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Text logo — display font */}
-          <Link
-            to="/browse"
-            className="font-header text-xl text-primary tracking-wide"
-          >
-            PROPEBUY
-          </Link>
-          {/* Desktop links — hidden on phone */}
-          <nav className="hidden md:flex items-center gap-6 font-body text-sm">
-            <Link to="/browse" className="hover:text-primary">
-              Browse
-            </Link>
-            <Link to="/cart" className="hover:text-primary">
-              Cart
-            </Link>
-            <Link to="/orders" className="hover:text-primary">
-              Orders
-            </Link>
-            <Link to="/profile" className="text-passive hover:text-primary">
-              Profile
-            </Link>
-          </nav>
-          {/* Hamburger — phone only */}
-          <button
-            onClick={() => setOpen(!open)}
-            className="md:hidden p-2 text-2xl"
-            aria-label="Menu"
-          >
-            {open ? "✕" : "☰"}
-          </button>
-        </div>
-        {/* Mobile dropdown — stacks vertically */}
-        {open && (
-          <nav className="md:hidden px-4 pb-4 flex flex-col gap-3 font-body text-base border-t border-gray-100 pt-3">
-            <Link to="/browse" onClick={() => setOpen(false)}>
-              Browse
-            </Link>
-            <Link to="/cart" onClick={() => setOpen(false)}>
-              Cart
-            </Link>
-            <Link to="/orders" onClick={() => setOpen(false)}>
-              Orders
-            </Link>
-            <Link to="/profile" onClick={() => setOpen(false)}>
-              Profile
-            </Link>
-          </nav>
-        )}
-      </header>
-      {/* Page content — centers on desktop, full width on phone */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6">
+      <PublicNav />
+      {/* Page content — min-w-0 + overflow guard, the responsive trio */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 min-w-0 overflow-x-hidden">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   );
 };
