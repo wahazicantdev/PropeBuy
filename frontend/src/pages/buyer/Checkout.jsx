@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Spinner from "../../components/Spinner.jsx";
 import Select from "../../components/Select.jsx";
 import { useCartStore } from "../../stores/cart.store.js";
 import { checkoutOrder } from "../../api/order.api.js";
+// Fresh account status — the stored copy goes stale after admin review
+import { fetchMe } from "../../api/auth.api.js";
+import { useAuthStore } from "../../stores/auth.store.js";
 
 // Checkout - phone-first picks, guarded by BuyerRoute outside
 const Checkout = () => {
@@ -18,6 +21,23 @@ const Checkout = () => {
   // Block double submit
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  // Live account status — checkout is VERIFIED-only on the backend
+  // (objective 1b), so the page says so instead of failing on tap
+  const accountStatus = useAuthStore((s) => s.user?.accountStatus);
+  const verified = accountStatus === "VERIFIED";
+
+  // Refresh the stored user once — localStorage still says PENDING
+  // after an admin approves, which would wrongly block a now-verified
+  // buyer. getState() avoids a stale closure without extra deps.
+  useEffect(() => {
+    fetchMe()
+      .then((res) => {
+        const { user, setUser } = useAuthStore.getState();
+        if (res.data) setUser({ ...user, ...res.data });
+      })
+      // Silent — the backend gate still answers honestly on submit
+      .catch(() => {});
+  }, []);
 
   // Delivery options straight from the documented enum
   const deliveryOptions = [
@@ -54,8 +74,9 @@ const Checkout = () => {
       toast.success("Order placed. Prepare your cash payment.");
       navigate(`/orders/${res.data.id}`);
     } catch (err) {
-      // Stray blank tab from a failed order must not linger
-      if (payTab && !payTab.closed) payTab.close();
+      // BUGFIX: a leftover payTab.close() from the retired new-tab flow
+      // threw ReferenceError right here, so the toast below never ran —
+      // short-stock failures (the double-selling proof) showed nothing.
       // Short stock or validator message from backend
       toast.error(err.response?.data?.message || "Checkout failed. Try again.");
     } finally {
@@ -152,10 +173,18 @@ const Checkout = () => {
               P{Number(getTotalAmount()).toLocaleString()}
             </span>
           </div>
-          {/* Submit with spinner state */}
+          {/* Unverified notice — explains the disabled button up front */}
+          {!verified && (
+            <p className="font-body text-xs text-danger mt-4 border border-danger/30 bg-danger/5 rounded-lg p-3">
+              {accountStatus === "REJECTED"
+                ? "Your account is not verified, so orders are blocked. Contact your barangay administrator."
+                : "Your documents are still under review. You can order once an admin verifies your account."}
+            </p>
+          )}
+          {/* Submit with spinner state — VERIFIED buyers only */}
           <button
             onClick={placeOrder}
-            disabled={loading}
+            disabled={loading || !verified}
             className="w-full mt-4 bg-primary text-white font-body py-3 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? <Spinner /> : null}
