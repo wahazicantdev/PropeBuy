@@ -32,16 +32,14 @@ import OrderDetailSeller from "./pages/seller/OrderDetailSeller.jsx";
 import Dashboard from "./pages/seller/Dashboard.jsx";
 import InventoryMonitor from "./pages/seller/InventoryMonitor.jsx";
 import SellerProfile from "./pages/seller/SellerProfile.jsx";
-
-// Temp placeholder - admin pages Phase E only now
-const Placeholder = ({ label }) => (
-  // Responsive centered text
-  <div className="min-h-[50vh] flex items-center justify-center px-4 text-center">
-    <h1 className="font-header font-bold text-xl md:text-2xl text-primary">
-      {label} — coming next phase
-    </h1>
-  </div>
-);
+// Admin pages - Phase E, all 7 portal pages live
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import PendingVerifications from "./pages/admin/PendingVerifications.jsx";
+import UserManagement from "./pages/admin/UserManagement.jsx";
+import ProductModeration from "./pages/admin/ProductModeration.jsx";
+import OrdersOverview from "./pages/admin/OrdersOverview.jsx";
+import BarangayManagement from "./pages/admin/BarangayManagement.jsx";
+import CategoryManagement from "./pages/admin/CategoryManagement.jsx";
 
 const App = () => {
   return (
@@ -83,13 +81,20 @@ const App = () => {
           <Route path="/seller/profile" element={<SellerProfile />} />
         </Route>
       </Route>
-      {/* Admin - top nav shell */}
+      {/* Admin - top nav shell, all 7 pages guarded by role ADMIN */}
       <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
-          <Route
-            path="/admin/dashboard"
-            element={<Placeholder label="Admin Dashboard" />}
-          />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          {/* Verification queue - the blocking gate for new vendors */}
+          <Route path="/admin/pending" element={<PendingVerifications />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          {/* Moderation - soft removal with a mandatory reason */}
+          <Route path="/admin/products" element={<ProductModeration />} />
+          {/* Oversight - read-only, no admin status override exists */}
+          <Route path="/admin/orders" element={<OrdersOverview />} />
+          {/* Taxonomy - barangay coverage and the 7 categories */}
+          <Route path="/admin/barangays" element={<BarangayManagement />} />
+          <Route path="/admin/categories" element={<CategoryManagement />} />
         </Route>
       </Route>
     </Routes>

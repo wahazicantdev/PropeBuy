@@ -32,13 +32,17 @@
 // GET  /api/admin/users           → getAllUsers
 // GET  /api/admin/users/verifications/pending → getPendingVerifications
 // GET  /api/admin/users/:id       → getUser
+// GET  /api/admin/users/:id/ocr-details → getUserOCRDetails
+// POST /api/admin/users/:id/ocr-rerun → rerunOCR
 // PUT  /api/admin/users/:id/verify → verifyUser
 // PUT  /api/admin/users/:id/suspend → suspendUser
 // GET  /api/admin/products        → getAllProducts
 // PUT  /api/admin/products/:id/remove → removeProduct
 // GET  /api/admin/orders          → getAllOrders
+// GET  /api/admin/barangays       → getAllBarangays (Phase E, incl. disabled)
 // POST /api/admin/barangays       → addBarangay
 // PUT  /api/admin/barangays/:id/toggle → toggleBarangay
+// GET  /api/admin/categories      → getAllCategories (Phase E, incl. disabled)
 // POST /api/admin/categories      → addCategory
 // PUT  /api/admin/categories/:id/toggle → toggleCategory
 // GET  /api/analytics/platform    → getPlatformAnalytics

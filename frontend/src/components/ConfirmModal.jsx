@@ -13,11 +13,30 @@ const ConfirmModal = ({
   cancelLabel = "Cancel",
   // busy — disables both buttons while the action runs
   busy = false,
+  // tone — Phase E addition. "danger" (default) keeps every existing
+  // caller red; "primary" is for confirms that CREATE instead of destroy,
+  // like approving a vendor. Red on an approve button lies about intent.
+  tone = "danger",
+  // children — Phase E addition. Optional slot between message and
+  // buttons for extra fields (a removal reason textarea, an OCR summary).
+  // Omit it and the modal looks exactly like it always did.
+  children,
+  // confirmDisabled — lets a caller block confirm until its slot is
+  // filled in, e.g. product removal needs a reason before submitting
+  confirmDisabled = false,
+  // size — "sm" (default) for plain confirms, "md" when a slot needs room
+  size = "sm",
   onConfirm,
   onCancel,
 }) => {
   // Render nothing when closed — parent owns the state
   if (!open) return null;
+
+  // Confirm button skin — one lookup, no nested ternaries in the JSX
+  const confirmSkin =
+    tone === "primary" ? "btn-primary" : "bg-danger text-white";
+  // Card width — grows only when the caller asks for a slot
+  const cardWidth = size === "md" ? "max-w-md" : "max-w-sm";
 
   // createPortal renders to document.body — the overlay escapes every
   // ancestor, so it ALWAYS covers the whole screen, sidebar included
@@ -30,7 +49,7 @@ const ConfirmModal = ({
     >
       {/* Card — pop-enter, stopPropagation so taps inside never close it */}
       <div
-        className="pop-enter bg-white rounded-lg shadow-lg max-w-sm w-full p-6 overflow-hidden"
+        className={`pop-enter bg-white rounded-lg shadow-lg ${cardWidth} w-full p-6 overflow-hidden max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -38,19 +57,21 @@ const ConfirmModal = ({
         <h3 className="font-header font-bold text-lg text-gray-900 mb-2">
           {title}
         </h3>
-        <p className="font-body text-sm text-gray-600 mb-6 wrap-break-word">
+        <p className="font-body text-sm text-gray-600 wrap-break-word">
           {message}
         </p>
-        <div className="flex gap-3">
-          {/* Confirm — soft red danger token, disabled while busy */}
+        {/* Slot — only takes vertical space when a caller passes children */}
+        {children ? <div className="mt-4">{children}</div> : null}
+        <div className="flex gap-3 mt-6">
+          {/* Confirm — tone picks the skin, disabled while busy or blocked */}
           <button
             onClick={onConfirm}
-            disabled={busy}
-            className="flex-1 bg-danger text-white font-body text-sm font-bold rounded-lg py-2.5 hover:opacity-90 disabled:opacity-50"
+            disabled={busy || confirmDisabled}
+            className={`flex-1 ${confirmSkin} font-body text-sm font-bold rounded-lg py-2.5 hover:opacity-90 disabled:opacity-50`}
           >
             {busy ? "Working..." : confirmLabel}
           </button>
-          {/* Cancel — passive gray, same busy rule */}
+          {/* Cancel — passive gray, busy only (never blocked by the slot) */}
           <button
             onClick={onCancel}
             disabled={busy}
