@@ -4,10 +4,12 @@ import toast from "react-hot-toast";
 // Status pill reuse — same colors as order pages
 import { OrderPill } from "../../components/OrderStatus.jsx";
 import Spinner from "../../components/Spinner.jsx";
+// Revenue trend — objective 1g, recharts column chart
+import RevenueChart from "../../components/RevenueChart.jsx";
 import { fetchSellerAnalytics } from "../../api/analytics.api.js";
 
 // Dashboard — seller landing page, one analytics call powers everything.
-// Charts (revenueChart) stay untouched until Phase F recharts week.
+// revenueChart renders through RevenueChart below the summary cards.
 const Dashboard = () => {
   // Whole analytics bundle: summary, ordersByStatus, lists
   const [stats, setStats] = useState(null);
@@ -33,7 +35,7 @@ const Dashboard = () => {
   }
 
   // Short destructured reads
-  const { summary, ordersByStatus, topProducts, recentOrders, lowStockProducts } = stats;
+  const { summary, ordersByStatus, topProducts, recentOrders, revenueChart } = stats;
   // Fresh DB friendly — zeros are honest, empty notes say so out loud
   const hasSales = summary.totalOrders > 0;
 
@@ -125,8 +127,14 @@ const Dashboard = () => {
         </Link>
       </div>
 
+      {/* ── REVENUE TREND ── */}
+      {/* Monthly fulfilled revenue, zero-filled to an even 6-month axis */}
+      <div className="mt-5">
+        <RevenueChart data={revenueChart} />
+      </div>
+
       {/* ── ORDER PIPELINE CHIPS ── */}
-      <div className="mt-5 border border-gray-100 rounded-xl p-4">
+      <div className="mt-3 border border-gray-100 rounded-xl p-4">
         <p className="font-body font-bold text-sm text-gray-900">
           Orders by status
         </p>
