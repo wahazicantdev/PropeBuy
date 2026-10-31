@@ -86,11 +86,13 @@ export const authorize = (...roles) => {
 // Ensures user account is VERIFIED before accessing protected features
 export const requireVerified = (req, res, next) => {
   if (req.user.accountStatus !== "VERIFIED") {
-    return res.status(403).json({
-      success: false,
-      message:
-        "Your account is pending verification. Please wait for admin approval.",
-    });
+    // Honest copy per status — a rejected user waiting for "approval"
+    // that will never come is worse than a clear answer
+    const message =
+      req.user.accountStatus === "REJECTED"
+        ? "Your account is not verified. Contact your barangay administrator."
+        : "Your account is pending verification. Please wait for admin approval.";
+    return res.status(403).json({ success: false, message });
   }
   next();
 };

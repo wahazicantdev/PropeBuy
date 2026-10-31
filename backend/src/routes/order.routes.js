@@ -10,7 +10,11 @@ import {
   checkPaymentStatus,
 } from "../controllers/order.controller.js";
 import { validateCartItem } from "../controllers/cart.controller.js";
-import { protect, authorize } from "../middleware/auth.middleware.js";
+import {
+  protect,
+  authorize,
+  requireVerified,
+} from "../middleware/auth.middleware.js";
 import {
   validateCheckout,
   validateIdParam,
@@ -26,10 +30,16 @@ orderRoutes.post("/webhook/paymongo", handlePaymongoWebhook);
 // ── PROTECTED ROUTES — SELLER & BUYER ────────────────────
 
 // ── CART VALIDATION ────────────────────────────────────
+// requireVerified — objective 1b says every buyer is a verified member
+// of their barangay. PENDING and REJECTED (incl. suspended) accounts can
+// still log in and browse, but money only moves for VERIFIED accounts.
+// protect re-reads the user from the DB, so a suspension bites at once
+// even while the old JWT is still valid.
 orderRoutes.post(
   "/cart/validate",
   protect,
   authorize("BUYER"),
+  requireVerified,
   validateCartItem,
 );
 
@@ -38,6 +48,7 @@ orderRoutes.post(
   "/checkout",
   protect,
   authorize("BUYER"),
+  requireVerified,
   validateCheckout,
   checkout,
 );
