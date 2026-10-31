@@ -102,11 +102,15 @@ const generalLimiter = rateLimit({
 });
 
 // Auth rate limiter — stricter limit for login and register
-// Allows only 10 requests per 15 minutes per IP address
+// Allows only 10 FAILED attempts per 15 minutes per IP address
 // Prevents brute-force password attacks
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // only 10 auth attempts per window
+  max: 10, // only 10 failed auth attempts per window
+  // Count failures only (status >= 400). A guesser still hits the wall
+  // after 10 wrong passwords, but switching between real accounts —
+  // buyer, seller, admin during a demo — never burns the budget.
+  skipSuccessfulRequests: true,
   message: {
     success: false,
     message:
@@ -139,7 +143,14 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 
 // ── ROUTES ─────────────────────────────────────────────
-app.use("/api/auth", authLimiter, authRoutes);
+// Brute-force guard only where credentials and documents are submitted.
+// It used to wrap the whole /api/auth router, so GET /auth/me (called by
+// Browse, Checkout and both profile pages, twice per visit under React
+// StrictMode in dev) spent the same 10-request budget and locked users
+// out of logging in without a single wrong password.
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/analytics", analyticsRoutes);
