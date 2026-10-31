@@ -1,17 +1,32 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store.js";
 import { useCartStore } from "../stores/cart.store.js";
+import Icon from "./Icon.jsx";
 
-// Public top nav — links switch by auth state and role
+// Public top nav — SHOP.CO header: black announcement bar for guests,
+// logo, text links, pill search, icon buttons. Links still switch by
+// auth state and role, exactly like before the redesign.
 const PublicNav = () => {
-  // Mobile toggle
+  // Phone drawer + phone search row
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  // Announcement bar — dismiss lasts for this page view only
+  const [promo, setPromo] = useState(true);
   // Auth state plus logout plus redirect
   const { isAuthenticated, user, logout } = useAuthStore();
   // Cart count badge for buyers
   const getTotalItems = useCartStore((s) => s.getTotalItems);
   const navigate = useNavigate();
+  // Search box starts from the URL, so /browse?search=x shows "x"
+  const [urlParams] = useSearchParams();
+  const [query, setQuery] = useState(urlParams.get("search") || "");
+
+  // Role flags — one place, read everywhere below
+  const isSeller = user?.role === "SELLER";
+  const isAdmin = user?.role === "ADMIN";
+  const showCart = !isAuthenticated || user?.role === "BUYER";
+  const cartCount = getTotalItems();
 
   // Logout clears session and lands on landing
   const handleLogout = () => {
@@ -20,166 +35,225 @@ const PublicNav = () => {
     navigate("/");
   };
 
+  // Search submits to Browse — the URL carries the term, so results
+  // are shareable and Browse reads it as its single source of truth
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    setSearchOpen(false);
+    navigate(q ? `/browse?search=${encodeURIComponent(q)}` : "/browse");
+  };
+
   // Role home for the logo tap — buyers browse, sellers dash, admins dash
   const homePath = !isAuthenticated
     ? "/"
-    : user?.role === "SELLER"
+    : isSeller
       ? "/seller/dashboard"
-      : user?.role === "ADMIN"
+      : isAdmin
         ? "/admin/dashboard"
         : "/browse";
 
-  // Links per state — guests see logins, members see their pages
-  const renderLinks = (mobile) => {
-    // Shared style helper for mobile stacking
-    const row = mobile ? "py-1" : "";
-    // Guest links
-    if (!isAuthenticated) {
-      return (
-        <>
-          <Link
-            to="/browse"
-            onClick={() => setOpen(false)}
-            className={`text-passive hover:text-primary ${row}`}
-          >
-            Browse
-          </Link>
-          <Link
-            to="/login/buyer"
-            onClick={() => setOpen(false)}
-            className={`text-passive hover:text-primary ${row}`}
-          >
-            Buyer Login
-          </Link>
-          <Link
-            to="/login/seller"
-            onClick={() => setOpen(false)}
-            className={`text-passive hover:text-primary ${row}`}
-          >
-            Seller Login
-          </Link>
-          <Link
-            to="/register"
-            onClick={() => setOpen(false)}
-            className="bg-primary text-white px-4 py-2 rounded-lg hover:opacity-90 text-center"
-          >
-            Register
-          </Link>
-        </>
-      );
-    }
-    // Buyer links with live cart count
-    if (user?.role === "BUYER" || user?.role === "ADMIN") {
-      return (
-        <>
-          <Link
-            to="/browse"
-            onClick={() => setOpen(false)}
-            className={`text-passive hover:text-primary ${row}`}
-          >
-            Browse
-          </Link>
-          <Link
-            to="/cart"
-            onClick={() => setOpen(false)}
-            className={`text-passive hover:text-primary ${row}`}
-          >
-            Cart{getTotalItems() > 0 ? ` (${getTotalItems()})` : ""}
-          </Link>
-          <Link
-            to="/orders"
-            onClick={() => setOpen(false)}
-            className={`text-passive hover:text-primary ${row}`}
-          >
-            Orders
-          </Link>
-          <Link
-            to="/profile"
-            onClick={() => setOpen(false)}
-            className={`text-passive hover:text-primary ${row}`}
-          >
-            Profile
-          </Link>
-          <button
-            onClick={handleLogout}
-            className={`text-passive hover:text-danger text-left ${row}`}
-          >
-            Log Out
-          </button>
-        </>
-      );
-    }
-    // Seller links
-    return (
-      <>
-        <Link
-          to="/browse"
-          onClick={() => setOpen(false)}
-          className={`text-passive hover:text-primary ${row}`}
-        >
-          Browse
-        </Link>
-        <Link
-          to="/seller/dashboard"
-          onClick={() => setOpen(false)}
-          className={`text-passive hover:text-primary ${row}`}
-        >
-          Dashboard
-        </Link>
-        <Link
-          to="/seller/profile"
-          onClick={() => setOpen(false)}
-          className={`text-passive hover:text-primary ${row}`}
-        >
-          Profile
-        </Link>
-        <button
-          onClick={handleLogout}
-          className={`text-passive hover:text-danger text-left ${row}`}
-        >
-          Log Out
-        </button>
-      </>
-    );
-  };
+  // Account icon target — login for guests, own area for members
+  const accountPath = !isAuthenticated
+    ? "/login/buyer"
+    : isSeller
+      ? "/seller/profile"
+      : isAdmin
+        ? "/admin/dashboard"
+        : "/profile";
+
+  // Text links per state — guests see doors in, members see their pages
+  const links = !isAuthenticated
+    ? [
+        { to: "/browse", label: "Shop" },
+        { to: "/register", label: "Sell on PropeBuy" },
+        { to: "/login/seller", label: "Seller Login" },
+      ]
+    : isSeller
+      ? [
+          { to: "/browse", label: "Shop" },
+          { to: "/seller/dashboard", label: "Dashboard" },
+        ]
+      : isAdmin
+        ? [
+            { to: "/browse", label: "Shop" },
+            { to: "/admin/dashboard", label: "Admin Portal" },
+          ]
+        : [
+            { to: "/browse", label: "Shop" },
+            { to: "/orders", label: "My Orders" },
+          ];
+
+  // Shared NavLink look — black when active, 60% black otherwise
+  const linkClass = ({ isActive }) =>
+    `font-body text-base ${isActive ? "text-black font-medium" : "text-black/60 hover:text-black"}`;
+
+  // Pill search field — reused by the desktop bar and the phone row
+  const searchField = (
+    <form onSubmit={submitSearch} className="relative w-full" role="search">
+      <Icon
+        name="search"
+        size={22}
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none"
+      />
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search for local goods..."
+        aria-label="Search products"
+        className="w-full py-3 pl-12 pr-4 font-body text-sm"
+      />
+    </form>
+  );
 
   return (
-    // Sticky white bar, minimalist border
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Text logo — display font, home follows role */}
-        <Link
-          to={homePath}
-          className="font-header font-bold text-xl text-primary tracking-wide"
-        >
-          PROPEBUY
-        </Link>
-        {/* Desktop row — hidden on phone */}
-        <nav className="hidden md:flex items-center gap-6 font-body text-sm">
-          {renderLinks(false)}
-        </nav>
-        {/* Hamburger — phone only */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="md:hidden p-2 text-2xl"
-          aria-label="Menu"
-        >
-          {open ? "✕" : "☰"}
-        </button>
-      </div>
-      {/* Mobile stack */}
-      {open && (
-        <nav className="md:hidden px-4 pb-4 flex flex-col gap-3 font-body border-t border-gray-100 pt-3">
-          {/* Name plate proves login at a glance */}
-          {isAuthenticated && (
-            <p className="font-body text-xs text-passive">
-              Hi, {user?.name || "member"}
-            </p>
-          )}
-          {renderLinks(true)}
-        </nav>
+    <>
+      {/* ── ANNOUNCEMENT BAR — guests only, like the reference ── */}
+      {!isAuthenticated && promo && (
+        <div className="bg-primary text-white">
+          <div className="relative max-w-7xl mx-auto px-10 py-2.5 text-center font-body text-xs md:text-sm">
+            Shop verified barangay vendors — pay cash or GCash.{" "}
+            <Link to="/register" className="font-medium underline">
+              Sign up now
+            </Link>
+            {/* Dismiss — desktop and phone */}
+            <button
+              onClick={() => setPromo(false)}
+              aria-label="Close announcement"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
+        </div>
       )}
-    </header>
+
+      {/* ── MAIN HEADER — sticky, white ── */}
+      <header className="sticky top-0 z-50 bg-white border-b border-black/10">
+        <div className="max-w-7xl mx-auto px-4 h-16 md:h-24 flex items-center gap-4 md:gap-10">
+          {/* Phone menu button — left of the logo, reference layout */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="md:hidden p-1 -ml-1"
+            aria-label={open ? "Close menu" : "Open menu"}
+          >
+            <Icon name={open ? "close" : "menu"} size={24} />
+          </button>
+
+          {/* Logo — display font, home follows role */}
+          <Link
+            to={homePath}
+            className="font-header text-2xl md:text-[32px] text-black shrink-0"
+          >
+            PropeBuy
+          </Link>
+
+          {/* Desktop text links */}
+          <nav className="hidden md:flex items-center gap-6 shrink-0">
+            {links.map((l) => (
+              <NavLink key={l.to} to={l.to} className={linkClass}>
+                {l.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Desktop search — takes the free middle space */}
+          <div className="hidden md:block flex-1 min-w-0">{searchField}</div>
+
+          {/* Icon cluster — pushed right on phone */}
+          <div className="ml-auto md:ml-0 flex items-center gap-3 md:gap-4">
+            {/* Phone search toggle */}
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="md:hidden p-1"
+              aria-label="Search"
+            >
+              <Icon name="search" size={24} />
+            </button>
+            {/* Cart with live count — guests and buyers only */}
+            {showCart && (
+              <Link to="/cart" className="relative p-1" aria-label="Cart">
+                <Icon name="shopping_cart" size={24} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-white font-body text-[11px] font-bold flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
+            {/* Account — login for guests, own area for members */}
+            <Link to={accountPath} className="p-1" aria-label="Account">
+              <Icon name="person" size={24} />
+            </Link>
+            {/* Desktop logout — members only */}
+            {isAuthenticated && (
+              <button
+                onClick={handleLogout}
+                className="hidden md:block p-1 text-black/60 hover:text-danger"
+                aria-label="Log out"
+                title="Log out"
+              >
+                <Icon name="logout" size={24} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Phone search row */}
+        {searchOpen && (
+          <div className="md:hidden px-4 pb-3 pop-enter">{searchField}</div>
+        )}
+
+        {/* Phone drawer */}
+        {open && (
+          <nav className="md:hidden px-4 pb-5 pt-3 flex flex-col gap-4 border-t border-black/10 pop-enter">
+            {/* Name plate proves login at a glance */}
+            {isAuthenticated && (
+              <p className="font-body text-sm text-passive">
+                Hi, {user?.name || "member"}
+              </p>
+            )}
+            {links.map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                onClick={() => setOpen(false)}
+                className={linkClass}
+              >
+                {l.label}
+              </NavLink>
+            ))}
+            {/* Doors in for guests, door out for members */}
+            {!isAuthenticated ? (
+              <div className="flex gap-3 pt-2">
+                <Link
+                  to="/login/buyer"
+                  onClick={() => setOpen(false)}
+                  className="btn-outline flex-1 py-3 text-center font-body font-medium"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setOpen(false)}
+                  className="btn-primary flex-1 py-3 text-center font-body font-medium"
+                >
+                  Sign up
+                </Link>
+              </div>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 font-body text-base text-black/60 hover:text-danger"
+              >
+                <Icon name="logout" />
+                Log out
+              </button>
+            )}
+          </nav>
+        )}
+      </header>
+    </>
   );
 };
 

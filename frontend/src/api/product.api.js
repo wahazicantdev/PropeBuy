@@ -23,7 +23,9 @@ export const fetchProducts = async (params = {}) => {
   if (params.barangayId) clean.barangayId = params.barangayId;
   if (params.categoryId) clean.categoryId = params.categoryId;
   if (params.search) clean.search = params.search;
-  // GET /products?barangayId=&categoryId=&search=
+  // Seller store page filter
+  if (params.sellerId) clean.sellerId = params.sellerId;
+  // GET /products?barangayId=&categoryId=&search=&sellerId=
   const res = await api.get("/products", { params: clean });
   // Returns { success, count, data: [...] }
   return res.data;
