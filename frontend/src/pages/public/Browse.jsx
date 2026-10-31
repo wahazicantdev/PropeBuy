@@ -156,7 +156,7 @@ const Browse = () => {
         {/* Grid — 2 columns on phone, 4 on desktop */}
         {loading ? (
           <div className="py-16 flex justify-center">
-            <span className="spinner" style={{ borderTopColor: "#05829a" }} />
+            <span className="spinner" />
           </div>
         ) : products.length === 0 ? (
           <div className="py-16 text-center">
