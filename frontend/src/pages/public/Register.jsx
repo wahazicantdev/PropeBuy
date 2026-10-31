@@ -201,7 +201,7 @@ const Register = () => {
         {/* Document uploads — the dual-document verification */}
         <div className="grid gap-3 pt-2">
           {docTile("Government ID", "Any valid government-issued ID, photo", "id_card", idDoc, setIdDoc)}
-          {docTile("Barangay Certificate", "Certificate of Residency, issued this year", "description", certDoc, setCertDoc)}
+          {docTile("Barangay Certificate", "Certificate of Residency, issued within 6 months", "description", certDoc, setCertDoc)}
         </div>
         {/* Submit — reading documents takes a few seconds, say so */}
         <button
