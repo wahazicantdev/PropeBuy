@@ -31,7 +31,10 @@ const BuyerLogin = () => {
       // Save + redirect
       login(res.data, res.token);
       toast.success("Welcome back");
-      navigate("/browse");
+      // Phase E: admins share this login door but belong in their portal.
+      // Without this branch an admin landed on /browse and had to type
+      // the admin URL by hand — bad on demo day.
+      navigate(res.data.role === "ADMIN" ? "/admin/dashboard" : "/browse");
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {
