@@ -54,12 +54,12 @@ const Landing = () => {
       {/* Hero — stacked on phone, split on desktop */}
       <section className="max-w-7xl mx-auto px-4 py-12 md:py-20 grid gap-8 md:grid-cols-2 items-center">
         <div>
-          {/* Norwester bold header, generalized scope */}
+          {/* Display header, generalized scope */}
           <h1 className="font-header font-bold text-3xl md:text-5xl text-gray-900 leading-tight">
             Muntinlupa's{" "}
             <span className="text-primary">barangay marketplace</span>
           </h1>
-          {/* Lato benefit subtext, no jargon */}
+          {/* Body benefit subtext, no jargon */}
           <p className="font-body text-passive mt-4 text-base md:text-lg">
             Shop verified local vendors across Muntinlupa City. Browse by
             barangay, pay cash or GCash, track every order.

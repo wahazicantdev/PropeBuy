@@ -109,7 +109,7 @@ const PaymentWaiting = () => {
         <div className="mt-6 flex flex-col gap-3">
           <span
             className="spinner mx-auto"
-            style={{ borderTopColor: "#05829a", width: 28, height: 28 }}
+            style={{ width: 28, height: 28 }}
           />
           <button
             onClick={recheck}

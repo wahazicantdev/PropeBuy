@@ -147,7 +147,7 @@ const PublicNav = () => {
     // Sticky white bar, minimalist border
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Text logo — Norwester bold, home follows role */}
+        {/* Text logo — display font, home follows role */}
         <Link
           to={homePath}
           className="font-header font-bold text-xl text-primary tracking-wide"

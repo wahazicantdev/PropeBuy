@@ -1,30 +1,60 @@
-/* Lato for body — Google Fonts */
-@import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap");
+/* Archivo for headings — Google Fonts, variable width axis.
+   Stretched to 125% at 800–900 weight it stands in for Integral CF,
+   the paid display face used in the SHOP.CO Figma reference. */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap");
 /* Tailwind v4 entry */
 @import "tailwindcss";
 
-/* Norwester for headers — download .otf to src/assets/fonts/norwester.otf */
+/* Satoshi for body — self-hosted from Fontshare (ITF Free Font License),
+   the exact body face of the Figma reference */
 @font-face {
-  font-family: "Norwester";
-  src: url("./assets/fonts/norwester.otf") format("opentype");
+  font-family: "Satoshi";
+  src: url("./assets/fonts/satoshi/Satoshi-400.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
+@font-face {
+  font-family: "Satoshi";
+  src: url("./assets/fonts/satoshi/Satoshi-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("./assets/fonts/satoshi/Satoshi-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("./assets/fonts/satoshi/Satoshi-900.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
 
-/* Design tokens — single source of truth */
+/* Design tokens — single source of truth, SHOP.CO palette.
+   Names are unchanged from the teal era on purpose: every page already
+   reads text-primary / bg-primary / text-passive / text-danger, so the
+   whole app re-skins from this block without touching page files. */
 @theme {
-  --color-primary: #05829a; /* main brand + success */
-  --color-passive: #6b7280; /* gray for non-important */
-  --color-danger: #e05252; /* soft red, not harsh */
-  --font-header: "Norwester", sans-serif; /* headers + logo */
-  --font-body: "Lato", sans-serif; /* descriptions */
+  --color-primary: #000000; /* brand black — buttons, links, active states */
+  --color-passive: #666666; /* black at 60% — secondary text */
+  --color-danger: #ff3333; /* soft red — errors, destructive, discounts */
+  --color-success: #01ab31; /* verified green — trust marks only */
+  --color-surface: #f0f0f0; /* light gray — inputs, search, footer, panels */
+  --color-card: #f2f0f1; /* warm gray — behind product images */
+  --color-star: #ffc633; /* rating yellow — reserved for future reviews */
+  --font-header: "Archivo", sans-serif; /* display — wide, heavy, caps */
+  --font-body: "Satoshi", sans-serif; /* everything else */
+  --radius-xl: 1.25rem; /* 20px cards, the Figma card radius */
+  --radius-2xl: 1.25rem; /* same — never two card radii on one page */
 }
 
 /* Base defaults — minimalist */
 body {
   background-color: white; /* clean bg */
-  color: #1f2937; /* readable dark gray */
-  font-family: var(--font-body); /* Lato everywhere */
+  color: #000000; /* reference body ink */
+  font-family: var(--font-body); /* Satoshi everywhere */
   overflow-x: hidden; /* kill horizontal scroll on phone */
 }
 
@@ -34,22 +64,19 @@ img {
   height: auto; /* keep ratio */
 }
 
-/* Responsive headers — smaller on phone, big on desktop */
-h1,
-h2,
-h3 {
-  font-family: var(--font-header); /* Norwester */
-  line-height: 1.2; /* tight minimalist */
-}
-
-/* Make Norwester always bold — professional minimalist */
+/* Display type — wide, heavy, uppercase, like the reference headings.
+   font-stretch reaches Archivo's width axis; uppercase matches Integral
+   CF, which only ships capitals. */
 h1,
 h2,
 h3,
 .font-header {
-  font-family: "Norwester", sans-serif; /* headers + logo */
-  font-weight: 700; /* bold every time */
-  line-height: 1.2; /* tight */
+  font-family: var(--font-header);
+  font-weight: 900; /* heaviest cut, the reference weight */
+  font-stretch: 125%; /* widest Archivo — the Integral CF stand-in */
+  text-transform: uppercase;
+  letter-spacing: -0.01em; /* wide letters read tighter this way */
+  line-height: 1.1; /* tight display leading */
 }
 
 /* Global buttons - press motion on every button automatically */
@@ -66,14 +93,45 @@ button:disabled {
   cursor: not-allowed;
   transform: none;
 }
-/* Shared button skins - use on PropeBuy call-to-action buttons */
+
+/* Shared button skins — pill shape is the reference CTA.
+   Plain (unlayered) CSS beats Tailwind's layered utilities, so a
+   leftover rounded-lg on an old button still renders as a pill. */
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
+  border-radius: 9999px;
 }
 .btn-outline {
-  border: 1px solid var(--color-primary);
+  border: 1px solid rgb(0 0 0 / 0.1);
   color: var(--color-primary);
+  background-color: white;
+  border-radius: 9999px;
+}
+
+/* Text inputs — gray pill fields like the reference search bar.
+   Unlayered so every existing form adopts the look; padding still comes
+   from each page's utilities. File, check and radio inputs untouched. */
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+textarea {
+  background-color: var(--color-surface);
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  color: #000000;
+}
+/* Multi-line text cannot be a pill — card radius instead */
+textarea {
+  border-radius: 1.25rem;
+}
+input::placeholder,
+textarea::placeholder {
+  color: rgb(0 0 0 / 0.4);
+}
+/* Focus — black ring, the only accent in a black-and-white system */
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
   background-color: white;
 }
 
@@ -128,15 +186,17 @@ button:disabled {
   } /* settle fully */
 }
 
-/* Tiny spinner — border trick, no images or JS timers */
+/* Tiny spinner — border trick, no images or JS timers.
+   currentColor ring: white inside black buttons, black on white pages */
 .spinner {
   width: 16px;
   height: 16px; /* compact inline size */
-  border: 2px solid rgba(255, 255, 255, 0.4); /* faint ring */
-  border-top-color: white; /* bright segment spins */
+  border: 2px solid currentColor; /* ring follows the text color */
+  border-top-color: transparent; /* the gap is what spins */
   border-radius: 9999px; /* circle */
   animation: spin 0.7s linear infinite; /* constant rotation */
   display: inline-block; /* sits inside buttons */
+  opacity: 0.8;
 }
 @keyframes spin {
   to {
@@ -156,27 +216,21 @@ button:disabled {
   }
 }
 
-/* Global selector - one design for every dropdown in PropeBuy */
+/* Global selector - same gray pill as the text inputs */
 .select {
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
-  padding-right: 1rem; /* no room needed for background icon */
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  padding: 0.75rem 1.25rem;
   font-family: var(--font-body);
   font-size: 0.875rem;
-  color: #1f2937;
-  background-color: white;
-  background-position:
-    calc(100% - 1.25rem) center,
-    calc(100% - 0.9rem) center;
-  background-size: 0.4rem 0.4rem;
-  background-repeat: no-repeat;
+  color: #000000;
+  background-color: var(--color-surface);
 }
 .select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(5, 130, 154, 0.15);
+  background-color: white;
 }
