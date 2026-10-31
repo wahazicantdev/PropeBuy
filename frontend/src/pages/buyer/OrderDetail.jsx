@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
 import { fetchOrder, checkPayment } from "../../api/order.api.js";
+// Live tick — socket events refetch this page, no manual refresh
+import { useLiveTick } from "../../hooks/useSocket.js";
 
 // Order detail - one order with items, totals, payment recheck
 const OrderDetail = () => {
@@ -15,12 +17,15 @@ const OrderDetail = () => {
   const [checking, setChecking] = useState(false);
 
   // Load once by id
+  // Bumps on status or payment events — the stepper moves on its own
+  const live = useLiveTick();
+
   useEffect(() => {
     fetchOrder(id)
       .then((res) => setOrder(res.data))
       .catch(() => toast.error("Order not found"))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, live]);
 
   // Manual GCash recheck for slow webhooks
   const recheck = async () => {
