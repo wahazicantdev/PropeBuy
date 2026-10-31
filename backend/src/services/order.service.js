@@ -7,7 +7,9 @@ import {
 import {
   notifyOrderStatus,
   notifyPaymentConfirmed,
+  notifyNewOrder,
 } from "../utils/notification.helper.js";
+import { checkLowStock } from "../utils/checkLowStock.helper.js";
 
 // ── CHECKOUT SERVICE ───────────────────────────────────
 // Contains the full TPS logic and PayMongo integration
@@ -107,7 +109,8 @@ export const processCheckout = async (
         orderItems: {
           include: {
             product: {
-              select: { id: true, name: true, imageUrl: true },
+              // sellerId — the post-commit alerts route by seller
+              select: { id: true, name: true, imageUrl: true, sellerId: true },
             },
           },
         },
@@ -117,6 +120,31 @@ export const processCheckout = async (
       },
     });
   });
+
+  // ── AFTER COMMIT — SELLER ALERTS ──────────────────
+  // Runs only once the transaction has COMMITTED, so a rolled-back
+  // checkout never alerts anyone. Alerts are fire-and-forget: a socket
+  // or lookup failure must never fail an order that is already saved.
+  try {
+    // Count each seller's lines — one alert per seller, not per item
+    const linesBySeller = new Map();
+    for (const line of order.orderItems) {
+      const sellerId = line.product.sellerId;
+      linesBySeller.set(sellerId, (linesBySeller.get(sellerId) || 0) + 1);
+    }
+    for (const [sellerId, count] of linesBySeller) {
+      notifyNewOrder(sellerId, order.id, count);
+    }
+    // Low stock — checkout is what actually drains stock, so this is
+    // where the alert matters most (it used to fire only on edits)
+    await Promise.all(
+      order.orderItems.map((line) =>
+        checkLowStock(line.product.id, line.product.sellerId),
+      ),
+    );
+  } catch (err) {
+    console.error("Post-checkout seller alerts failed:", err.message);
+  }
 
   // ── AFTER COMMIT — GCASH PAYMENT ─────────────────
   // PayMongo called OUTSIDE transaction — intentional

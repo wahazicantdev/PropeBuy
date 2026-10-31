@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import StockPill from "../../components/StockPill.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchMyProducts } from "../../api/product.api.js";
+// Live tick — socket events refetch this page, no manual refresh
+import { useLiveTick } from "../../hooks/useSocket.js";
 
 // InventoryMonitor — full-stocking view of active listings.
 // Data from my-products (includes inactive), monitor only counts live ones.
@@ -17,6 +19,9 @@ const InventoryMonitor = () => {
   const [filter, setFilter] = useState("all");
 
   // Load listings once, then sort worst stock to the top
+  // Bumps on new_order and low_stock_alert — stock counts stay true
+  const live = useLiveTick();
+
   useEffect(() => {
     fetchMyProducts()
       .then((res) => {
@@ -26,7 +31,7 @@ const InventoryMonitor = () => {
       })
       .catch(() => toast.error("Failed to load inventory"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [live]);
 
   // Loading state
   if (loading || !products) {

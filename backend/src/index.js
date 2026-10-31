@@ -6,7 +6,9 @@ import { Server } from "socket.io";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 // Imported config/middleware
-import { CLIENT_URL, PORT } from "./config/env.js";
+import { CLIENT_URL, PORT, JWT_SECRET } from "./config/env.js";
+// JWT verify — socket handshakes prove identity the same way REST does
+import jwt from "jsonwebtoken";
 import { errorHandler } from "./middleware/error.middleware.js";
 // Prisma client — shutdown handlers disconnect the DB cleanly through this
 import prisma from "./config/prismaClient.js";
@@ -36,19 +38,35 @@ export const io = new Server(httpServer, {
   },
 });
 
+// ── SOCKET.IO HANDSHAKE AUTH ───────────────────────────
+// Every socket must present the same JWT the REST API uses.
+// Before this, clients did socket.emit("join", anyId) — anyone could
+// join user_5 and read user 5's order and payment notifications.
+// Now the room comes from the VERIFIED token, never from the client.
+io.use((socket, next) => {
+  // Token rides in the handshake auth payload from socket.io-client
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error("Not authorized — no token"));
+  try {
+    // Same secret as the protect middleware — one identity system
+    const decoded = jwt.verify(token, JWT_SECRET);
+    socket.userId = decoded.id;
+    next();
+  } catch {
+    // Expired or tampered token — refuse the connection
+    next(new Error("Not authorized — invalid token"));
+  }
+});
+
 // ── SOCKET.IO CONNECTION HANDLER ───────────────────────
 // Runs every time a client connects to the socket server
 io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
-
   // ── JOIN PERSONAL ROOM ───────────────────────────
-  // When user connects — they join a room named after their user ID
-  // This allows us to send notifications to specific users
-  // Example: room "user_5" = only user with ID 5 receives events
-  socket.on("join", (userId) => {
-    socket.join(`user_${userId}`);
-    console.log(`User ${userId} joined room user_${userId}`);
-  });
+  // Room named after the verified user ID — notification helpers emit
+  // to user_{id}, so only that user's sockets receive their events.
+  // Joined server-side on connect, so reconnects rejoin automatically.
+  socket.join(`user_${socket.userId}`);
+  console.log(`Socket ${socket.id} joined room user_${socket.userId}`);
 
   // ── DISCONNECT HANDLER ───────────────────────────
   // Fires when client disconnects — browser closed, tab closed, etc.
