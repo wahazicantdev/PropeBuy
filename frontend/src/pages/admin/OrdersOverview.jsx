@@ -189,7 +189,7 @@ const OrdersOverview = () => {
                     Order #{o.id}
                   </p>
                   <p className="font-body text-xs text-passive truncate mt-0.5">
-                    {o.buyer?.name || "Buyer"} · {o.buyer?.email || "no email"}
+                    {o.buyer?.name || "Buyer"} · {o.buyer?.email || "no email"} · {o.buyer?.barangay?.name || "no barangay"}
                   </p>
                   <p className="font-body text-xs text-passive mt-0.5">
                     {new Date(o.createdAt).toLocaleDateString("en-PH", {
@@ -238,7 +238,7 @@ const OrdersOverview = () => {
                           {i.product?.name || "Removed product"}
                         </p>
                         <p className="font-body text-xs text-passive truncate mt-0.5">
-                          vendor: {i.product?.seller?.name || "unknown"}
+                          vendor: {i.product?.seller?.name || "unknown"} · {i.product?.barangay?.name || "no barangay"}
                         </p>
                       </div>
                       {/* Price captured AT CHECKOUT, not current price —

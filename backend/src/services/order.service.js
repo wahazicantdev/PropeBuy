@@ -218,8 +218,14 @@ export const getOrderById = async (orderId) => {
           },
         },
       },
+      // Buyer's barangay, shown on the seller's order page
       buyer: {
-        select: { id: true, name: true, email: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          barangay: { select: { name: true } },
+        },
       },
     },
   });
