@@ -32,6 +32,14 @@ export const createProduct = async (req, res) => {
     });
   }
 
+  // Others is open-ended, so the seller must confirm a physical good
+  if (await needsDeliverableConfirmation(categoryId, req.body)) {
+    return res.status(400).json({
+      success: false,
+      message: "Please confirm this is a physical item that can be picked up or delivered",
+    });
+  }
+
   // Upload product image if provided
   let imageUrl = null;
   if (req.file) {
@@ -152,6 +160,17 @@ export const getProducts = async (req, res) => {
   });
 };
 
+// True when the category is Others and the seller has not confirmed
+const needsDeliverableConfirmation = async (categoryId, body) => {
+  const category = await prisma.category.findUnique({
+    where: { id: cleanInt(categoryId) },
+  });
+  return (
+    category?.name.toLowerCase() === "others" &&
+    body.deliverableConfirmed !== "true"
+  );
+};
+
 // ── GET SINGLE PRODUCT ─────────────────────────────────
 // Public — view product details
 export const getProduct = async (req, res) => {
@@ -260,6 +279,16 @@ export const updateProduct = async (req, res) => {
     return res.status(403).json({
       success: false,
       message: "Not authorized to edit this product",
+    });
+  }
+
+  // Only moving into Others needs a new confirmation
+  const isCategoryChange =
+    categoryId && cleanInt(categoryId) !== product.categoryId;
+  if (isCategoryChange && (await needsDeliverableConfirmation(categoryId, req.body))) {
+    return res.status(400).json({
+      success: false,
+      message: "Please confirm this is a physical item that can be picked up or delivered",
     });
   }
 
