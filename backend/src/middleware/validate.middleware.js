@@ -28,6 +28,29 @@ export const handleValidationErrors = (req, res, next) => {
 
 // ── AUTH VALIDATIONS ───────────────────────────────────
 
+// Same email rules as registration, so both see the identical address
+const otpEmailRule = () =>
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail();
+
+// Validates a request for a registration code
+export const validateOtpSend = [otpEmailRule(), handleValidationErrors];
+
+// Validates a submitted 6-digit code
+export const validateOtpVerify = [
+  otpEmailRule(),
+  body("code")
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage("Enter the 6-digit code"),
+  handleValidationErrors,
+];
+
 // Validates registration request body
 // Checks all required fields before reaching controller
 export const validateRegister = [
