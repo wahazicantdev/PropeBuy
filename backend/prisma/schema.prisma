@@ -34,6 +34,18 @@ model User {
   @@map("users")
 }
 
+// One active email code per address. Deleted once it is confirmed.
+model EmailOtp {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  codeHash   String
+  attempts   Int      @default(0)
+  expiresAt  DateTime
+  lastSentAt DateTime @default(now())
+
+  @@map("email_otps")
+}
+
 model Barangay {
   id        Int       @id @default(autoincrement())
   name      String    @unique
