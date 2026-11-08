@@ -10,6 +10,7 @@ import { checkoutOrder } from "../../api/order.api.js";
 // Fresh account status — the stored copy goes stale after admin review
 import { fetchMe } from "../../api/auth.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
+import { removeDeadCartItems } from "../../utils/cartCheck.js";
 
 // Checkout - phone-first picks, guarded by BuyerRoute outside
 const Checkout = () => {
@@ -39,6 +40,11 @@ const Checkout = () => {
       })
       // Silent — the backend gate still answers honestly on submit
       .catch(() => {});
+  }, []);
+
+  // A saved cart can go stale, so re-check every line on arrival
+  useEffect(() => {
+    removeDeadCartItems();
   }, []);
 
   // Delivery options straight from the documented enum
@@ -81,6 +87,8 @@ const Checkout = () => {
       // short-stock failures (the double-selling proof) showed nothing.
       // Short stock or validator message from backend
       toast.error(err.response?.data?.message || "Checkout failed. Try again.");
+      // Stock may have changed while the buyer was on this page
+      removeDeadCartItems();
     } finally {
       setLoading(false);
     }

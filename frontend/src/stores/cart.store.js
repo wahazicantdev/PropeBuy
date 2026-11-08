@@ -53,6 +53,17 @@ export const useCartStore = create(
           ),
         })),
 
+      // ── SYNC WITH LIVE PRODUCT ──
+      // Refreshes stock and price, then caps quantity to what is left
+      syncLine: (productId, { stock, price }) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.productId === productId
+              ? { ...i, stock, price, quantity: Math.min(i.quantity, stock) }
+              : i,
+          ),
+        })),
+
       // ── REMOVE ONE ──
       removeItem: (productId) =>
         set((state) => ({
