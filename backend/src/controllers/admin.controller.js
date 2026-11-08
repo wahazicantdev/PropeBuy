@@ -613,7 +613,12 @@ export const getAllOrders = async (req, res) => {
     include: {
       // Include buyer info
       buyer: {
-        select: { id: true, name: true, email: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          barangay: { select: { name: true } },
+        },
       },
       // Include all order items with product and seller info
       orderItems: {
@@ -623,6 +628,8 @@ export const getAllOrders = async (req, res) => {
               id: true,
               name: true,
               price: true,
+              // Barangay the goods are listed under
+              barangay: { select: { name: true } },
               seller: {
                 select: { id: true, name: true },
               },
