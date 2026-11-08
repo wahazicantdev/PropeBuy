@@ -175,9 +175,9 @@ const buildOCRSummary = (result, confidence, issues, extractedData) => {
   }
 
   const resultLabels = {
-    AUTO_APPROVED: "✅ Automatically Approved",
-    MANUAL_REVIEW: "⚠️ Flagged for Manual Review",
-    AUTO_REJECTED: "❌ Automatically Rejected",
+    AUTO_APPROVED: "High confidence (Safe to approve)",
+    MANUAL_REVIEW: "Unsure (Needs review)",
+    AUTO_REJECTED: "Very low confidence (Likely reject)",
   };
 
   let summary = `OCR Result: ${resultLabels[result] || result}\n`;
@@ -214,8 +214,7 @@ const buildOCRSummary = (result, confidence, issues, extractedData) => {
 export const getPendingVerifications = async (req, res) => {
   const pendingUsers = await prisma.user.findMany({
     where: {
-      // Show both PENDING (manual review needed) accounts
-      // AUTO_REJECTED can be reviewed too in case of OCR error
+      // Every new account lands here, grouped by OCR on the page
       accountStatus: "PENDING",
     },
     select: {

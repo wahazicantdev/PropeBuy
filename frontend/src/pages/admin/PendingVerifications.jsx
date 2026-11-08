@@ -13,6 +13,32 @@ import {
 } from "../../api/admin.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
 
+// Three work queues — OCR only sorts accounts, the admin decides each one
+const OCR_GROUPS = [
+  {
+    key: "safe",
+    label: "Safe to approve",
+    hint: "OCR read both documents with high confidence. Do a quick check, then approve.",
+  },
+  {
+    key: "review",
+    label: "Needs review",
+    hint: "OCR was unsure. Compare both documents carefully.",
+  },
+  {
+    key: "reject",
+    label: "Likely reject",
+    hint: "OCR could barely read or match these documents. Check them before rejecting.",
+  },
+];
+
+// Accounts without OCR data need a human look, so they go to Needs review
+const groupOf = (user) => {
+  if (user.ocrResult === "AUTO_APPROVED") return "safe";
+  if (user.ocrResult === "AUTO_REJECTED") return "reject";
+  return "review";
+};
+
 // PendingVerifications — the blocking queue of the whole platform.
 // A vendor cannot list goods until an admin clears them here, so this
 // page is OCR-assisted with a manual fallback: the engine recommends,
@@ -22,6 +48,8 @@ const PendingVerifications = () => {
   const [users, setUsers] = useState([]);
   // Active barangays — the approve dropdown assigns one of these
   const [barangays, setBarangays] = useState([]);
+  // Which OCR group the admin is working through
+  const [activeGroup, setActiveGroup] = useState("safe");
   // Loading flag until the first fetch settles
   const [loading, setLoading] = useState(true);
 
@@ -146,7 +174,7 @@ const PendingVerifications = () => {
     try {
       const res = await rerunUserOCR(id);
       toast.success(
-        `OCR re-run done — ${res.data.ocrResult} at ${res.data.ocrConfidence}%`,
+        `OCR re-run done at ${res.data.ocrConfidence}%. The account may have moved groups.`,
       );
       // Refresh the queue so the new pill shows, and drop a stale audit
       setAuditId(null);
@@ -164,6 +192,12 @@ const PendingVerifications = () => {
     { value: "", label: "Select barangay" },
     ...barangays.map((b) => ({ value: String(b.id), label: b.name })),
   ];
+
+  // Current tab's accounts, strongest OCR match first
+  const visibleUsers = users
+    .filter((u) => groupOf(u) === activeGroup)
+    .sort((a, b) => (b.ocrConfidence ?? 0) - (a.ocrConfidence ?? 0));
+  const activeHint = OCR_GROUPS.find((g) => g.key === activeGroup).hint;
 
   // Loading state
   if (loading) {
@@ -203,10 +237,23 @@ const PendingVerifications = () => {
       {/* How-to strip — OCR recommends, human decides. Says the policy
           out loud so a panelist reading the screen gets the framing. */}
       <p className="mt-4 font-body text-xs text-passive border border-black/10 rounded-xl p-3">
-        OCR reads both documents and recommends a result. You decide. Open the
-        documents yourself before approving — the score is assistance, not
-        proof.
+        OCR sorts each new account into a group. It never approves or rejects
+        anyone. Open the documents yourself before you decide.
       </p>
+
+      {/* OCR groups — one work queue at a time, with live counts */}
+      <div className="mt-4 flex gap-2 flex-wrap">
+        {OCR_GROUPS.map((g) => (
+          <button
+            key={g.key}
+            onClick={() => setActiveGroup(g.key)}
+            className={`btn-active rounded-full px-4 py-2 font-body text-xs font-bold ${activeGroup === g.key ? "bg-black text-white" : "bg-surface text-black"}`}
+          >
+            {g.label} ({users.filter((u) => groupOf(u) === g.key).length})
+          </button>
+        ))}
+      </div>
+      <p className="mt-2 font-body text-xs text-passive">{activeHint}</p>
 
       {/* Empty queue — the good kind of empty */}
       {users.length === 0 ? (
@@ -217,9 +264,14 @@ const PendingVerifications = () => {
             automatically.
           </p>
         </div>
+      ) : visibleUsers.length === 0 ? (
+        // Other groups still have work, only this one is empty
+        <p className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center font-body text-sm text-passive">
+          No accounts in this group.
+        </p>
       ) : (
         <ul className="mt-5 flex flex-col gap-3">
-          {users.map((u) => (
+          {visibleUsers.map((u) => (
             // min-w-0 + overflow-hidden — the responsive trio on every card
             <li
               key={u.id}

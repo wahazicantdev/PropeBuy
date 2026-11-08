@@ -360,6 +360,8 @@ export const crossCheckDocuments = (idFields, certFields, claimedBarangay) => {
 
   const confidence = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
+  // These codes only sort the admin's queue. Nothing here changes an
+  // account's status, because the admin makes every decision.
   let result;
   if (confidence >= CONFIDENCE_THRESHOLD) {
     result = "AUTO_APPROVED";
@@ -367,6 +369,17 @@ export const crossCheckDocuments = (idFields, certFields, claimedBarangay) => {
     result = "MANUAL_REVIEW";
   } else {
     result = "AUTO_REJECTED";
+  }
+
+  // An outdated certificate can never land in the safe group
+  if (
+    result === "AUTO_APPROVED" &&
+    isCertificateRecent(certFields.dateIssued) === false
+  ) {
+    result = "MANUAL_REVIEW";
+    issues.push(
+      "Barangay Certificate may be outdated — issued more than 6 months ago",
+    );
   }
 
   return {
