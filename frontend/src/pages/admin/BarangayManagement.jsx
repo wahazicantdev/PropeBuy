@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 // Shared pieces
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import Spinner from "../../components/Spinner.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
 import {
   fetchAdminBarangays,
   addBarangay,
@@ -112,15 +113,17 @@ const BarangayManagement = () => {
         <p className="font-body font-bold text-sm text-gray-900">
           Add a barangay
         </p>
-        <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+        <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
           <div className="min-w-0">
+            <FieldLabel htmlFor="name">Barangay name</FieldLabel>
             <input
+              id="name"
               {...register("name", {
                 required: "Barangay name is required",
                 minLength: { value: 2, message: "At least 2 characters" },
                 maxLength: { value: 100, message: "At most 100 characters" },
               })}
-              placeholder="Barangay name"
+              placeholder="Example: Poblacion"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
             />
             {/* Field error — client rules mirror the express-validator ones */}
@@ -131,12 +134,14 @@ const BarangayManagement = () => {
             )}
           </div>
           <div className="min-w-0">
+            <FieldLabel htmlFor="city">City</FieldLabel>
             <input
+              id="city"
               {...register("city", {
                 minLength: { value: 2, message: "At least 2 characters" },
                 maxLength: { value: 100, message: "At most 100 characters" },
               })}
-              placeholder="City (defaults to Muntinlupa City)"
+              placeholder="Defaults to Muntinlupa City"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
             />
             {errors.city && (
