@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 // Custom dropdown + spinner — house components
 import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
 import { createProduct, fetchCategories } from "../../api/product.api.js";
 
 // AddProduct — new listing, ALL fields required including photo
@@ -92,12 +93,14 @@ const AddProduct = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         {/* Name — backend wants 2 to 255 chars */}
         <div>
+          <FieldLabel htmlFor="name">Product name</FieldLabel>
           <input
+            id="name"
             {...register("name", {
               required: "Product name is required",
               minLength: { value: 2, message: "At least 2 characters" },
             })}
-            placeholder="Product name"
+            placeholder="Example: Handwoven bayong"
             className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
           />
           {errors.name && (
@@ -106,6 +109,7 @@ const AddProduct = () => {
         </div>
         {/* Category — custom dropdown, state-driven */}
         <div>
+          <FieldLabel>Category</FieldLabel>
           <Select
             value={categoryId}
             onChange={setCategoryId}
@@ -116,7 +120,9 @@ const AddProduct = () => {
         {/* Price and stock — grid pair, numeric keyboards on phone */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
+            <FieldLabel htmlFor="price">Price (₱)</FieldLabel>
             <input
+              id="price"
               {...register("price", {
                 required: "Price is required",
                 validate: (v) =>
@@ -125,7 +131,7 @@ const AddProduct = () => {
               type="number"
               min="1"
               step="0.01"
-              placeholder="Price (₱)"
+              placeholder="0.00"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.price && (
@@ -133,7 +139,9 @@ const AddProduct = () => {
             )}
           </div>
           <div>
+            <FieldLabel htmlFor="stock">Stock</FieldLabel>
             <input
+              id="stock"
               {...register("stock", {
                 required: "Stock is required",
                 validate: (v) =>
@@ -144,7 +152,7 @@ const AddProduct = () => {
               })}
               type="number"
               min="1"
-              placeholder="Stock"
+              placeholder="How many you have"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.stock && (
@@ -154,7 +162,9 @@ const AddProduct = () => {
         </div>
         {/* Description — REQUIRED, 1000 char ceiling mirrors backend */}
         <div>
+          <FieldLabel htmlFor="description">Description</FieldLabel>
           <textarea
+            id="description"
             {...register("description", {
               required: "Description is required",
               maxLength: {
@@ -163,7 +173,7 @@ const AddProduct = () => {
               },
             })}
             rows={4}
-            placeholder="Describe the item — condition, size, what is included"
+            placeholder="Condition, size, what is included"
             className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary resize-y"
           />
           {errors.description && (
@@ -174,6 +184,7 @@ const AddProduct = () => {
         </div>
         {/* Photo — REQUIRED, dashed picker, instant preview */}
         <div>
+          <FieldLabel>Product photo</FieldLabel>
           <label className="border border-dashed border-gray-300 rounded-lg p-4 font-body text-sm text-passive cursor-pointer block">
             {image ? `Photo selected — ${image.name}` : "Add a product photo"}
             <input
