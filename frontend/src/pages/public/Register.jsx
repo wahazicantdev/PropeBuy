@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthShell from "../../components/AuthShell.jsx";
 import Icon from "../../components/Icon.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
 import Select from "../../components/Select.jsx";
 import { registerUser } from "../../api/auth.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
@@ -135,11 +136,13 @@ const Register = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Name */}
         <div>
+          <FieldLabel htmlFor="name">Full name</FieldLabel>
           <div className="relative">
             <Icon name="person" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
             <input
               {...register("name", { required: "Name required" })}
-              placeholder="Full name (as on your ID)"
+              id="name"
+              placeholder="As shown on your ID"
               autoComplete="name"
               className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
             />
@@ -150,12 +153,14 @@ const Register = () => {
         </div>
         {/* Email */}
         <div>
+          <FieldLabel htmlFor="email">Email address</FieldLabel>
           <div className="relative">
             <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
             <input
               {...register("email", { required: "Email required" })}
+              id="email"
               type="email"
-              placeholder="Email address"
+              placeholder="you@example.com"
               autoComplete="email"
               className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
             />
@@ -166,6 +171,7 @@ const Register = () => {
         </div>
         {/* Password */}
         <div>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
           <div className="relative">
             <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
             <input
@@ -173,8 +179,9 @@ const Register = () => {
                 required: "Password required",
                 minLength: { value: 6, message: "Min 6 chars" },
               })}
+              id="password"
               type="password"
-              placeholder="Password (min 6 characters)"
+              placeholder="At least 6 characters"
               autoComplete="new-password"
               className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
             />
@@ -185,18 +192,24 @@ const Register = () => {
         </div>
         {/* Role plus barangay — custom dropdowns */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Select
-            value={role}
-            onChange={setRole}
-            options={roleOptions}
-            ariaLabel="Select role"
-          />
-          <Select
-            value={barangayId}
-            onChange={setBarangayId}
-            options={barangayOptions}
-            ariaLabel="Select barangay"
-          />
+          <div>
+            <FieldLabel>I am a</FieldLabel>
+            <Select
+              value={role}
+              onChange={setRole}
+              options={roleOptions}
+              ariaLabel="Select role"
+            />
+          </div>
+          <div>
+            <FieldLabel>Barangay</FieldLabel>
+            <Select
+              value={barangayId}
+              onChange={setBarangayId}
+              options={barangayOptions}
+              ariaLabel="Select barangay"
+            />
+          </div>
         </div>
         {/* Document uploads — the dual-document verification */}
         <div className="grid gap-3 pt-2">
