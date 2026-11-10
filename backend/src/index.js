@@ -4,12 +4,18 @@ import "express-async-errors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 // Imported config/middleware
 import { CLIENT_URL, PORT, JWT_SECRET } from "./config/env.js";
 // JWT verify — socket handshakes prove identity the same way REST does
 import jwt from "jsonwebtoken";
 import { errorHandler } from "./middleware/error.middleware.js";
+// Rate limiters — shared Wi-Fi rules live in their own file
+import {
+  generalLimiter,
+  loginAccountLimiter,
+  loginIpLimiter,
+  registerLimiter,
+} from "./middleware/rateLimit.middleware.js";
 // Prisma client — shutdown handlers disconnect the DB cleanly through this
 import prisma from "./config/prismaClient.js";
 // Imported Routes
@@ -20,6 +26,14 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
+
+// ── PROXY TRUST ────────────────────────────────────────
+// Hosting puts one proxy in front of the app. Without this every visitor
+// looks like the proxy's IP and shares one rate limit. Production only,
+// so local requests cannot fake their IP with a header.
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
 
 // ── CREATE HTTP SERVER ─────────────────────────────────
 // We wrap Express in a raw HTTP server
@@ -82,55 +96,6 @@ io.on("connection", (socket) => {
 // Must be one of the first middleware — applies to all routes
 app.use(helmet());
 
-// ── RATE LIMITERS ──────────────────────────────────────
-
-// General rate limiter — applies to all API routes
-// Allows 1000 requests per 15 minutes per IP address (~1 per second
-// sustained). 100 was too tight once orders started refetching live on
-// socket events — a normal shopping session plus React StrictMode in dev
-// could hit it. 1000 still stops scraping and request floods.
-// Prevents general API abuse and scraping
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes in milliseconds
-  max: 1000, // max requests per window per IP
-  // Never throttle:
-  // - the PayMongo webhook: retries come from PayMongo's shared IPs, and
-  //   a 429 there means a paid order never gets its confirmation
-  // - CORS preflights: the browser sends one before many real requests,
-  //   counting them would charge every frontend call twice
-  skip: (req) =>
-    req.method === "OPTIONS" ||
-    req.originalUrl.startsWith("/api/orders/webhook/paymongo"),
-  message: {
-    success: false,
-    message: "Too many requests — please try again after 15 minutes",
-  },
-  // standardHeaders — returns rate limit info in response headers
-  // X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
-  standardHeaders: true,
-  // legacyHeaders — disables old X-RateLimit headers
-  legacyHeaders: false,
-});
-
-// Auth rate limiter — stricter limit for login and register
-// Allows only 10 FAILED attempts per 15 minutes per IP address
-// Prevents brute-force password attacks
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // only 10 failed auth attempts per window
-  // Count failures only (status >= 400). A guesser still hits the wall
-  // after 10 wrong passwords, but switching between real accounts —
-  // buyer, seller, admin during a demo — never burns the budget.
-  skipSuccessfulRequests: true,
-  message: {
-    success: false,
-    message:
-      "Too many authentication attempts — please try again after 15 minutes",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // ── STANDARD MIDDLEWARE ────────────────────────────────
 app.use(
   cors({
@@ -163,8 +128,8 @@ app.use("/api", generalLimiter);
 // Browse, Checkout and both profile pages, twice per visit under React
 // StrictMode in dev) spent the same 10-request budget and locked users
 // out of logging in without a single wrong password.
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/register", authLimiter);
+app.use("/api/auth/login", loginIpLimiter, loginAccountLimiter);
+app.use("/api/auth/register", registerLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
