@@ -20,6 +20,8 @@ const AddProduct = () => {
   const [categoryId, setCategoryId] = useState("");
   // Dropdown options loaded once
   const [categories, setCategories] = useState([]);
+  // Physical-goods confirmation, only asked for Others
+  const [deliverable, setDeliverable] = useState(false);
   // Photo file + its instant preview URL
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -32,6 +34,12 @@ const AddProduct = () => {
     { value: "", label: "Select category" },
     ...categories.map((c) => ({ value: String(c.id), label: c.name })),
   ];
+
+  // Others is open-ended, so the seller confirms it is a physical good
+  const isOthers =
+    categories
+      .find((c) => String(c.id) === categoryId)
+      ?.name.toLowerCase() === "others";
 
   // Load the 7 documented categories once
   useEffect(() => {
@@ -55,6 +63,8 @@ const AddProduct = () => {
   const onSubmit = async (values) => {
     // Category is state-driven — check before sending
     if (!categoryId) return toast.error("Please select a category");
+    if (isOthers && !deliverable)
+      return toast.error("Please confirm this is a physical item");
     // Photo required — a listing without a picture sells nothing
     if (!image) return toast.error("Please add a product photo");
     setLoading(true);
@@ -66,6 +76,7 @@ const AddProduct = () => {
         stock: values.stock,
         categoryId,
         description: values.description || "",
+        deliverableConfirmed: isOthers && deliverable,
       };
       const res = await createProduct({ data, image });
       toast.success(res.message || "Product created");
@@ -117,6 +128,22 @@ const AddProduct = () => {
             ariaLabel="Select category"
           />
         </div>
+        {/* Others confirmation — keeps services and non-deliverables out */}
+        {isOthers && (
+          <label className="flex items-start gap-3 bg-surface rounded-xl p-4 font-body text-sm text-black cursor-pointer">
+            <input
+              type="checkbox"
+              checked={deliverable}
+              onChange={(e) => setDeliverable(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-black"
+            />
+            <span>
+              I confirm this is a physical item that can be picked up or
+              delivered. Services, dine-in meals and fresh produce are not
+              allowed.
+            </span>
+          </label>
+        )}
         {/* Price and stock — grid pair, numeric keyboards on phone */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

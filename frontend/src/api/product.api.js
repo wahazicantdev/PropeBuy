@@ -52,6 +52,8 @@ const buildProductForm = ({ data, image }) => {
   // Description ALWAYS appended — empty string clears it on edit,
   // create maps "" to null server-side (STEP 1 patch handles this)
   form.append("description", data.description || "");
+  // Sent only when the seller ticked the Others confirmation
+  if (data.deliverableConfirmed) form.append("deliverableConfirmed", "true");
   // Image optional — edit keeps old photo when skipped
   if (image) form.append("image", image);
   return form;
