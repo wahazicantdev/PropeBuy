@@ -11,6 +11,7 @@ import { checkoutOrder } from "../../api/order.api.js";
 import { fetchMe } from "../../api/auth.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 import { removeDeadCartItems } from "../../utils/cartCheck.js";
+import { fetchProduct } from "../../api/product.api.js";
 
 // Checkout - phone-first picks, guarded by BuyerRoute outside
 const Checkout = () => {
@@ -47,6 +48,46 @@ const Checkout = () => {
     removeDeadCartItems();
   }, []);
 
+  // Saved address, refreshed by fetchMe above
+  const address = useAuthStore((s) => s.user?.address);
+
+  // Delivery rules for this cart: one seller who delivers, and their fee
+  const [delivery, setDelivery] = useState({ checked: false });
+  const productKey = items.map((i) => i.productId).join(",");
+  useEffect(() => {
+    if (!productKey) return;
+    Promise.all(
+      productKey.split(",").map((id) =>
+        fetchProduct(id)
+          .then((r) => r.data)
+          .catch(() => null),
+      ),
+    ).then((products) => {
+      // One entry per seller in the cart
+      const sellers = new Map(
+        products.filter(Boolean).map((p) => [p.seller?.id, p.seller]),
+      );
+      if (sellers.size !== 1) {
+        setDelivery({
+          checked: true,
+          ok: false,
+          reason: "Delivery works for one seller per order. Choose pickup, or check out each seller separately.",
+        });
+        return;
+      }
+      const [seller] = sellers.values();
+      if (!seller?.offersDelivery) {
+        setDelivery({
+          checked: true,
+          ok: false,
+          reason: `${seller?.name || "This seller"} does not offer delivery yet. Choose pickup.`,
+        });
+        return;
+      }
+      setDelivery({ checked: true, ok: true, fee: Number(seller.deliveryFee) || 0 });
+    });
+  }, [productKey]);
+
   // Delivery options straight from the documented enum
   const deliveryOptions = [
     { value: "PICKUP", label: "Store pickup" },
@@ -56,6 +97,21 @@ const Checkout = () => {
   // Empty cart means nothing to pay for, back to browse
   // Loading exempts the just-placed order so clearCart cannot hijack the handoff
   if (items.length === 0 && !loading) return <Navigate to="/browse" replace />;
+
+  // Money split shown in the summary
+  const isDelivery = deliveryType === "DELIVERY";
+  const fee = isDelivery && delivery.ok ? delivery.fee : 0;
+  const itemsTotal = getTotalAmount();
+  // Delivery needs a seller who delivers and a saved address
+  const deliveryProblem = !isDelivery
+    ? null
+    : !delivery.checked
+      ? "Checking delivery options..."
+      : !delivery.ok
+        ? delivery.reason
+        : !address
+          ? "missing-address"
+          : null;
 
   // Place order - cash stays in app, GCash leaves same-tab like Shopee
   const placeOrder = async () => {
@@ -130,6 +186,37 @@ const Checkout = () => {
                 ariaLabel="Delivery type"
               />
             </div>
+            {/* Delivery details — address, fee and why the fee is prepaid */}
+            {isDelivery && (
+              <div className="mt-4 font-body text-sm space-y-2">
+                {deliveryProblem === "missing-address" ? (
+                  <p className="text-danger">
+                    Add your delivery address first.{" "}
+                    <Link to="/profile" className="font-bold underline">
+                      Go to my profile
+                    </Link>
+                  </p>
+                ) : deliveryProblem ? (
+                  <p className="text-danger">{deliveryProblem}</p>
+                ) : (
+                  <>
+                    <p className="text-black">
+                      <span className="text-black/60">Deliver to: </span>
+                      {address}
+                    </p>
+                    <p className="text-black">
+                      <span className="text-black/60">Delivery fee: </span>
+                      <span className="font-bold">{formatPeso(fee)}</span>
+                    </p>
+                    {paymentMethod === "CASH" && fee > 0 && (
+                      <p className="text-black/60 text-xs">
+                        The delivery fee is paid online first through GCash. Your items stay cash on delivery.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Payment pick — radio cards, black border on the chosen one */}
@@ -200,11 +287,31 @@ const Checkout = () => {
               <dt className="text-black/60">Delivery</dt>
               <dd className="font-bold text-black">{deliveryType === "DELIVERY" ? "Delivery" : "Store pickup"}</dd>
             </div>
+            {/* Fee row only for delivery */}
+            {isDelivery && delivery.ok && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-black/60">Delivery fee</dt>
+                <dd className="font-bold text-black">{formatPeso(fee)}</dd>
+              </div>
+            )}
             <hr className="border-black/10" />
             <div className="flex justify-between gap-2 text-lg">
               <dt className="text-black">Total to pay</dt>
-              <dd className="font-bold text-2xl text-black">{formatPeso(getTotalAmount())}</dd>
+              <dd className="font-bold text-2xl text-black">{formatPeso(itemsTotal + fee)}</dd>
             </div>
+            {/* Cash delivery: what is paid now and what is paid at the door */}
+            {isDelivery && paymentMethod === "CASH" && fee > 0 && (
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-black/60">Pay online now</dt>
+                  <dd className="font-bold text-black">{formatPeso(fee)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-black/60">Cash on delivery</dt>
+                  <dd className="font-bold text-black">{formatPeso(itemsTotal)}</dd>
+                </div>
+              </div>
+            )}
           </dl>
           {/* Unverified notice — explains the disabled button up front */}
           {!verified && (
@@ -218,7 +325,7 @@ const Checkout = () => {
           {/* Submit with spinner state — VERIFIED buyers only */}
           <button
             onClick={placeOrder}
-            disabled={loading || !verified}
+            disabled={loading || !verified || !!deliveryProblem}
             className="btn-primary btn-active w-full mt-6 py-4 font-body font-medium disabled:opacity-40 flex items-center justify-center gap-2"
           >
             {loading ? <Spinner /> : <Icon name="lock" />}

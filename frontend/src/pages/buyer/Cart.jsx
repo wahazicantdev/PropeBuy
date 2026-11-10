@@ -122,7 +122,7 @@ const Cart = () => {
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-black/60">Delivery fee</dt>
-              <dd className="font-bold text-black">Arranged with vendor</dd>
+              <dd className="font-bold text-black">Shown at checkout</dd>
             </div>
             <hr className="border-black/10" />
             <div className="flex justify-between gap-2 text-lg">

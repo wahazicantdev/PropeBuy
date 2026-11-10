@@ -187,6 +187,8 @@ export const getProduct = async (req, res) => {
           id: true,
           name: true,
           accountStatus: true,
+          offersDelivery: true,
+          deliveryFee: true,
           barangay: {
             select: {
               id: true,

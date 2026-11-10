@@ -291,8 +291,24 @@ const OrderDetailSeller = () => {
           <p className="font-body text-xs text-passive">
             {order.deliveryType === "PICKUP"
               ? "Coordinate time and place with the buyer"
-              : "Coordinate delivery with the buyer"}
+              : "Deliver to the address below"}
           </p>
+          {/* Delivery snapshot, and a clear stop while the fee is unpaid */}
+          {order.deliveryType === "DELIVERY" && (
+            <div className="mt-2 font-body text-xs space-y-0.5">
+              <p className="text-gray-900 break-words">
+                {order.deliveryAddress || "No address on this order"}
+              </p>
+              {Number(order.deliveryFee) > 0 && (
+                <p className={order.deliveryFeeStatus === "PENDING" ? "text-danger" : "text-passive"}>
+                  Delivery fee ₱{Number(order.deliveryFee).toFixed(2)}{" "}
+                  {order.deliveryFeeStatus === "PENDING"
+                    ? "not paid yet. Wait before processing, or cancel."
+                    : "paid online"}
+                </p>
+              )}
+            </div>
+          )}
         </div>
         {/* Payment — method, honest pending notes, cash action lives here */}
         <div>
