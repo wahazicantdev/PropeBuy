@@ -6,6 +6,7 @@ import { fetchMe } from "../../api/auth.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
 // House badge — shows only when the account is VERIFIED
 import VerifiedBadge from "../../components/VerifiedBadge.jsx";
+import ProfileAddress from "../../components/ProfileAddress.jsx";
 
 // SellerProfile — read-only account info, mirrors BuyerProfile.
 // No edit endpoint exists on the backend yet, so the page never fakes one.
@@ -120,6 +121,8 @@ const SellerProfile = () => {
           </div>
         )}
       </div>
+      {/* Store address — key remounts it with fresh values */}
+      <ProfileAddress isSeller key={`${user?.id}-${user?.address ?? ""}`} />
       {/* Shortcuts plus logout */}
       <div className="mt-4 grid gap-3">
         <Link

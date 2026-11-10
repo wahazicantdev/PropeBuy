@@ -233,6 +233,7 @@ export const getMe = async (req, res) => {
       role: true,
       accountStatus: true,
       barangayId: true,
+      address: true,
       ocrResult: true,
       ocrConfidence: true,
       createdAt: true,
@@ -241,6 +242,44 @@ export const getMe = async (req, res) => {
 
   res.status(200).json({
     success: true,
+    data: user,
+  });
+};
+
+// ── UPDATE MY PROFILE ──────────────────────────────────
+// Fields a user may change themselves. Name, email and barangay come
+// from the verified documents, so only an admin can change those.
+const profileSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  accountStatus: true,
+  barangayId: true,
+  address: true,
+};
+
+export const updateMe = async (req, res) => {
+  // Empty text clears the address
+  const address =
+    typeof req.body.address === "string" ? req.body.address.trim() : "";
+  if (address.length > 300) {
+    return res.status(400).json({
+      success: false,
+      message: "Address must be 300 characters or less",
+    });
+  }
+  const data = { address: address || null };
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data,
+    select: profileSelect,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Profile saved",
     data: user,
   });
 };
