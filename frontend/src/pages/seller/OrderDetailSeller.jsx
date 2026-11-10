@@ -275,6 +275,10 @@ const OrderDetailSeller = () => {
           <p className="font-body text-xs text-passive truncate">
             {order.buyer?.email}
           </p>
+          {/* Where the buyer is based */}
+          <p className="font-body text-xs text-passive truncate">
+            Barangay {order.buyer?.barangay?.name || "not set"}
+          </p>
         </div>
         {/* Delivery — enum labels */}
         <div>
