@@ -293,7 +293,7 @@ export const crossCheckDocuments = (idFields, certFields, claimedBarangay) => {
       );
     }
   } else {
-    score += 10;
+    // Nothing read means nothing earned — unrelated pictures must score low
     issues.push("Could not extract barangay from government ID");
   }
 
@@ -310,7 +310,6 @@ export const crossCheckDocuments = (idFields, certFields, claimedBarangay) => {
       );
     }
   } else {
-    score += 10;
     issues.push("Could not extract barangay from Barangay Certificate");
   }
 
@@ -341,18 +340,16 @@ export const crossCheckDocuments = (idFields, certFields, claimedBarangay) => {
     }
   } else if (certFields.name && !idFields.name) {
     // Certificate has name but ID doesn't — give partial credit
-    // ID name extraction might have failed due to colored background
-    score += 15;
+    // ID name extraction might have failed due to colored background.
+    // No points — a name that cannot be compared proves nothing.
     issues.push("Could not extract name from government ID for comparison");
   } else if (idFields.name && !certFields.name) {
-    // ID has name but certificate doesn't
-    score += 15;
+    // ID has name but certificate doesn't — no points, nothing to compare
     issues.push(
       "Could not extract name from Barangay Certificate for comparison",
     );
   } else {
-    // Neither document has extractable name
-    score += 5;
+    // Neither document has extractable name — no points
     issues.push(
       "Could not extract names from one or both documents for comparison",
     );
