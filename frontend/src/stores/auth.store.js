@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useCartStore } from "./cart.store.js";
 
 // Auth store — survives refresh via localStorage
 export const useAuthStore = create(
@@ -18,6 +19,8 @@ export const useAuthStore = create(
         localStorage.setItem("propebuy_user", JSON.stringify(user));
         // Update store
         set({ user, token, isAuthenticated: true });
+        // Hand the cart to this account, or empty another account's cart
+        useCartStore.getState().claimFor(user.id);
       },
 
       // ── LOGOUT ──
@@ -26,6 +29,8 @@ export const useAuthStore = create(
         localStorage.removeItem("propebuy_token");
         localStorage.removeItem("propebuy_user");
         set({ user: null, token: null, isAuthenticated: false });
+        // The cart leaves with the account
+        useCartStore.getState().reset();
       },
 
       // ── SYNC USER ──
