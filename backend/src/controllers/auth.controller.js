@@ -8,7 +8,6 @@ import {
   extractIDFields,
   extractCertificateFields,
   crossCheckDocuments,
-  isCertificateRecent,
 } from "../utils/ocr.helper.js";
 
 // ── REGISTER ───────────────────────────────────────────
@@ -100,30 +99,6 @@ export const register = async (req, res) => {
     barangay?.name || "",
   );
 
-  // ── CHECK CERTIFICATE RECENCY ──────────────────────
-  const isRecent = isCertificateRecent(certFields.dateIssued);
-  if (isRecent === false) {
-    // Certificate is older than 6 months
-    // Downgrade result to MANUAL_REVIEW if it was AUTO_APPROVED
-    if (verificationResult.result === "AUTO_APPROVED") {
-      verificationResult.result = "MANUAL_REVIEW";
-      verificationResult.issues.push(
-        "Barangay Certificate may be outdated — issued more than 6 months ago",
-      );
-    }
-  }
-
-  // ── DETERMINE ACCOUNT STATUS BASED ON OCR RESULT ──
-  // AUTO_APPROVED → account immediately VERIFIED
-  // MANUAL_REVIEW → account stays PENDING — admin reviews
-  // AUTO_REJECTED → account immediately REJECTED
-  const accountStatus =
-    verificationResult.result === "AUTO_APPROVED"
-      ? "VERIFIED"
-      : verificationResult.result === "AUTO_REJECTED"
-        ? "REJECTED"
-        : "PENDING"; // MANUAL_REVIEW
-
   // Hash password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
@@ -138,10 +113,10 @@ export const register = async (req, res) => {
       barangayId: barangayId ? parseInt(barangayId) : null,
       idDocumentUrl: idUpload.secure_url,
       certDocumentUrl: certUpload.secure_url,
-      accountStatus,
+      // Every new account waits for an admin, whatever OCR found
+      accountStatus: "PENDING",
 
-      // Store OCR results for admin reference
-      // Even if auto-approved — admin can still review these
+      // Store OCR results so the admin queue can group this account
       ocrResult: verificationResult.result,
       ocrConfidence: verificationResult.confidence,
 
@@ -159,21 +134,10 @@ export const register = async (req, res) => {
     expiresIn: JWT_EXPIRES_IN,
   });
 
-  // ── BUILD RESPONSE MESSAGE ─────────────────────────
-  // Different message based on OCR result
-  // So user knows what to expect
-  const messages = {
-    VERIFIED:
-      "Registration successful. Your account has been automatically verified. You can now access PropeBuy.",
-    REJECTED:
-      "Registration failed. Your documents could not be verified. Please ensure you submit valid and matching documents.",
-    PENDING:
-      "Registration successful. Your documents are pending manual review by our administrators. You will be notified once verified.",
-  };
-
   res.status(201).json({
     success: true,
-    message: messages[accountStatus],
+    message:
+      "Registration successful. An administrator will review your documents before you can buy or sell.",
     ocrResult: verificationResult.result,
     ocrConfidence: verificationResult.confidence,
     token,
