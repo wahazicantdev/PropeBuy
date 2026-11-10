@@ -38,7 +38,8 @@ const PaymentSuccess = () => {
         // Fallback status check
         const res = await checkPayment(orderId);
         // Paid means webhook or check confirmed the money
-        if (res.data?.paymentStatus === "PAID") {
+        // GCash orders settle the items, cash delivery orders the fee
+        if (res.data?.paymentStatus === "PAID" || res.data?.deliveryFeeStatus === "PAID") {
           setState("paid");
           clearInterval(timer);
         } else if (tries.current >= 20) {

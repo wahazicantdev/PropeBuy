@@ -122,7 +122,10 @@ const SellerProfile = () => {
         )}
       </div>
       {/* Store address — key remounts it with fresh values */}
-      <ProfileAddress isSeller key={`${user?.id}-${user?.address ?? ""}`} />
+      <ProfileAddress
+        isSeller
+        key={`${user?.id}-${user?.address ?? ""}-${user?.offersDelivery}-${user?.deliveryFee}`}
+      />
       {/* Shortcuts plus logout */}
       <div className="mt-4 grid gap-3">
         <Link

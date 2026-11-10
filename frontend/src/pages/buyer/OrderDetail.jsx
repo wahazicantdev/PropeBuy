@@ -192,10 +192,28 @@ const OrderDetail = () => {
               </dt>
               <dd className="font-bold text-black">{order.deliveryType === "PICKUP" ? "Store pickup" : "Delivery"}</dd>
             </div>
+            {/* Delivery snapshot — address and fee as placed */}
+            {order.deliveryType === "DELIVERY" && order.deliveryAddress && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-black/60 shrink-0">Deliver to</dt>
+                <dd className="font-bold text-black text-right break-words">{order.deliveryAddress}</dd>
+              </div>
+            )}
+            {Number(order.deliveryFee) > 0 && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-black/60">Delivery fee</dt>
+                <dd className="font-bold text-black">
+                  {formatPeso(order.deliveryFee)}{" "}
+                  <span className={`font-normal text-xs ${order.deliveryFeeStatus === "PAID" ? "text-black/60" : "text-danger"}`}>
+                    {order.deliveryFeeStatus === "PAID" ? "paid" : "not paid yet"}
+                  </span>
+                </dd>
+              </div>
+            )}
             <hr className="border-black/10" />
             <div className="flex justify-between gap-2 text-lg">
               <dt className="text-black">{order.paymentStatus === "PAID" ? "Total paid" : "Total to pay"}</dt>
-              <dd className="font-bold text-2xl text-black">{formatPeso(order.totalAmount)}</dd>
+              <dd className="font-bold text-2xl text-black">{formatPeso(Number(order.totalAmount) + Number(order.deliveryFee || 0))}</dd>
             </div>
           </dl>
           {/* Recheck button for waiting GCash money */}
