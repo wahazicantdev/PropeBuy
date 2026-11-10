@@ -234,6 +234,8 @@ export const getMe = async (req, res) => {
       accountStatus: true,
       barangayId: true,
       address: true,
+      offersDelivery: true,
+      deliveryFee: true,
       ocrResult: true,
       ocrConfidence: true,
       createdAt: true,
@@ -257,6 +259,8 @@ const profileSelect = {
   accountStatus: true,
   barangayId: true,
   address: true,
+  offersDelivery: true,
+  deliveryFee: true,
 };
 
 export const updateMe = async (req, res) => {
@@ -270,6 +274,20 @@ export const updateMe = async (req, res) => {
     });
   }
   const data = { address: address || null };
+
+  // Sellers also set whether they deliver and their flat fee
+  if (req.user.role === "SELLER" && req.body.offersDelivery !== undefined) {
+    const fee = Number(req.body.deliveryFee ?? 0);
+    if (!Number.isFinite(fee) || fee < 0 || fee > 5000) {
+      return res.status(400).json({
+        success: false,
+        message: "Delivery fee must be between ₱0 and ₱5,000",
+      });
+    }
+    data.offersDelivery =
+      req.body.offersDelivery === true || req.body.offersDelivery === "true";
+    data.deliveryFee = Math.round(fee * 100) / 100;
+  }
 
   const user = await prisma.user.update({
     where: { id: req.user.id },

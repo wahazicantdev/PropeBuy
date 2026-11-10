@@ -274,6 +274,9 @@ export const checkPaymentStatus = async (req, res) => {
   res.status(200).json({
     success: true,
     message: result.updated ? "Payment confirmed" : "Payment status retrieved",
-    data: { paymentStatus: result.paymentStatus },
+    data: {
+      paymentStatus: result.paymentStatus,
+      deliveryFeeStatus: result.deliveryFeeStatus,
+    },
   });
 };
