@@ -1,6 +1,11 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { register, login, getMe } from "../controllers/auth.controller.js";
+import {
+  register,
+  login,
+  getMe,
+  updateMe,
+} from "../controllers/auth.controller.js";
 import { sendOtp, verifyOtp } from "../controllers/otp.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import { upload } from "../config/cloudinary.js";
@@ -47,5 +52,7 @@ authRoutes.post("/otp/verify", otpVerifyLimiter, validateOtpVerify, verifyOtp);
 
 // Protected route — token required
 authRoutes.get("/me", protect, getMe);
+// Saved address, plus delivery settings for sellers
+authRoutes.put("/me", protect, updateMe);
 
 export default authRoutes;

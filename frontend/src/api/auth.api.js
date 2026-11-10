@@ -30,6 +30,12 @@ export const loginUser = async (email, password) => {
   return res.data;
 };
 
+// Save my own profile fields — address, and delivery settings for sellers
+export const updateProfile = async (data) => {
+  const res = await api.put("/auth/me", data);
+  return res.data;
+};
+
 // Current user — for refresh/sync
 export const fetchMe = async () => {
   // Token auto-attached by interceptor
