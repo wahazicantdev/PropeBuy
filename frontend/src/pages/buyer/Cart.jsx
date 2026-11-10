@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCartStore } from "../../stores/cart.store.js";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
+import { removeDeadCartItems } from "../../utils/cartCheck.js";
 
 // Cart — SHOP.CO "YOUR CART": one bordered card of line items with
 // dividers, quantity pills and a red trash icon, plus an order summary
@@ -14,6 +16,12 @@ const Cart = () => {
   const removeItem = useCartStore((s) => s.removeItem);
   const getTotalAmount = useCartStore((s) => s.getTotalAmount);
   const navigate = useNavigate();
+
+  // Same stock check as Checkout, so sold out items leave as soon as the
+  // buyer looks at the cart
+  useEffect(() => {
+    removeDeadCartItems();
+  }, []);
 
   // Empty state - no lines yet
   if (items.length === 0) {

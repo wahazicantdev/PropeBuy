@@ -21,6 +21,7 @@ export const removeDeadCartItems = async () => {
   );
 
   const removedNames = [];
+  const loweredNames = [];
   checks.forEach(({ item, product, unknown }) => {
     // Could not check this line, leave it for the backend to judge
     if (unknown) return;
@@ -28,6 +29,10 @@ export const removeDeadCartItems = async () => {
       removeItem(item.productId);
       removedNames.push(item.name);
       return;
+    }
+    // Seller has fewer left than the buyer wanted — say so
+    if (product.stock < item.quantity) {
+      loweredNames.push(`${item.name} (only ${product.stock} left)`);
     }
     syncLine(item.productId, {
       stock: product.stock,
@@ -39,6 +44,15 @@ export const removeDeadCartItems = async () => {
   if (removedNames.length > 0) {
     toast.error(
       `${removedNames.join(", ")} ${removedNames.length === 1 ? "is" : "are"} out of stock and removed from your cart.`,
+      // Fixed id — the check can run twice, the message shows once
+      { id: "cart-removed" },
     );
+  }
+
+  // One message for every lowered quantity
+  if (loweredNames.length > 0) {
+    toast(`Quantity updated: ${loweredNames.join(", ")}.`, {
+      id: "cart-lowered",
+    });
   }
 };
