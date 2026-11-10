@@ -12,6 +12,11 @@ const ProfileAddress = ({ isSeller = false }) => {
   const setUser = useAuthStore((s) => s.setUser);
   // Form values start from the saved profile
   const [address, setAddress] = useState(user?.address || "");
+  // Seller delivery settings
+  const [offersDelivery, setOffersDelivery] = useState(!!user?.offersDelivery);
+  const [deliveryFee, setDeliveryFee] = useState(
+    user?.deliveryFee != null ? String(Number(user.deliveryFee)) : "0",
+  );
   const [saving, setSaving] = useState(false);
 
   // Save, then sync the store so checkout sees the new address at once
@@ -19,7 +24,9 @@ const ProfileAddress = ({ isSeller = false }) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await updateProfile({ address });
+      const res = await updateProfile(
+        isSeller ? { address, offersDelivery, deliveryFee } : { address },
+      );
       setUser({ ...user, ...res.data });
       toast.success(res.message);
     } catch (err) {
@@ -53,6 +60,38 @@ const ProfileAddress = ({ isSeller = false }) => {
             : "Used when you choose delivery at checkout."}
         </p>
       </div>
+      {/* Seller delivery settings — one flat fee per order */}
+      {isSeller && (
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 font-body text-sm text-black cursor-pointer">
+            <input
+              type="checkbox"
+              checked={offersDelivery}
+              onChange={(e) => setOffersDelivery(e.target.checked)}
+              className="w-4 h-4 accent-black"
+            />
+            I deliver orders
+          </label>
+          {offersDelivery && (
+            <div>
+              <FieldLabel htmlFor="deliveryFee">Delivery fee per order (₱)</FieldLabel>
+              <input
+                id="deliveryFee"
+                type="number"
+                min="0"
+                max="5000"
+                step="1"
+                value={deliveryFee}
+                onChange={(e) => setDeliveryFee(e.target.value)}
+                className="w-full px-5 py-3.5 font-body text-sm"
+              />
+              <p className="font-body text-xs text-black/60 mt-1 pl-1">
+                Buyers pay this online before you deliver. It should cover your rider or your own trip.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       <button
         disabled={saving}
         className="btn-primary btn-active w-full py-3 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50"

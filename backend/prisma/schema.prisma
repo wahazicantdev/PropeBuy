@@ -18,6 +18,8 @@ model User {
   idDocumentUrl   String?
   certDocumentUrl String?
   address         String?       // saved delivery address, or the store address for sellers
+  offersDelivery  Boolean       @default(false) // seller delivers orders
+  deliveryFee     Decimal       @default(0) @db.Decimal(10, 2) // seller's flat delivery fee
 
   // OCR verification fields
   // Stores the result of automated document verification
@@ -99,6 +101,10 @@ model Order {
   deliveryType    DeliveryType
   totalAmount     Decimal       @db.Decimal(10, 2)
   paymongoLinkId  String?       // PayMongo link ID for GCash tracking
+  // Delivery snapshot — later profile edits never change a placed order
+  deliveryAddress   String?
+  deliveryFee       Decimal        @default(0) @db.Decimal(10, 2)
+  deliveryFeeStatus PaymentStatus? // null when there is no fee to pay
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
