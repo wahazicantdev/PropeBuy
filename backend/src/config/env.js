@@ -18,4 +18,7 @@ export const {
   // Redirect URLs after payment
   PAYMENT_SUCCESS_URL,
   PAYMENT_FAILED_URL,
+  // Email API for registration codes
+  BREVO_API_KEY,
+  EMAIL_FROM,
 } = process.env;

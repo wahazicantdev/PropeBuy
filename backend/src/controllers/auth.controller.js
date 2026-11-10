@@ -8,8 +8,8 @@ import {
   extractIDFields,
   extractCertificateFields,
   crossCheckDocuments,
-  isCertificateRecent,
 } from "../utils/ocr.helper.js";
+import { isEmailProofValid } from "../utils/otp.helper.js";
 
 // ── REGISTER ───────────────────────────────────────────
 export const register = async (req, res) => {
@@ -27,6 +27,15 @@ export const register = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Role must be either BUYER or SELLER",
+    });
+  }
+
+  // Email must have passed the code check, before any upload or OCR work
+  if (!isEmailProofValid(req.body.otpToken, email)) {
+    return res.status(400).json({
+      success: false,
+      message: "Please verify your email first",
+      emailNotVerified: true,
     });
   }
 
@@ -100,30 +109,6 @@ export const register = async (req, res) => {
     barangay?.name || "",
   );
 
-  // ── CHECK CERTIFICATE RECENCY ──────────────────────
-  const isRecent = isCertificateRecent(certFields.dateIssued);
-  if (isRecent === false) {
-    // Certificate is older than 6 months
-    // Downgrade result to MANUAL_REVIEW if it was AUTO_APPROVED
-    if (verificationResult.result === "AUTO_APPROVED") {
-      verificationResult.result = "MANUAL_REVIEW";
-      verificationResult.issues.push(
-        "Barangay Certificate may be outdated — issued more than 6 months ago",
-      );
-    }
-  }
-
-  // ── DETERMINE ACCOUNT STATUS BASED ON OCR RESULT ──
-  // AUTO_APPROVED → account immediately VERIFIED
-  // MANUAL_REVIEW → account stays PENDING — admin reviews
-  // AUTO_REJECTED → account immediately REJECTED
-  const accountStatus =
-    verificationResult.result === "AUTO_APPROVED"
-      ? "VERIFIED"
-      : verificationResult.result === "AUTO_REJECTED"
-        ? "REJECTED"
-        : "PENDING"; // MANUAL_REVIEW
-
   // Hash password
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
@@ -138,10 +123,10 @@ export const register = async (req, res) => {
       barangayId: barangayId ? parseInt(barangayId) : null,
       idDocumentUrl: idUpload.secure_url,
       certDocumentUrl: certUpload.secure_url,
-      accountStatus,
+      // Every new account waits for an admin, whatever OCR found
+      accountStatus: "PENDING",
 
-      // Store OCR results for admin reference
-      // Even if auto-approved — admin can still review these
+      // Store OCR results so the admin queue can group this account
       ocrResult: verificationResult.result,
       ocrConfidence: verificationResult.confidence,
 
@@ -159,21 +144,10 @@ export const register = async (req, res) => {
     expiresIn: JWT_EXPIRES_IN,
   });
 
-  // ── BUILD RESPONSE MESSAGE ─────────────────────────
-  // Different message based on OCR result
-  // So user knows what to expect
-  const messages = {
-    VERIFIED:
-      "Registration successful. Your account has been automatically verified. You can now access PropeBuy.",
-    REJECTED:
-      "Registration failed. Your documents could not be verified. Please ensure you submit valid and matching documents.",
-    PENDING:
-      "Registration successful. Your documents are pending manual review by our administrators. You will be notified once verified.",
-  };
-
   res.status(201).json({
     success: true,
-    message: messages[accountStatus],
+    message:
+      "Registration successful. An administrator will review your documents before you can buy or sell.",
     ocrResult: verificationResult.result,
     ocrConfidence: verificationResult.confidence,
     token,
@@ -259,6 +233,9 @@ export const getMe = async (req, res) => {
       role: true,
       accountStatus: true,
       barangayId: true,
+      address: true,
+      offersDelivery: true,
+      deliveryFee: true,
       ocrResult: true,
       ocrConfidence: true,
       createdAt: true,
@@ -267,6 +244,60 @@ export const getMe = async (req, res) => {
 
   res.status(200).json({
     success: true,
+    data: user,
+  });
+};
+
+// ── UPDATE MY PROFILE ──────────────────────────────────
+// Fields a user may change themselves. Name, email and barangay come
+// from the verified documents, so only an admin can change those.
+const profileSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  accountStatus: true,
+  barangayId: true,
+  address: true,
+  offersDelivery: true,
+  deliveryFee: true,
+};
+
+export const updateMe = async (req, res) => {
+  // Empty text clears the address
+  const address =
+    typeof req.body.address === "string" ? req.body.address.trim() : "";
+  if (address.length > 300) {
+    return res.status(400).json({
+      success: false,
+      message: "Address must be 300 characters or less",
+    });
+  }
+  const data = { address: address || null };
+
+  // Sellers also set whether they deliver and their flat fee
+  if (req.user.role === "SELLER" && req.body.offersDelivery !== undefined) {
+    const fee = Number(req.body.deliveryFee ?? 0);
+    if (!Number.isFinite(fee) || fee < 0 || fee > 5000) {
+      return res.status(400).json({
+        success: false,
+        message: "Delivery fee must be between ₱0 and ₱5,000",
+      });
+    }
+    data.offersDelivery =
+      req.body.offersDelivery === true || req.body.offersDelivery === "true";
+    data.deliveryFee = Math.round(fee * 100) / 100;
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data,
+    select: profileSelect,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Profile saved",
     data: user,
   });
 };

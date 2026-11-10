@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthShell from "../../components/AuthShell.jsx";
 import Icon from "../../components/Icon.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
 import { loginUser } from "../../api/auth.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 
@@ -17,6 +18,14 @@ const BuyerLogin = () => {
   const login = useAuthStore((s) => s.login);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+
+  // Message left by a session that was ended, e.g. a rejected account
+  useEffect(() => {
+    const notice = sessionStorage.getItem("propebuy_notice");
+    if (!notice) return;
+    sessionStorage.removeItem("propebuy_notice");
+    toast.error(notice, { id: "session-notice" });
+  }, []);
 
   // Submit — strict buyer check
   const onSubmit = async (v) => {
@@ -60,26 +69,34 @@ const BuyerLogin = () => {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Email — icon inside the gray pill */}
-        <div className="relative">
-          <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-          <input
-            {...register("email", { required: true })}
-            type="email"
-            placeholder="Email address"
-            autoComplete="email"
-            className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
-          />
+        <div>
+          <FieldLabel htmlFor="email">Email address</FieldLabel>
+          <div className="relative">
+            <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+            <input
+              {...register("email", { required: true })}
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              autoComplete="email"
+              className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
+            />
+          </div>
         </div>
         {/* Password */}
-        <div className="relative">
-          <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-          <input
-            {...register("password", { required: true })}
-            type="password"
-            placeholder="Password"
-            autoComplete="current-password"
-            className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
-          />
+        <div>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <div className="relative">
+            <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+            <input
+              {...register("password", { required: true })}
+              id="password"
+              type="password"
+              placeholder="Your password"
+              autoComplete="current-password"
+              className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
+            />
+          </div>
         </div>
         {/* Submit — black pill, spinner while waiting */}
         <button

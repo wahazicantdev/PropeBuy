@@ -1,4 +1,5 @@
 import prisma from "../config/prismaClient.js";
+import { notifyAccountStatus } from "../utils/notification.helper.js";
 import {
   extractTextFromImage,
   extractIDFields,
@@ -175,9 +176,9 @@ const buildOCRSummary = (result, confidence, issues, extractedData) => {
   }
 
   const resultLabels = {
-    AUTO_APPROVED: "✅ Automatically Approved",
-    MANUAL_REVIEW: "⚠️ Flagged for Manual Review",
-    AUTO_REJECTED: "❌ Automatically Rejected",
+    AUTO_APPROVED: "High confidence (Safe to approve)",
+    MANUAL_REVIEW: "Unsure (Needs review)",
+    AUTO_REJECTED: "Very low confidence (Likely reject)",
   };
 
   let summary = `OCR Result: ${resultLabels[result] || result}\n`;
@@ -214,8 +215,7 @@ const buildOCRSummary = (result, confidence, issues, extractedData) => {
 export const getPendingVerifications = async (req, res) => {
   const pendingUsers = await prisma.user.findMany({
     where: {
-      // Show both PENDING (manual review needed) accounts
-      // AUTO_REJECTED can be reviewed too in case of OCR error
+      // Every new account lands here, grouped by OCR on the page
       accountStatus: "PENDING",
     },
     select: {
@@ -331,6 +331,9 @@ export const verifyUser = async (req, res) => {
       barangayId: true,
     },
   });
+
+  // Live update for the user, if they are online right now
+  notifyAccountStatus(updatedUser.id, updatedUser.accountStatus);
 
   res.status(200).json({
     success: true,
@@ -486,6 +489,9 @@ export const suspendUser = async (req, res) => {
     },
   });
 
+  // Ends the suspended user's open pages right away
+  notifyAccountStatus(suspendedUser.id, "REJECTED");
+
   res.status(200).json({
     success: true,
     message: "User suspended successfully",
@@ -613,7 +619,12 @@ export const getAllOrders = async (req, res) => {
     include: {
       // Include buyer info
       buyer: {
-        select: { id: true, name: true, email: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          barangay: { select: { name: true } },
+        },
       },
       // Include all order items with product and seller info
       orderItems: {
@@ -623,6 +634,8 @@ export const getAllOrders = async (req, res) => {
               id: true,
               name: true,
               price: true,
+              // Barangay the goods are listed under
+              barangay: { select: { name: true } },
               seller: {
                 select: { id: true, name: true },
               },

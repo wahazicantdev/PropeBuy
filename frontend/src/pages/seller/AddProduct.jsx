@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 // Custom dropdown + spinner — house components
 import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
 import { createProduct, fetchCategories } from "../../api/product.api.js";
 
 // AddProduct — new listing, ALL fields required including photo
@@ -19,6 +20,8 @@ const AddProduct = () => {
   const [categoryId, setCategoryId] = useState("");
   // Dropdown options loaded once
   const [categories, setCategories] = useState([]);
+  // Physical-goods confirmation, only asked for Others
+  const [deliverable, setDeliverable] = useState(false);
   // Photo file + its instant preview URL
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -31,6 +34,12 @@ const AddProduct = () => {
     { value: "", label: "Select category" },
     ...categories.map((c) => ({ value: String(c.id), label: c.name })),
   ];
+
+  // Others is open-ended, so the seller confirms it is a physical good
+  const isOthers =
+    categories
+      .find((c) => String(c.id) === categoryId)
+      ?.name.toLowerCase() === "others";
 
   // Load the 7 documented categories once
   useEffect(() => {
@@ -54,6 +63,8 @@ const AddProduct = () => {
   const onSubmit = async (values) => {
     // Category is state-driven — check before sending
     if (!categoryId) return toast.error("Please select a category");
+    if (isOthers && !deliverable)
+      return toast.error("Please confirm this is a physical item");
     // Photo required — a listing without a picture sells nothing
     if (!image) return toast.error("Please add a product photo");
     setLoading(true);
@@ -65,6 +76,7 @@ const AddProduct = () => {
         stock: values.stock,
         categoryId,
         description: values.description || "",
+        deliverableConfirmed: isOthers && deliverable,
       };
       const res = await createProduct({ data, image });
       toast.success(res.message || "Product created");
@@ -92,12 +104,14 @@ const AddProduct = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         {/* Name — backend wants 2 to 255 chars */}
         <div>
+          <FieldLabel htmlFor="name">Product name</FieldLabel>
           <input
+            id="name"
             {...register("name", {
               required: "Product name is required",
               minLength: { value: 2, message: "At least 2 characters" },
             })}
-            placeholder="Product name"
+            placeholder="Example: Handwoven bayong"
             className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
           />
           {errors.name && (
@@ -106,6 +120,7 @@ const AddProduct = () => {
         </div>
         {/* Category — custom dropdown, state-driven */}
         <div>
+          <FieldLabel>Category</FieldLabel>
           <Select
             value={categoryId}
             onChange={setCategoryId}
@@ -113,10 +128,28 @@ const AddProduct = () => {
             ariaLabel="Select category"
           />
         </div>
+        {/* Others confirmation — keeps services and non-deliverables out */}
+        {isOthers && (
+          <label className="flex items-start gap-3 bg-surface rounded-xl p-4 font-body text-sm text-black cursor-pointer">
+            <input
+              type="checkbox"
+              checked={deliverable}
+              onChange={(e) => setDeliverable(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-black"
+            />
+            <span>
+              I confirm this is a physical item that can be picked up or
+              delivered. Services, dine-in meals and fresh produce are not
+              allowed.
+            </span>
+          </label>
+        )}
         {/* Price and stock — grid pair, numeric keyboards on phone */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
+            <FieldLabel htmlFor="price">Price (₱)</FieldLabel>
             <input
+              id="price"
               {...register("price", {
                 required: "Price is required",
                 validate: (v) =>
@@ -125,7 +158,7 @@ const AddProduct = () => {
               type="number"
               min="1"
               step="0.01"
-              placeholder="Price (₱)"
+              placeholder="0.00"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.price && (
@@ -133,7 +166,9 @@ const AddProduct = () => {
             )}
           </div>
           <div>
+            <FieldLabel htmlFor="stock">Stock</FieldLabel>
             <input
+              id="stock"
               {...register("stock", {
                 required: "Stock is required",
                 validate: (v) =>
@@ -144,7 +179,7 @@ const AddProduct = () => {
               })}
               type="number"
               min="1"
-              placeholder="Stock"
+              placeholder="How many you have"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.stock && (
@@ -154,7 +189,9 @@ const AddProduct = () => {
         </div>
         {/* Description — REQUIRED, 1000 char ceiling mirrors backend */}
         <div>
+          <FieldLabel htmlFor="description">Description</FieldLabel>
           <textarea
+            id="description"
             {...register("description", {
               required: "Description is required",
               maxLength: {
@@ -163,7 +200,7 @@ const AddProduct = () => {
               },
             })}
             rows={4}
-            placeholder="Describe the item — condition, size, what is included"
+            placeholder="Condition, size, what is included"
             className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary resize-y"
           />
           {errors.description && (
@@ -174,6 +211,7 @@ const AddProduct = () => {
         </div>
         {/* Photo — REQUIRED, dashed picker, instant preview */}
         <div>
+          <FieldLabel>Product photo</FieldLabel>
           <label className="border border-dashed border-gray-300 rounded-lg p-4 font-body text-sm text-passive cursor-pointer block">
             {image ? `Photo selected — ${image.name}` : "Add a product photo"}
             <input

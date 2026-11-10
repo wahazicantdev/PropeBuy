@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 // Custom dropdown + spinner — house components
 import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
 import {
   fetchProduct,
   fetchCategories,
@@ -31,6 +32,8 @@ const EditProduct = () => {
   // Category pick
   const [categoryId, setCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
+  // Physical-goods confirmation, only asked when moving into Others
+  const [deliverable, setDeliverable] = useState(false);
   // Replacement photo — stays null to keep the current one
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -40,6 +43,14 @@ const EditProduct = () => {
     { value: "", label: "Select category" },
     ...categories.map((c) => ({ value: String(c.id), label: c.name })),
   ];
+
+  // Others is open-ended, so the seller confirms it is a physical good
+  const isOthers =
+    categories
+      .find((c) => String(c.id) === categoryId)
+      ?.name.toLowerCase() === "others";
+  // Listings already in Others were confirmed when they entered it
+  const needsConfirm = isOthers && String(product?.categoryId) !== categoryId;
 
   // Categories load once
   useEffect(() => {
@@ -93,6 +104,8 @@ const EditProduct = () => {
   // Submit — full field set, photo only when replaced
   const onSubmit = async (values) => {
     if (!categoryId) return toast.error("Please select a category");
+    if (needsConfirm && !deliverable)
+      return toast.error("Please confirm this is a physical item");
     setLoading(true);
     try {
       const data = {
@@ -101,6 +114,7 @@ const EditProduct = () => {
         stock: values.stock,
         categoryId,
         description: values.description || "",
+        deliverableConfirmed: needsConfirm && deliverable,
       };
       const res = await updateProduct(id, { data, image });
       toast.success(res.message || "Product updated");
@@ -141,12 +155,14 @@ const EditProduct = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         {/* Name — same rules as create */}
         <div>
+          <FieldLabel htmlFor="name">Product name</FieldLabel>
           <input
+            id="name"
             {...register("name", {
               required: "Product name is required",
               minLength: { value: 2, message: "At least 2 characters" },
             })}
-            placeholder="Product name"
+            placeholder="Example: Handwoven bayong"
             className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
           />
           {errors.name && (
@@ -155,6 +171,7 @@ const EditProduct = () => {
         </div>
         {/* Category — prefilled from the product */}
         <div>
+          <FieldLabel>Category</FieldLabel>
           <Select
             value={categoryId}
             onChange={setCategoryId}
@@ -162,10 +179,28 @@ const EditProduct = () => {
             ariaLabel="Select category"
           />
         </div>
+        {/* Others confirmation — keeps services and non-deliverables out */}
+        {needsConfirm && (
+          <label className="flex items-start gap-3 bg-surface rounded-xl p-4 font-body text-sm text-black cursor-pointer">
+            <input
+              type="checkbox"
+              checked={deliverable}
+              onChange={(e) => setDeliverable(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-black"
+            />
+            <span>
+              I confirm this is a physical item that can be picked up or
+              delivered. Services, dine-in meals and fresh produce are not
+              allowed.
+            </span>
+          </label>
+        )}
         {/* Price and stock — edit allows stock 0 (sold out), STEP 1 patch */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
+            <FieldLabel htmlFor="price">Price (₱)</FieldLabel>
             <input
+              id="price"
               {...register("price", {
                 required: "Price is required",
                 validate: (v) =>
@@ -174,7 +209,7 @@ const EditProduct = () => {
               type="number"
               min="1"
               step="0.01"
-              placeholder="Price (₱)"
+              placeholder="0.00"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.price && (
@@ -182,7 +217,9 @@ const EditProduct = () => {
             )}
           </div>
           <div>
+            <FieldLabel htmlFor="stock">Stock</FieldLabel>
             <input
+              id="stock"
               {...register("stock", {
                 required: "Stock is required",
                 validate: (v) =>
@@ -193,7 +230,7 @@ const EditProduct = () => {
               })}
               type="number"
               min="0"
-              placeholder="Stock"
+              placeholder="How many you have"
               className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
             />
             {errors.stock && (
@@ -203,7 +240,9 @@ const EditProduct = () => {
         </div>
         {/* Description — optional, clearable now via the 4.1 patch */}
         <div>
+          <FieldLabel htmlFor="description">Description (optional)</FieldLabel>
           <textarea
+            id="description"
             {...register("description", {
               maxLength: {
                 value: 1000,
@@ -211,7 +250,7 @@ const EditProduct = () => {
               },
             })}
             rows={4}
-            placeholder="Describe the item (optional)"
+            placeholder="Condition, size, what is included"
             className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary resize-y"
           />
           {errors.description && (
@@ -222,6 +261,7 @@ const EditProduct = () => {
         </div>
         {/* Photo — current shown by default, replace only when picked */}
         <div>
+          <FieldLabel>Product photo</FieldLabel>
           <label className="border border-dashed border-gray-300 rounded-lg p-4 font-body text-sm text-passive cursor-pointer block">
             {image
               ? `New photo — ${image.name}`

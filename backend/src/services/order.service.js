@@ -11,6 +11,10 @@ import {
 } from "../utils/notification.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 
+// Error the buyer or seller should read — 400 keeps the message visible
+// in production, where unknown 500 errors are hidden
+const userError = (message) => Object.assign(new Error(message), { statusCode: 400 });
+
 // ── CHECKOUT SERVICE ───────────────────────────────────
 // Contains the full TPS logic and PayMongo integration
 // Called by the checkout controller
@@ -26,13 +30,15 @@ export const processCheckout = async (
   const order = await prisma.$transaction(async (tx) => {
     let totalAmount = 0;
     const validatedItems = [];
+    // Sellers in this order — delivery allows only one
+    const sellerIds = new Set();
 
     // Process each item in the order
     for (const item of items) {
       const { productId, quantity } = item;
 
       if (!productId || !quantity || quantity < 1) {
-        throw new Error("Invalid item — productId and quantity are required");
+        throw userError("Invalid item — productId and quantity are required");
       }
 
       // ── LOCK THE ROW — PREVENTS DOUBLE SELLING ────
@@ -40,7 +46,7 @@ export const processCheckout = async (
       // No concurrent transaction can touch it
       // until this transaction commits or rolls back
       const lockedProduct = await tx.$queryRaw`
-        SELECT id, name, stock, price
+        SELECT id, name, stock, price, "sellerId"
         FROM products
         WHERE id = ${cleanInt(productId)}
         AND "isActive" = true
@@ -48,15 +54,16 @@ export const processCheckout = async (
       `;
 
       if (!lockedProduct || lockedProduct.length === 0) {
-        throw new Error(`Product with ID ${productId} not found`);
+        throw userError(`Product with ID ${productId} not found`);
       }
 
       const product = lockedProduct[0];
+      sellerIds.add(product.sellerId);
 
       // ── STOCK CHECK ───────────────────────────────
       // If insufficient — throw triggers automatic ROLLBACK
       if (product.stock < quantity) {
-        throw new Error(
+        throw userError(
           `Insufficient stock for "${product.name}". ` +
             `Available: ${product.stock}, Requested: ${quantity}`,
         );
@@ -79,6 +86,38 @@ export const processCheckout = async (
       });
     }
 
+    // ── DELIVERY RULES ────────────────────────────
+    // One seller per delivery order, a seller who delivers, and a saved
+    // buyer address. The address and fee are copied onto the order.
+    let deliveryAddress = null;
+    let deliveryFee = 0;
+    if (deliveryType === "DELIVERY") {
+      if (sellerIds.size !== 1) {
+        throw userError(
+          "Delivery orders can only have items from one seller. Choose pickup, or check out each seller separately.",
+        );
+      }
+      const [sellerId] = sellerIds;
+      const seller = await tx.user.findUnique({
+        where: { id: sellerId },
+        select: { offersDelivery: true, deliveryFee: true },
+      });
+      if (!seller?.offersDelivery) {
+        throw userError("This seller does not offer delivery. Please choose pickup.");
+      }
+      const buyer = await tx.user.findUnique({
+        where: { id: buyerId },
+        select: { address: true },
+      });
+      if (!buyer?.address) {
+        throw userError(
+          "Add your delivery address in your profile before choosing delivery.",
+        );
+      }
+      deliveryAddress = buyer.address;
+      deliveryFee = cleanPrice(seller.deliveryFee);
+    }
+
     // ── CREATE ORDER RECORD ───────────────────────
     const newOrder = await tx.order.create({
       data: {
@@ -88,6 +127,10 @@ export const processCheckout = async (
         paymentStatus: "PENDING",
         deliveryType,
         totalAmount,
+        deliveryAddress,
+        deliveryFee,
+        // A fee waits for its online payment, no fee means nothing to pay
+        deliveryFeeStatus: deliveryFee > 0 ? "PENDING" : null,
       },
     });
 
@@ -150,10 +193,11 @@ export const processCheckout = async (
   // PayMongo called OUTSIDE transaction — intentional
   // External API calls must never be inside atomic transactions
   if (paymentMethod === "GCASH") {
+    // GCash pays the items and the delivery fee together
     const payment = await createCheckoutSession(
-      order.totalAmount,
+      cleanPrice(order.totalAmount) + cleanPrice(order.deliveryFee),
       order.id,
-      `PropeBuy Order #${order.id} — ${order.orderItems.length} item(s)`,
+      `PropeBuy Order #${order.id} — ${order.orderItems.length} item(s)${cleanPrice(order.deliveryFee) > 0 ? " + delivery fee" : ""}`,
     );
 
     // Save PayMongo session ID for webhook and status tracking
@@ -167,7 +211,23 @@ export const processCheckout = async (
     return { order, paymentUrl: payment.checkoutUrl };
   }
 
-  // Cash payment — no payment gateway needed
+  // ── AFTER COMMIT — DELIVERY FEE FOR CASH ORDERS ──
+  // Items stay cash on delivery, but the fee is paid online first, so a
+  // seller never pays a rider for an order nobody receives
+  if (paymentMethod === "CASH" && order.deliveryFeeStatus === "PENDING") {
+    const payment = await createCheckoutSession(
+      order.deliveryFee,
+      order.id,
+      `PropeBuy delivery fee — Order #${order.id}`,
+    );
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { paymongoLinkId: payment.sessionId },
+    });
+    return { order, paymentUrl: payment.checkoutUrl };
+  }
+
+  // Cash pickup, or cash delivery with no fee — no payment gateway needed
   return { order, paymentUrl: null };
 };
 
@@ -218,8 +278,14 @@ export const getOrderById = async (orderId) => {
           },
         },
       },
+      // Buyer's barangay, shown on the seller's order page
       buyer: {
-        select: { id: true, name: true, email: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          barangay: { select: { name: true } },
+        },
       },
     },
   });
@@ -265,14 +331,23 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
     },
   });
 
-  if (!order) throw new Error("Order not found");
+  if (!order) throw userError("Order not found");
 
   // Verify this order contains this seller's products
   const isSellerOrder = order.orderItems.some(
     (item) => item.product.sellerId === sellerId,
   );
 
-  if (!isSellerOrder) throw new Error("Not authorized to update this order");
+  if (!isSellerOrder) throw userError("Not authorized to update this order");
+
+  // Cash delivery waits for the online delivery fee before work starts.
+  // Cancelling is still allowed, and it returns the stock.
+  if (
+    ["PROCESSING", "FULFILLED"].includes(status) &&
+    order.deliveryFeeStatus === "PENDING"
+  ) {
+    throw userError("Waiting for the buyer to pay the delivery fee online");
+  }
 
   if (status === "CANCELLED") {
     // ── ATOMIC CANCELLATION ───────────────────────
@@ -321,6 +396,35 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
   });
 };
 
+// ── SETTLE AN ONLINE PAYMENT ───────────────────────────
+// GCash orders: items and any fee are paid. Cash delivery orders: the
+// online payment was the delivery fee only, so the items stay cash.
+const settleOnlinePayment = async (order) => {
+  if (order.paymentMethod === "CASH") {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { deliveryFeeStatus: "PAID" },
+    });
+  } else {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paymentStatus: "PAID",
+        status: "PROCESSING",
+        ...(order.deliveryFeeStatus ? { deliveryFeeStatus: "PAID" } : {}),
+      },
+    });
+  }
+  // Real-time notification to the buyer
+  notifyPaymentConfirmed(order.buyerId, order.id);
+};
+
+// True once the online part of this order is paid
+const onlinePartPaid = (order) =>
+  order.paymentMethod === "CASH"
+    ? order.deliveryFeeStatus !== "PENDING"
+    : order.paymentStatus === "PAID";
+
 // ── CHECK PAYMENT STATUS SERVICE ───────────────────────
 // Verifies GCash payment — uses PayMongo as fallback
 export const confirmPaymentStatus = async (orderId) => {
@@ -328,33 +432,36 @@ export const confirmPaymentStatus = async (orderId) => {
     where: { id: cleanInt(orderId) },
   });
 
-  if (!order) throw new Error("Order not found");
+  if (!order) throw userError("Order not found");
 
   // Already paid — return immediately
-  if (order.paymentStatus === "PAID") {
-    return { paymentStatus: "PAID", updated: false };
+  if (onlinePartPaid(order)) {
+    return {
+      paymentStatus: order.paymentStatus,
+      deliveryFeeStatus: order.deliveryFeeStatus,
+      updated: false,
+    };
   }
 
-  // Check with PayMongo directly if we have a link ID
+  // Check with PayMongo directly if we have a session id
   if (order.paymongoLinkId) {
     const paymongoStatus = await verifyPaymentStatus(order.paymongoLinkId);
-
     if (paymongoStatus === "paid") {
-      // Update database to reflect confirmed payment
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { paymentStatus: "PAID", status: "PROCESSING" },
-      });
-
-      // ── REAL-TIME PAYMENT NOTIFICATION ───────────
-      // Notify buyer that their GCash payment is confirmed
-      notifyPaymentConfirmed(order.buyerId, order.id);
-
-      return { paymentStatus: "PAID", updated: true };
+      await settleOnlinePayment(order);
+      const fresh = await prisma.order.findUnique({ where: { id: order.id } });
+      return {
+        paymentStatus: fresh.paymentStatus,
+        deliveryFeeStatus: fresh.deliveryFeeStatus,
+        updated: true,
+      };
     }
   }
 
-  return { paymentStatus: order.paymentStatus, updated: false };
+  return {
+    paymentStatus: order.paymentStatus,
+    deliveryFeeStatus: order.deliveryFeeStatus,
+    updated: false,
+  };
 };
 
 // ── MARK CASH PAYMENT RECEIVED ─────────────────────────
@@ -401,14 +508,8 @@ export const processWebhookEvent = async (event) => {
   });
 
   // Unknown session, or already settled — idempotent for PayMongo retries
-  if (!order || order.paymentStatus === "PAID") return;
+  if (!order || onlinePartPaid(order)) return;
 
-  // Same update as the polling path in confirmPaymentStatus
-  await prisma.order.update({
-    where: { id: order.id },
-    data: { paymentStatus: "PAID", status: "PROCESSING" },
-  });
-
-  // Real-time notification to buyer on payment confirmation
-  notifyPaymentConfirmed(order.buyerId, order.id);
+  // Same settlement as the polling path in confirmPaymentStatus
+  await settleOnlinePayment(order);
 };

@@ -4,8 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthShell from "../../components/AuthShell.jsx";
 import Icon from "../../components/Icon.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
 import Select from "../../components/Select.jsx";
-import { registerUser } from "../../api/auth.api.js";
+import {
+  registerUser,
+  requestEmailOtp,
+  verifyEmailOtp,
+} from "../../api/auth.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 
@@ -15,6 +20,8 @@ const Register = () => {
   const {
     register,
     handleSubmit,
+    trigger,
+    getValues,
     formState: { errors },
   } = useForm();
   // Role and barangay held in state since custom Select is controlled
@@ -27,6 +34,13 @@ const Register = () => {
   const [barangays, setBarangays] = useState([]);
   // Block double submit
   const [loading, setLoading] = useState(false);
+  // Email code steps — otpToken is the proof sent with registration
+  const [codeSent, setCodeSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpToken, setOtpToken] = useState("");
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   // Store plus nav
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
@@ -49,6 +63,67 @@ const Register = () => {
       .catch(() => toast.error("Failed to load barangays"));
   }, []);
 
+  // Counts the resend wait down by one second at a time
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  // Validator message first, then the API message, then a fallback
+  const readError = (err, fallback) =>
+    err.response?.data?.errors?.[0]?.message ||
+    err.response?.data?.message ||
+    fallback;
+
+  // Back to step 1 so a different email can be used
+  const resetEmailStep = () => {
+    setCodeSent(false);
+    setOtpCode("");
+    setOtpToken("");
+  };
+
+  // Emails a code to the address in the email field
+  const sendCode = async () => {
+    if (!(await trigger("email"))) return;
+    setSending(true);
+    try {
+      const res = await requestEmailOtp(getValues("email"));
+      setCodeSent(true);
+      setOtpCode("");
+      setCooldown(res.data.retryAfter);
+      toast.success(res.message);
+    } catch (err) {
+      // The backend says how long to wait when the cooldown is still on
+      if (err.response?.data?.retryAfter) setCooldown(err.response.data.retryAfter);
+      toast.error(readError(err, "Could not send the code"));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Confirms the code and unlocks the rest of the form
+  const confirmCode = async () => {
+    if (otpCode.length !== 6) return;
+    setVerifying(true);
+    try {
+      const res = await verifyEmailOtp(getValues("email"), otpCode);
+      setOtpToken(res.data.otpToken);
+      toast.success(res.message);
+    } catch (err) {
+      toast.error(readError(err, "Could not confirm the code"));
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // Enter key and main button follow whichever step is on screen
+  const submitEmailStep = (e) => {
+    e.preventDefault();
+    if (codeSent) confirmCode();
+    else if (cooldown <= 0 && !sending) sendCode();
+  };
+
   // Submit — FormData for multer fields
   const onSubmit = async (values) => {
     // Barangay required, backend cross-checks documents against it
@@ -65,6 +140,7 @@ const Register = () => {
       fd.append("password", values.password);
       fd.append("role", role);
       fd.append("barangayId", barangayId);
+      fd.append("otpToken", otpToken);
       fd.append("idDocument", idDoc);
       fd.append("certDocument", certDoc);
       // POST /auth/register
@@ -82,12 +158,9 @@ const Register = () => {
         );
       else navigate("/browse");
     } catch (err) {
-      // Validator array first, else message
-      const msg =
-        err.response?.data?.errors?.[0]?.message ||
-        err.response?.data?.message ||
-        "Registration failed";
-      toast.error(msg);
+      // The 30-minute proof ran out — send them back to confirm again
+      if (err.response?.data?.emailNotVerified) resetEmailStep();
+      toast.error(readError(err, "Registration failed"));
     } finally {
       setLoading(false);
     }
@@ -132,14 +205,105 @@ const Register = () => {
         </>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        onSubmit={otpToken ? handleSubmit(onSubmit) : submitEmailStep}
+        className="space-y-4"
+      >
+        {/* Email — step 1, locked once a code is on its way */}
+        <div>
+          <FieldLabel htmlFor="email">Email address</FieldLabel>
+          <div className="relative">
+            <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+            <input
+              {...register("email", {
+                required: "Email required",
+                pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email" },
+              })}
+              id="email"
+              type="email"
+              readOnly={codeSent}
+              placeholder="you@example.com"
+              autoComplete="email"
+              className="w-full pl-13 pr-5 py-3.5 font-body text-sm read-only:text-black/60"
+            />
+          </div>
+          {errors.email && (
+            <p className="text-danger text-xs mt-1 pl-5">{errors.email.message}</p>
+          )}
+          {/* Verified state — offer a way back if the email was wrong */}
+          {otpToken && (
+            <p className="flex items-center gap-1 font-body text-xs text-success mt-1.5 pl-5">
+              <Icon name="check_circle" className="text-success" />
+              Email verified.
+              <button type="button" onClick={resetEmailStep} className="text-black font-bold underline ml-1">
+                Change email
+              </button>
+            </p>
+          )}
+        </div>
+        {/* Step 1 button — send the first code */}
+        {!codeSent && (
+          <button
+            disabled={sending || cooldown > 0}
+            className="btn-primary btn-active w-full py-3.5 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {sending ? <span className="spinner" /> : <Icon name="mail" />}
+            {sending ? "Sending..." : cooldown > 0 ? `Send code in ${cooldown}s` : "Send code"}
+          </button>
+        )}
+        {/* Step 2 — type the emailed code */}
+        {codeSent && !otpToken && (
+          <>
+            <div>
+              <FieldLabel htmlFor="otpCode">6-digit code</FieldLabel>
+              <input
+                id="otpCode"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="Check your email"
+                className="w-full px-5 py-3.5 font-body text-sm"
+              />
+              <p className="font-body text-xs text-black/60 mt-1.5 pl-5">
+                The code expires in 10 minutes. Check your spam folder too.
+              </p>
+            </div>
+            <button
+              disabled={verifying || otpCode.length !== 6}
+              className="btn-primary btn-active w-full py-3.5 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {verifying ? <span className="spinner" /> : <Icon name="check_circle" />}
+              {verifying ? "Checking..." : "Confirm code"}
+            </button>
+            {/* Resend waits for the cooldown, change email restarts the step */}
+            <div className="flex justify-between font-body text-sm">
+              <button
+                type="button"
+                onClick={sendCode}
+                disabled={sending || cooldown > 0}
+                className="font-bold underline disabled:opacity-50 disabled:no-underline"
+              >
+                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+              </button>
+              <button type="button" onClick={resetEmailStep} className="font-bold underline">
+                Change email
+              </button>
+            </div>
+          </>
+        )}
+        {/* Step 3 — the rest of the form appears after the email is confirmed */}
+        {otpToken && (
+          <>
         {/* Name */}
         <div>
+          <FieldLabel htmlFor="name">Full name</FieldLabel>
           <div className="relative">
             <Icon name="person" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
             <input
               {...register("name", { required: "Name required" })}
-              placeholder="Full name (as on your ID)"
+              id="name"
+              placeholder="As shown on your ID"
               autoComplete="name"
               className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
             />
@@ -148,24 +312,9 @@ const Register = () => {
             <p className="text-danger text-xs mt-1 pl-5">{errors.name.message}</p>
           )}
         </div>
-        {/* Email */}
-        <div>
-          <div className="relative">
-            <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-            <input
-              {...register("email", { required: "Email required" })}
-              type="email"
-              placeholder="Email address"
-              autoComplete="email"
-              className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
-            />
-          </div>
-          {errors.email && (
-            <p className="text-danger text-xs mt-1 pl-5">{errors.email.message}</p>
-          )}
-        </div>
         {/* Password */}
         <div>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
           <div className="relative">
             <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
             <input
@@ -173,8 +322,9 @@ const Register = () => {
                 required: "Password required",
                 minLength: { value: 6, message: "Min 6 chars" },
               })}
+              id="password"
               type="password"
-              placeholder="Password (min 6 characters)"
+              placeholder="At least 6 characters"
               autoComplete="new-password"
               className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
             />
@@ -185,18 +335,24 @@ const Register = () => {
         </div>
         {/* Role plus barangay — custom dropdowns */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Select
-            value={role}
-            onChange={setRole}
-            options={roleOptions}
-            ariaLabel="Select role"
-          />
-          <Select
-            value={barangayId}
-            onChange={setBarangayId}
-            options={barangayOptions}
-            ariaLabel="Select barangay"
-          />
+          <div>
+            <FieldLabel>I am a</FieldLabel>
+            <Select
+              value={role}
+              onChange={setRole}
+              options={roleOptions}
+              ariaLabel="Select role"
+            />
+          </div>
+          <div>
+            <FieldLabel>Barangay</FieldLabel>
+            <Select
+              value={barangayId}
+              onChange={setBarangayId}
+              options={barangayOptions}
+              ariaLabel="Select barangay"
+            />
+          </div>
         </div>
         {/* Document uploads — the dual-document verification */}
         <div className="grid gap-3 pt-2">
@@ -211,6 +367,8 @@ const Register = () => {
           {loading ? <span className="spinner" /> : <Icon name="how_to_reg" />}
           {loading ? "Checking your documents..." : "Create account"}
         </button>
+          </>
+        )}
       </form>
     </AuthShell>
   );

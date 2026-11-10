@@ -36,7 +36,7 @@ export const RolePill = ({ role }) => {
 };
 
 // ── OCR RESULT ──
-// What the OCR engine decided before any human looked:
+// How the OCR engine grouped the account for the admin queue:
 // AUTO_APPROVED >=60, MANUAL_REVIEW 30-59, AUTO_REJECTED <30
 const OCR_STYLES = {
   AUTO_APPROVED: "bg-primary/10 text-primary", // OCR says clean
@@ -44,9 +44,9 @@ const OCR_STYLES = {
   AUTO_REJECTED: "bg-danger/10 text-danger", // OCR says mismatch
 };
 const OCR_LABELS = {
-  AUTO_APPROVED: "OCR: clean",
+  AUTO_APPROVED: "OCR: high confidence",
   MANUAL_REVIEW: "OCR: needs review",
-  AUTO_REJECTED: "OCR: mismatch",
+  AUTO_REJECTED: "OCR: low confidence",
 };
 
 export const OcrPill = ({ result, confidence }) => {

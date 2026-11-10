@@ -7,6 +7,20 @@ export const useCartStore = create(
     (set, get) => ({
       // ── STATE ──
       items: [], // [{ productId, name, price, imageUrl, quantity, stock }]
+      ownerId: null, // account that owns this cart, null for a guest
+
+      // ── CLAIM FOR AN ACCOUNT ──
+      // A guest cart is kept on login. Another account's cart is emptied,
+      // so buyers sharing one browser never see each other's items.
+      claimFor: (userId) =>
+        set((state) =>
+          state.ownerId && state.ownerId !== userId
+            ? { items: [], ownerId: userId }
+            : { ownerId: userId },
+        ),
+
+      // ── RESET ON LOGOUT ──
+      reset: () => set({ items: [], ownerId: null }),
 
       // ── ADD TO CART ──
       // Merges if same product, caps at stock
@@ -49,6 +63,17 @@ export const useCartStore = create(
           items: state.items.map((i) =>
             i.productId === productId
               ? { ...i, quantity: Math.max(1, Math.min(qty, i.stock)) }
+              : i,
+          ),
+        })),
+
+      // ── SYNC WITH LIVE PRODUCT ──
+      // Refreshes stock and price, then caps quantity to what is left
+      syncLine: (productId, { stock, price }) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.productId === productId
+              ? { ...i, stock, price, quantity: Math.min(i.quantity, stock) }
               : i,
           ),
         })),
