@@ -17,6 +17,7 @@ model User {
   barangayId      Int?
   idDocumentUrl   String?
   certDocumentUrl String?
+  address         String?       // saved delivery address, or the store address for sellers
 
   // OCR verification fields
   // Stores the result of automated document verification

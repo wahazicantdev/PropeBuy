@@ -5,6 +5,7 @@ import { useAuthStore } from "../../stores/auth.store.js";
 import { fetchMe } from "../../api/auth.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
 import Icon from "../../components/Icon.jsx";
+import ProfileAddress from "../../components/ProfileAddress.jsx";
 
 // Buyer profile - read-only info, no edit endpoint exists on backend
 const BuyerProfile = () => {
@@ -101,6 +102,9 @@ const BuyerProfile = () => {
         ))}
       </ul>
 
+      {/* Saved delivery address — key remounts it with fresh values */}
+      <ProfileAddress key={`${user?.id}-${user?.address ?? ""}`} />
+
       {/* Shortcuts plus logout */}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <Link to="/orders" className="btn-primary btn-active py-3.5 text-center font-body font-medium flex items-center justify-center gap-2">
@@ -115,10 +119,10 @@ const BuyerProfile = () => {
           Log out
         </button>
       </div>
-      {/* Honest scope note — editing waits for a backend endpoint */}
+      {/* Name, email and barangay are locked to the verified documents */}
       <p className="mt-4 font-body text-xs text-black/40">
-        Profile details come from your verified documents. Contact your
-        barangay administrator to change them.
+        Your name, email and barangay come from your verified documents.
+        Contact your barangay administrator to change them.
       </p>
     </div>
   );
