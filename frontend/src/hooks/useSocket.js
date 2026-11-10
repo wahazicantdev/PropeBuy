@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../stores/auth.store.js";
+import { endSession } from "../api/axios.js";
 
 // Window event every socket message re-broadcasts. Pages subscribe
 // through useLiveTick() and refetch, so order and stock screens update
@@ -59,6 +60,20 @@ export const useSocket = () => {
         { icon: "⚠️" },
       );
       broadcast("low_stock_alert", payload);
+    });
+
+    // ── ACCOUNT EVENTS ──
+    // Admin decision arrives live: approval unlocks the account,
+    // rejection or suspension logs the user out at once
+    socket.on("account_status", (payload) => {
+      const { user: current, setUser } = useAuthStore.getState();
+      if (payload.status === "REJECTED") {
+        endSession(payload.message, current?.role);
+        return;
+      }
+      if (current) setUser({ ...current, accountStatus: payload.status });
+      toast.success(payload.message);
+      broadcast("account_status", payload);
     });
 
     // Handshake refused — expired token. Stay quiet in the UI: the

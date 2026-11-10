@@ -1,4 +1,12 @@
 import axios from "axios";
+import { useAuthStore } from "../stores/auth.store.js";
+
+// Ends the session, keeps a message for the login page, goes to login
+export const endSession = (message, role) => {
+  sessionStorage.setItem("propebuy_notice", message);
+  useAuthStore.getState().logout();
+  window.location.href = role === "SELLER" ? "/login/seller" : "/login/buyer";
+};
 
 // Base URL — from .env, fallback to localhost:5000
 const api = axios.create({
@@ -37,6 +45,10 @@ api.interceptors.response.use(
       // Avoid loop if already on login page
       if (!window.location.pathname.includes("login"))
         window.location.href = "/login/buyer";
+    }
+    // 403 for a rejected or suspended account — log out everywhere
+    if (error.response.status === 403 && error.response.data?.accountRejected) {
+      endSession(error.response.data.message, useAuthStore.getState().user?.role);
     }
     return Promise.reject(error);
   },
