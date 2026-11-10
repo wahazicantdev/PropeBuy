@@ -38,6 +38,17 @@ export const protect = async (req, res, next) => {
       });
     }
 
+    // Rejected or suspended while logged in — end the session now,
+    // not when the token expires
+    if (user.accountStatus === "REJECTED") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This account was rejected or suspended. Contact your barangay administrator.",
+        accountRejected: true,
+      });
+    }
+
     // attach whole user data, not just userId
     req.user = user;
     // Token and user are valid, continue to protected route.
