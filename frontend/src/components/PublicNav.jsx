@@ -16,7 +16,10 @@ const PublicNav = () => {
   // Auth state plus logout plus redirect
   const { isAuthenticated, user, logout } = useAuthStore();
   // Cart count badge for buyers
-  const getTotalItems = useCartStore((s) => s.getTotalItems);
+  // Subscribes to the items, so the count changes the moment the cart does
+  const cartCount = useCartStore((s) =>
+    s.items.reduce((sum, i) => sum + i.quantity, 0),
+  );
   const navigate = useNavigate();
   // Search box starts from the URL, so /browse?search=x shows "x"
   const [urlParams] = useSearchParams();
@@ -26,7 +29,6 @@ const PublicNav = () => {
   const isSeller = user?.role === "SELLER";
   const isAdmin = user?.role === "ADMIN";
   const showCart = !isAuthenticated || user?.role === "BUYER";
-  const cartCount = getTotalItems();
 
   // Logout clears session and lands on landing
   const handleLogout = () => {
