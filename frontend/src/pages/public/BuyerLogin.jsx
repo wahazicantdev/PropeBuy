@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -18,6 +18,14 @@ const BuyerLogin = () => {
   const login = useAuthStore((s) => s.login);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+
+  // Message left by a session that was ended, e.g. a rejected account
+  useEffect(() => {
+    const notice = sessionStorage.getItem("propebuy_notice");
+    if (!notice) return;
+    sessionStorage.removeItem("propebuy_notice");
+    toast.error(notice, { id: "session-notice" });
+  }, []);
 
   // Submit — strict buyer check
   const onSubmit = async (v) => {

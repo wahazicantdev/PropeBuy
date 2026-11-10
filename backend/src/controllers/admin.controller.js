@@ -1,4 +1,5 @@
 import prisma from "../config/prismaClient.js";
+import { notifyAccountStatus } from "../utils/notification.helper.js";
 import {
   extractTextFromImage,
   extractIDFields,
@@ -331,6 +332,9 @@ export const verifyUser = async (req, res) => {
     },
   });
 
+  // Live update for the user, if they are online right now
+  notifyAccountStatus(updatedUser.id, updatedUser.accountStatus);
+
   res.status(200).json({
     success: true,
     message: `User ${action === "approve" ? "approved" : "rejected"} successfully`,
@@ -484,6 +488,9 @@ export const suspendUser = async (req, res) => {
       accountStatus: true,
     },
   });
+
+  // Ends the suspended user's open pages right away
+  notifyAccountStatus(suspendedUser.id, "REJECTED");
 
   res.status(200).json({
     success: true,
