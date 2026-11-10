@@ -10,6 +10,18 @@ export const registerUser = async (formData) => {
   return res.data;
 };
 
+// Ask the backend to email a registration code
+export const requestEmailOtp = async (email) => {
+  const res = await api.post("/auth/otp/send", { email });
+  return res.data;
+};
+
+// Confirm the code — returns data.otpToken for registration
+export const verifyEmailOtp = async (email, code) => {
+  const res = await api.post("/auth/otp/verify", { email, code });
+  return res.data;
+};
+
 // Login — json only
 export const loginUser = async (email, password) => {
   // Backend validates via validateLogin

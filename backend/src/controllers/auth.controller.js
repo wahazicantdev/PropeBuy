@@ -9,6 +9,7 @@ import {
   extractCertificateFields,
   crossCheckDocuments,
 } from "../utils/ocr.helper.js";
+import { isEmailProofValid } from "../utils/otp.helper.js";
 
 // ── REGISTER ───────────────────────────────────────────
 export const register = async (req, res) => {
@@ -26,6 +27,15 @@ export const register = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Role must be either BUYER or SELLER",
+    });
+  }
+
+  // Email must have passed the code check, before any upload or OCR work
+  if (!isEmailProofValid(req.body.otpToken, email)) {
+    return res.status(400).json({
+      success: false,
+      message: "Please verify your email first",
+      emailNotVerified: true,
     });
   }
 
