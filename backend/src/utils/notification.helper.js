@@ -44,6 +44,21 @@ export const notifyLowStock = (sellerId, product) => {
   });
 };
 
+// ── SEND ACCOUNT STATUS CHANGE ────────────────────────
+// Tells a logged-in user the admin approved, rejected or suspended them
+// userId — the account that changed
+// status — VERIFIED or REJECTED
+export const notifyAccountStatus = (userId, status) => {
+  io.to(`user_${userId}`).emit("account_status", {
+    status,
+    message:
+      status === "VERIFIED"
+        ? "Your account is verified. You can now buy and sell on PropeBuy."
+        : "This account was rejected or suspended. Contact your barangay administrator.",
+    timestamp: new Date().toISOString(),
+  });
+};
+
 // ── SEND NEW ORDER ALERT ───────────────────────────────
 // Notifies a seller the moment a buyer's checkout commits with their
 // goods inside. One order can hold items from several sellers, so the
