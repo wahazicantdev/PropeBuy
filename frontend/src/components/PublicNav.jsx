@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NotificationBell from "./NotificationBell.jsx";
 import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store.js";
 import { useCartStore } from "../stores/cart.store.js";
@@ -183,6 +184,8 @@ const PublicNav = () => {
                 )}
               </Link>
             )}
+            {/* Saved notifications — members only */}
+            {isAuthenticated && <NotificationBell />}
             {/* Account — login for guests, own area for members */}
             <Link to={accountPath} className="p-1" aria-label="Account">
               <Icon name="person" size={24} />

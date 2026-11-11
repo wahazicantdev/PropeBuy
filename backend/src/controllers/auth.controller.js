@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { notifyAdminsNewRegistration } from "../utils/notification.helper.js";
 import jwt from "jsonwebtoken";
 import prisma from "../config/prismaClient.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
@@ -138,6 +139,9 @@ export const register = async (req, res) => {
       ocrExtractedData: JSON.stringify(verificationResult.extractedData),
     },
   });
+
+  // Admins see the new applicant in their bell
+  notifyAdminsNewRegistration(user);
 
   // ── GENERATE JWT TOKEN ─────────────────────────────
   const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {

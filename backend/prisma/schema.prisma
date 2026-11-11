@@ -32,6 +32,7 @@ model User {
   updatedAt       DateTime      @updatedAt
   orders          Order[]
   products        Product[]
+  notifications   Notification[]
   barangay        Barangay?     @relation(fields: [barangayId], references: [id])
 
   @@map("users")
@@ -47,6 +48,22 @@ model EmailOtp {
   lastSentAt DateTime @default(now())
 
   @@map("email_otps")
+}
+
+// Saved notification — the bell list. Live toasts still come by socket.
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // ORDER_STATUS, PAYMENT, NEW_ORDER, LOW_STOCK, ACCOUNT, NEW_REGISTRATION
+  title     String
+  message   String
+  link      String?  // page to open when tapped
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
 }
 
 model Barangay {
