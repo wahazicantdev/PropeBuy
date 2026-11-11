@@ -77,6 +77,14 @@ const SellerStore = () => {
                 </h1>
                 <div className="mt-2 flex items-center gap-3 flex-wrap">
                   {seller?.accountStatus === "VERIFIED" && <VerifiedBadge />}
+                  {/* Store average across every rated item */}
+                  {seller?.rating?.count > 0 && (
+                    <span className="flex items-center gap-1 font-body text-sm text-black">
+                      <Icon name="star" size={18} className="text-star" />
+                      {seller.rating.average.toFixed(1)}
+                      <span className="text-black/50">({seller.rating.count} rating{seller.rating.count > 1 ? "s" : ""})</span>
+                    </span>
+                  )}
                   <span className="flex items-center gap-1 font-body text-sm text-black/60">
                     <Icon name="location_on" size={16} />
                     Barangay {barangay?.name || "—"}, Muntinlupa

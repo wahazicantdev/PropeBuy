@@ -1,3 +1,4 @@
+import { attachRatings } from "../utils/review.helper.js";
 import prisma from "../config/prismaClient.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
 import { cleanInt, cleanPrice } from "../utils/format.helper.js";
@@ -156,7 +157,8 @@ export const getProducts = async (req, res) => {
   res.status(200).json({
     success: true,
     count: products.length,
-    data: products,
+    // Product and seller ratings for the cards and store page
+    data: await attachRatings(products),
   });
 };
 
@@ -219,9 +221,12 @@ export const getProduct = async (req, res) => {
     });
   }
 
+  // Product and seller rating for the detail page
+  const [rated] = await attachRatings([product]);
+
   res.status(200).json({
     success: true,
-    data: product,
+    data: rated,
   });
 };
 

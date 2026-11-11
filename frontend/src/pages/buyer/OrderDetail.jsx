@@ -1,3 +1,4 @@
+import RateOrderItems from "../../components/RateOrderItems.jsx";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -135,6 +136,19 @@ const OrderDetail = () => {
           <Icon name="cancel" />
           This order was cancelled. Reserved stock went back to the sellers.
         </p>
+      )}
+
+      {/* Ratings — required on fulfilled orders before the next checkout */}
+      {order.status === "FULFILLED" && (
+        <RateOrderItems
+          order={order}
+          onRated={(itemId, review) =>
+            setOrder((o) => ({
+              ...o,
+              orderItems: o.orderItems.map((it) => (it.id === itemId ? { ...it, review } : it)),
+            }))
+          }
+        />
       )}
 
       {/* Items left, payment card right — stacked on phone */}

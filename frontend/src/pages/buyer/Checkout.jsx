@@ -1,3 +1,4 @@
+import { fetchPendingReviews } from "../../api/review.api.js";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -87,6 +88,14 @@ const Checkout = () => {
       setDelivery({ checked: true, ok: true, fee: Number(seller.deliveryFee) || 0 });
     });
   }, [productKey]);
+
+  // Unrated fulfilled orders block checkout on the backend, so say it here
+  const [pendingReviews, setPendingReviews] = useState([]);
+  useEffect(() => {
+    fetchPendingReviews()
+      .then((res) => setPendingReviews(res.data || []))
+      .catch(() => {});
+  }, []);
 
   // Delivery options straight from the documented enum
   const deliveryOptions = [
@@ -197,7 +206,8 @@ const Checkout = () => {
                     </Link>
                   </p>
                 ) : deliveryProblem ? (
-                  <p className="text-danger">{deliveryProblem}</p>
+                  // Gray while still checking, red once there is a real problem
+                  <p className={delivery.checked ? "text-danger" : "text-black/60"}>{deliveryProblem}</p>
                 ) : (
                   <>
                     <p className="text-black">
@@ -313,6 +323,18 @@ const Checkout = () => {
               </div>
             )}
           </dl>
+          {/* Ratings notice — links to the order that needs them */}
+          {pendingReviews.length > 0 && (
+            <p className="font-body text-xs text-danger mt-5 bg-danger/10 rounded-xl p-3 flex gap-2">
+              <Icon name="star" size={18} className="shrink-0" />
+              <span>
+                Please rate your completed order before placing a new one.{" "}
+                <Link to={`/orders/${pendingReviews[0].orderId}`} className="font-bold underline">
+                  Rate now
+                </Link>
+              </span>
+            </p>
+          )}
           {/* Unverified notice — explains the disabled button up front */}
           {!verified && (
             <p className="font-body text-xs text-danger mt-5 bg-danger/10 rounded-xl p-3 flex gap-2">
@@ -325,7 +347,7 @@ const Checkout = () => {
           {/* Submit with spinner state — VERIFIED buyers only */}
           <button
             onClick={placeOrder}
-            disabled={loading || !verified || !!deliveryProblem}
+            disabled={loading || !verified || !!deliveryProblem || pendingReviews.length > 0}
             className="btn-primary btn-active w-full mt-6 py-4 font-body font-medium disabled:opacity-40 flex items-center justify-center gap-2"
           >
             {loading ? <Spinner /> : <Icon name="lock" />}

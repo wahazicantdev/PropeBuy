@@ -1,3 +1,5 @@
+import Stars from "../../components/Stars.jsx";
+import ProductReviews from "../../components/ProductReviews.jsx";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -170,6 +172,13 @@ const ProductDetail = () => {
           {/* ── INFO PANEL ── */}
           <div className="min-w-0">
             <h1 className="text-2xl md:text-4xl text-black">{product.name}</h1>
+            {/* Rating summary under the name */}
+            {product.rating?.count > 0 && (
+              <p className="mt-2 flex items-center gap-2 font-body text-sm text-black/70">
+                <Stars value={product.rating.average} size={18} />
+                {product.rating.average.toFixed(1)} · {product.rating.count} rating{product.rating.count > 1 ? "s" : ""}
+              </p>
+            )}
             <p className="mt-3 font-body font-bold text-2xl md:text-3xl text-black">
               {formatPeso(product.price)}
             </p>
@@ -262,6 +271,9 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* ── RATINGS AND REVIEWS ── */}
+        <ProductReviews productId={product.id} />
 
         {/* ── YOU MIGHT ALSO LIKE ── */}
         {related.length > 0 && (
