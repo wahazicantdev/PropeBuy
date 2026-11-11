@@ -62,6 +62,13 @@ export const useSocket = () => {
       broadcast("low_stock_alert", payload);
     });
 
+    // ── SAVED NOTIFICATIONS ──
+    // No toast here — the event above already showed one. This only
+    // makes every open bell refetch its list and count.
+    socket.on("notification_new", (payload) => {
+      broadcast("notification_new", payload);
+    });
+
     // ── ACCOUNT EVENTS ──
     // Admin decision arrives live: approval unlocks the account,
     // rejection or suspension logs the user out at once

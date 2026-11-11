@@ -333,7 +333,7 @@ export const verifyUser = async (req, res) => {
   });
 
   // Live update for the user, if they are online right now
-  notifyAccountStatus(updatedUser.id, updatedUser.accountStatus);
+  notifyAccountStatus(updatedUser.id, updatedUser.accountStatus, updatedUser.role);
 
   res.status(200).json({
     success: true,
@@ -490,7 +490,7 @@ export const suspendUser = async (req, res) => {
   });
 
   // Ends the suspended user's open pages right away
-  notifyAccountStatus(suspendedUser.id, "REJECTED");
+  notifyAccountStatus(suspendedUser.id, "REJECTED", suspendedUser.role);
 
   res.status(200).json({
     success: true,

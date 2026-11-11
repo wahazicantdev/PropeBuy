@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NotificationBell from "../NotificationBell.jsx";
 import { Link, NavLink, Outlet } from "react-router-dom";
 // Auth store — same source every other shell reads, always live state
 import { useAuthStore } from "../../stores/auth.store.js";
@@ -73,6 +74,10 @@ const AdminLayout = () => {
           <Link to="/admin/dashboard" className="font-header text-xl md:text-2xl text-black shrink-0">
             PropeBuy <span className="text-black/40">Admin</span>
           </Link>
+          {/* Bell on phone and tablet, the desktop one sits in the row */}
+          <div className="lg:hidden ml-auto">
+            <NotificationBell />
+          </div>
           {/* Desktop row — NavLink marks the page you are on */}
           <nav className="hidden lg:flex items-center gap-1 ml-auto">
             {links.map((l) => (
@@ -81,6 +86,8 @@ const AdminLayout = () => {
                 {l.label}
               </NavLink>
             ))}
+            {/* New registrations and other alerts */}
+            <NotificationBell />
             {/* Logout — exit door on every admin page */}
             <button
               onClick={handleLogout}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NotificationBell from "../NotificationBell.jsx";
 import { Link, NavLink, Outlet } from "react-router-dom";
 // Auth store — same source PublicNav reads, always live state
 import { useAuthStore } from "../../stores/auth.store.js";
@@ -46,8 +47,16 @@ const SellerLayout = () => {
   // ProtectedRoute: pending sellers land on Profile and see this.
   const statusCard = (
     <div className="bg-surface rounded-xl p-4">
-      <p className="font-body text-sm font-bold text-black truncate">{user?.name}</p>
-      <p className="font-body text-xs text-black/60 truncate">{user?.email}</p>
+      {/* Name plus the desktop bell — the phone bell lives in the top bar */}
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="font-body text-sm font-bold text-black truncate">{user?.name}</p>
+          <p className="font-body text-xs text-black/60 truncate">{user?.email}</p>
+        </div>
+        <span className="hidden md:block -mt-1">
+          <NotificationBell side="left" />
+        </span>
+      </div>
       <div className="mt-2">
         {user?.accountStatus === "VERIFIED" ? (
           <VerifiedBadge />
@@ -82,7 +91,11 @@ const SellerLayout = () => {
           <Icon name={open ? "close" : "menu"} size={24} />
         </button>
         <Link to="/seller/dashboard" className="font-header text-xl text-black">PropeBuy</Link>
-        <Link to="/browse" className="ml-auto p-1" aria-label="Open the shop">
+        {/* Bell on the phone top bar */}
+        <div className="ml-auto">
+          <NotificationBell />
+        </div>
+        <Link to="/browse" className="p-1" aria-label="Open the shop">
           <Icon name="storefront" size={24} />
         </Link>
       </header>
