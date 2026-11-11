@@ -55,6 +55,14 @@ const ProductCard = ({ product }) => {
           <VerifiedBadge />
         </div>
       )}
+      {/* Rating — only once someone has rated it */}
+      {product.rating?.count > 0 && (
+        <p className="mt-1 flex items-center gap-1 font-body text-xs text-black/70">
+          <Icon name="star" size={14} className="text-star" />
+          {product.rating.average.toFixed(1)}
+          <span className="text-black/40">({product.rating.count})</span>
+        </p>
+      )}
       {/* Price — biggest thing on the card, like the reference */}
       <p className="mt-1 font-body font-bold text-lg md:text-xl text-black">
         {formatPeso(product.price)}

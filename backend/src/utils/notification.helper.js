@@ -121,6 +121,16 @@ export const notifyNewOrder = (sellerId, orderId, itemCount) => {
   });
 };
 
+// ── NEW RATING FOR A SELLER ────────────────────────────
+export const notifyNewReview = (sellerId, productName, rating) => {
+  saveNotification(sellerId, {
+    type: "NEW_REVIEW",
+    title: `New ${rating}-star rating`,
+    message: `A buyer rated "${productName}" ${rating} out of 5.`,
+    link: "/seller/products",
+  });
+};
+
 // ── NEW REGISTRATION FOR ADMINS ────────────────────────
 // Every admin gets a bell item when someone waits for verification
 export const notifyAdminsNewRegistration = (user) => {

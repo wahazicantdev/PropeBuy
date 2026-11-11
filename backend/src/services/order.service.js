@@ -264,6 +264,8 @@ export const getOrderById = async (orderId) => {
     include: {
       orderItems: {
         include: {
+          // The buyer's rating, so the order page knows what is left
+          review: { select: { rating: true, comment: true, createdAt: true } },
           product: {
             // sellerId added so getSellerOrder access check works
              select: {
@@ -368,7 +370,11 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
   } else {
     await prisma.order.update({
       where: { id: cleanInt(orderId) },
-      data: { status },
+      // Fulfilled orders get a date — ratings are required from here on
+      data: {
+        status,
+        ...(status === "FULFILLED" ? { fulfilledAt: new Date() } : {}),
+      },
     });
   }
 
@@ -377,7 +383,7 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
   // Buyer's page updates automatically without refresh
   const statusMessages = {
     PROCESSING: "Your order is now being processed by the seller",
-    FULFILLED: "Your order has been fulfilled and is ready",
+    FULFILLED: "Your order has been fulfilled. Please rate your items.",
     CANCELLED: "Your order has been cancelled",
   };
 

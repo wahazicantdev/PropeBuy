@@ -33,6 +33,8 @@ model User {
   orders          Order[]
   products        Product[]
   notifications   Notification[]
+  reviewsWritten  Review[]      @relation("ReviewBuyer")
+  reviewsReceived Review[]      @relation("ReviewSeller")
   barangay        Barangay?     @relation(fields: [barangayId], references: [id])
 
   @@map("users")
@@ -102,6 +104,7 @@ model Product {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   orderItems  OrderItem[]
+  reviews     Review[]
   barangay    Barangay    @relation(fields: [barangayId], references: [id])
   category    Category    @relation(fields: [categoryId], references: [id])
   seller      User        @relation(fields: [sellerId], references: [id])
@@ -122,6 +125,9 @@ model Order {
   deliveryAddress   String?
   deliveryFee       Decimal        @default(0) @db.Decimal(10, 2)
   deliveryFeeStatus PaymentStatus? // null when there is no fee to pay
+  // Set when the seller marks the order fulfilled. Ratings are required
+  // only for orders with this date, so older orders never lock a buyer.
+  fulfilledAt       DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -140,8 +146,29 @@ model OrderItem {
   createdAt DateTime @default(now())
   order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
+  review    Review?
 
   @@map("order_items")
+}
+
+// One rating per purchased item, written by the buyer after fulfillment
+model Review {
+  id          Int       @id @default(autoincrement())
+  orderItemId Int       @unique
+  productId   Int
+  buyerId     Int
+  sellerId    Int       // copied so store averages need no join
+  rating      Int       // 1 to 5 stars
+  comment     String?
+  createdAt   DateTime  @default(now())
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer       User      @relation("ReviewBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller      User      @relation("ReviewSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([sellerId])
+  @@map("reviews")
 }
 
 enum Role {

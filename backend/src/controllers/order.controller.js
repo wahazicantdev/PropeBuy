@@ -1,3 +1,4 @@
+import { countPendingReviews } from "../utils/review.helper.js";
 import {
   processCheckout,
   getBuyerOrders,
@@ -35,6 +36,16 @@ export const checkout = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Delivery type must be PICKUP or DELIVERY",
+    });
+  }
+
+  // Ratings first: an unrated fulfilled order blocks the next checkout
+  const pendingReviews = await countPendingReviews(req.user.id);
+  if (pendingReviews > 0) {
+    return res.status(403).json({
+      success: false,
+      message: `Please rate your completed order first (${pendingReviews} item${pendingReviews > 1 ? "s" : ""} left).`,
+      pendingReviews,
     });
   }
 
