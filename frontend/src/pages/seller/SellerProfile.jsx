@@ -16,6 +16,9 @@ const SellerProfile = () => {
   const setUser = useAuthStore((s) => s.setUser);
   // Barangay id → name for the display row
   const [barangayName, setBarangayName] = useState("");
+  // True once the fresh profile is in. The address form waits for it, so a
+  // quick Save can never send the empty address from the login copy.
+  const [loaded, setLoaded] = useState(false);
 
   // Refresh from server truth so the status is never a stale store copy
   useEffect(() => {
@@ -23,6 +26,7 @@ const SellerProfile = () => {
       .then((res) => {
         // Sync store with fresh server data
         setUser(res.data);
+        setLoaded(true);
         // Resolve barangay name when the seller picked one
         if (res.data?.barangayId) {
           fetchBarangays()
@@ -122,10 +126,12 @@ const SellerProfile = () => {
         )}
       </div>
       {/* Store address — key remounts it with fresh values */}
+      {loaded && (
       <ProfileAddress
         isSeller
-        key={`${user?.id}-${user?.address ?? ""}-${user?.offersDelivery}-${user?.deliveryFee}`}
+        key={`${user?.id}-${user?.address ?? ""}-${user?.offersDelivery}-${user?.deliveryFee}-${user?.storeLat}-${user?.storeLng}`}
       />
+      )}
       {/* Shortcuts plus logout */}
       <div className="mt-4 grid gap-3">
         <Link

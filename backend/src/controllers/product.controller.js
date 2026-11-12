@@ -134,6 +134,9 @@ export const getProducts = async (req, res) => {
           id: true,
           name: true,
           accountStatus: true,
+          address: true,
+          storeLat: true,
+          storeLng: true,
         },
       },
       barangay: {
@@ -191,6 +194,9 @@ export const getProduct = async (req, res) => {
           accountStatus: true,
           offersDelivery: true,
           deliveryFee: true,
+          address: true,
+          storeLat: true,
+          storeLng: true,
           barangay: {
             select: {
               id: true,

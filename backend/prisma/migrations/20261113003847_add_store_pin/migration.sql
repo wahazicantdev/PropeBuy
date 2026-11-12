@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "storeLat" DOUBLE PRECISION,
+ADD COLUMN     "storeLng" DOUBLE PRECISION;
+

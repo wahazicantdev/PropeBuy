@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import toast from "react-hot-toast";
 import FieldLabel from "./FieldLabel.jsx";
 import Icon from "./Icon.jsx";
 import { updateProfile } from "../api/auth.api.js";
 import { useAuthStore } from "../stores/auth.store.js";
+
+// Map code loads only when a seller opens their profile
+const StoreMap = lazy(() => import("./StoreMap.jsx"));
 
 // Saved address card. Buyers use it for delivery, sellers as the store
 // address. The parent remounts it with a key when the saved user changes.
@@ -14,6 +17,10 @@ const ProfileAddress = ({ isSeller = false }) => {
   const [address, setAddress] = useState(user?.address || "");
   // Seller delivery settings
   const [offersDelivery, setOffersDelivery] = useState(!!user?.offersDelivery);
+  // Store pin, null until the seller taps the map
+  const [pin, setPin] = useState(
+    user?.storeLat != null ? { lat: user.storeLat, lng: user.storeLng } : null,
+  );
   const [deliveryFee, setDeliveryFee] = useState(
     user?.deliveryFee != null ? String(Number(user.deliveryFee)) : "0",
   );
@@ -25,7 +32,15 @@ const ProfileAddress = ({ isSeller = false }) => {
     setSaving(true);
     try {
       const res = await updateProfile(
-        isSeller ? { address, offersDelivery, deliveryFee } : { address },
+        isSeller
+          ? {
+              address,
+              offersDelivery,
+              deliveryFee,
+              storeLat: pin ? pin.lat : null,
+              storeLng: pin ? pin.lng : null,
+            }
+          : { address },
       );
       setUser({ ...user, ...res.data });
       toast.success(res.message);
@@ -60,6 +75,29 @@ const ProfileAddress = ({ isSeller = false }) => {
             : "Used when you choose delivery at checkout."}
         </p>
       </div>
+      {/* Store pin — tap the map, saved with the button below */}
+      {isSeller && (
+        <div>
+          <FieldLabel>Store location pin</FieldLabel>
+          <Suspense
+            fallback={<div className="h-[260px] rounded-xl bg-surface flex items-center justify-center font-body text-sm text-black/60">Loading map...</div>}
+          >
+            <StoreMap
+              lat={pin?.lat}
+              lng={pin?.lng}
+              onPick={(lat, lng) => setPin({ lat, lng })}
+            />
+          </Suspense>
+          <div className="mt-1 pl-1 flex items-center justify-between gap-3 font-body text-xs text-black/60">
+            <span>{pin ? "Pin placed. Tap again to move it." : "Tap the map where your store is."}</span>
+            {pin && (
+              <button type="button" onClick={() => setPin(null)} className="font-bold underline text-black shrink-0">
+                Remove pin
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {/* Seller delivery settings — one flat fee per order */}
       {isSeller && (
         <div className="space-y-3">
