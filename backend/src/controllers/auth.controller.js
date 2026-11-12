@@ -240,6 +240,8 @@ export const getMe = async (req, res) => {
       address: true,
       offersDelivery: true,
       deliveryFee: true,
+      storeLat: true,
+      storeLng: true,
       ocrResult: true,
       ocrConfidence: true,
       createdAt: true,
@@ -265,7 +267,14 @@ const profileSelect = {
   address: true,
   offersDelivery: true,
   deliveryFee: true,
+  storeLat: true,
+  storeLng: true,
 };
+
+// Muntinlupa City with a small margin — the platform's service area
+const inMuntinlupa = (lat, lng) =>
+  Number.isFinite(lat) && Number.isFinite(lng) &&
+  lat >= 14.33 && lat <= 14.48 && lng >= 120.98 && lng <= 121.09;
 
 export const updateMe = async (req, res) => {
   // Empty text clears the address
@@ -291,6 +300,25 @@ export const updateMe = async (req, res) => {
     data.offersDelivery =
       req.body.offersDelivery === true || req.body.offersDelivery === "true";
     data.deliveryFee = Math.round(fee * 100) / 100;
+  }
+
+  // Sellers pin their store on the map, or send null to remove the pin
+  if (req.user.role === "SELLER" && req.body.storeLat !== undefined) {
+    if (req.body.storeLat === null || req.body.storeLng === null) {
+      data.storeLat = null;
+      data.storeLng = null;
+    } else {
+      const lat = Number(req.body.storeLat);
+      const lng = Number(req.body.storeLng);
+      if (!inMuntinlupa(lat, lng)) {
+        return res.status(400).json({
+          success: false,
+          message: "Place the pin inside Muntinlupa City",
+        });
+      }
+      data.storeLat = lat;
+      data.storeLng = lng;
+    }
   }
 
   const user = await prisma.user.update({

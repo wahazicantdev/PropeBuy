@@ -15,6 +15,9 @@ const BuyerProfile = () => {
   const logout = useAuthStore((s) => s.logout);
   // Fresh copy plus barangay name map
   const [barangayName, setBarangayName] = useState("");
+  // True once the fresh profile is in. The address form waits for it, so a
+  // quick Save can never send the empty address from the login copy.
+  const [loaded, setLoaded] = useState(false);
   const navigate = useNavigate();
 
   // Refresh from backend once so status is never stale
@@ -23,6 +26,7 @@ const BuyerProfile = () => {
       .then((res) => {
         // Sync store with server truth
         setUser(res.data);
+        setLoaded(true);
         // Map barangay id to name for display
         if (res.data?.barangayId) {
           fetchBarangays()
@@ -103,7 +107,7 @@ const BuyerProfile = () => {
       </ul>
 
       {/* Saved delivery address — key remounts it with fresh values */}
-      <ProfileAddress key={`${user?.id}-${user?.address ?? ""}`} />
+      {loaded && <ProfileAddress key={`${user?.id}-${user?.address ?? ""}`} />}
 
       {/* Shortcuts plus logout */}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">

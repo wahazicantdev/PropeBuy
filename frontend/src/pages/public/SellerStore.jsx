@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -7,6 +8,9 @@ import ProductCard from "../../components/ProductCard.jsx";
 import VerifiedBadge from "../../components/VerifiedBadge.jsx";
 import Icon from "../../components/Icon.jsx";
 import { fetchProducts } from "../../api/product.api.js";
+
+// Map code loads only on stores that have a pin
+const StoreMap = lazy(() => import("../../components/StoreMap.jsx"));
 
 // Public seller store — every "Sold by" link lands here. Until the
 // redesign this page was a placeholder that said "opens after Phase C".
@@ -90,6 +94,28 @@ const SellerStore = () => {
                     Barangay {barangay?.name || "—"}, Muntinlupa
                   </span>
                 </div>
+                {/* Store address and pin — buyers find the shop for pickup */}
+                {seller?.address && (
+                  <p className="mt-3 flex items-start gap-1.5 font-body text-sm text-black/70">
+                    <Icon name="location_on" size={18} className="shrink-0" />
+                    <span className="break-words">{seller.address}</span>
+                  </p>
+                )}
+                {seller?.storeLat != null && (
+                  <div className="mt-3 max-w-xl">
+                    <Suspense fallback={<div className="h-[220px] rounded-xl bg-white" />}>
+                      <StoreMap lat={seller.storeLat} lng={seller.storeLng} height={220} />
+                    </Suspense>
+                    <a
+                      href={`https://www.openstreetmap.org/?mlat=${seller.storeLat}&mlon=${seller.storeLng}#map=18/${seller.storeLat}/${seller.storeLng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block mt-2 font-body text-xs font-bold underline text-black"
+                    >
+                      Open in OpenStreetMap
+                    </a>
+                  </div>
+                )}
                 {/* What they sell */}
                 <div className="mt-4 flex gap-2 flex-wrap">
                   {categoryNames.map((n) => (

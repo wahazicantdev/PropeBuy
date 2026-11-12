@@ -20,6 +20,8 @@ model User {
   address         String?       // saved delivery address, or the store address for sellers
   offersDelivery  Boolean       @default(false) // seller delivers orders
   deliveryFee     Decimal       @default(0) @db.Decimal(10, 2) // seller's flat delivery fee
+  storeLat        Float?        // store pin, set by hand on the map
+  storeLng        Float?
 
   // OCR verification fields
   // Stores the result of automated document verification
