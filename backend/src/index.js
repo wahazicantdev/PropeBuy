@@ -5,7 +5,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import helmet from "helmet";
 // Imported config/middleware
-import { CLIENT_URL, PORT, JWT_SECRET } from "./config/env.js";
+import { ALLOWED_ORIGINS, PORT, JWT_SECRET } from "./config/env.js";
 // JWT verify — socket handshakes prove identity the same way REST does
 import jwt from "jsonwebtoken";
 import { errorHandler } from "./middleware/error.middleware.js";
@@ -48,7 +48,7 @@ const httpServer = createServer(app);
 // cors config allows our React frontend to connect
 export const io = new Server(httpServer, {
   cors: {
-    origin: CLIENT_URL,
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -101,7 +101,7 @@ app.use(helmet());
 // ── STANDARD MIDDLEWARE ────────────────────────────────
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   }),
 );
