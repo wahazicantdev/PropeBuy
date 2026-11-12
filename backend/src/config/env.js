@@ -22,3 +22,9 @@ export const {
   BREVO_API_KEY,
   EMAIL_FROM,
 } = process.env;
+
+// CLIENT_URL may list several origins: "http://localhost:5173,https://propebuy.vercel.app"
+export const ALLOWED_ORIGINS = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
