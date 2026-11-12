@@ -33,6 +33,7 @@ PropeBuy is built on three pillars:
 - Cash payment, or GCash through PayMongo
 - Real-time order status updates without refreshing the page
 - Saved delivery address and order history
+- Required star ratings for items from completed orders, with optional comments
 
 ### Sellers
 - Product listing management for 7 categories of physical goods
@@ -40,6 +41,8 @@ PropeBuy is built on three pillars:
 - Order fulfillment: process, fulfill, cancel and confirm cash payments
 - Sales analytics: revenue trends, top-selling products and order summaries
 - Optional delivery with a flat fee, prepaid online by the buyer
+- Store location pin on an OpenStreetMap map, shown on the store page
+- Store rating built from buyer reviews
 - Verified Local Vendor badge
 
 ### Administrators
@@ -55,8 +58,6 @@ PropeBuy is built on three pillars:
 - Security middleware, input validation and rate limiting
 
 ### In progress
-- Mandatory ratings after a completed order
-- Store location pin on an OpenStreetMap-based map
 - Public deployment for system evaluation
 
 ## Tech stack
@@ -68,6 +69,7 @@ PropeBuy is built on three pillars:
 | Database | PostgreSQL on Neon, Prisma ORM 6 |
 | Authentication | JSON Web Tokens, bcrypt, email one-time codes |
 | Real-time | Socket.IO |
+| Maps | Leaflet with OpenStreetMap tiles |
 | Payments | PayMongo Checkout Sessions (GCash QR), signed webhooks |
 | Document verification | Tesseract.js OCR with Sharp image preprocessing |
 | File storage | Cloudinary |
