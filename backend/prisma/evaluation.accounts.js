@@ -4,17 +4,32 @@
 // Safe to re-run: it creates or updates only these accounts and never
 // deletes anything.
 //
-// Usage (in backend/):  npm run evalAccounts -- "YourSharedPassword"
+// Usage (in backend/):
+//   npm run evalAccounts -- "RespondentPassword" "AdminPassword"
+// Both passwords are required and never stored in the code, because the
+// repository is public.
 import bcrypt from "bcryptjs";
 // House Prisma client — loads env.js automatically on import
 import prisma from "../src/config/prismaClient.js";
 
 // ── SETTINGS ───────────────────────────────────────────────
-// 15 per group plus 3 spares each for late or repeat respondents
-const BUYERS = 18;
-const VENDORS = 18;
+// 01-20: Actual Users (15 plus spares). 21-50: IT Experts, one pair each.
+const BUYERS = 50;
+const VENDORS = 50;
 const PRODUCTS_PER_VENDOR = 3;
-const password = process.argv[2] || "Propebuy@2026";
+const password = process.argv[2];
+const adminPassword = process.argv[3];
+
+// No defaults — a password written here would be public on GitHub
+if (!password || !adminPassword || password.length < 8 || adminPassword.length < 8) {
+  console.log('Usage: npm run evalAccounts -- "RespondentPassword" "AdminPassword"');
+  console.log("Both are required, at least 8 characters each.");
+  process.exit(1);
+}
+if (password === adminPassword) {
+  console.log("Use a different password for the admin account.");
+  process.exit(1);
+}
 
 // Two-digit numbering: 01, 02 ... 18
 const pad = (n) => String(n).padStart(2, "0");
@@ -50,13 +65,14 @@ async function main() {
   ).map((p) => p.imageUrl);
 
   const hashed = await bcrypt.hash(password, 10);
+  const adminHashed = await bcrypt.hash(adminPassword, 10);
 
   // Every account is verified and placed in the pilot barangay
-  const upsertUser = (email, data) =>
+  const upsertUser = (email, data, hash = hashed) =>
     prisma.user.upsert({
       where: { email },
-      create: { email, password: hashed, accountStatus: "VERIFIED", barangayId: poblacion.id, ...data },
-      update: { password: hashed, accountStatus: "VERIFIED", barangayId: poblacion.id, ...data },
+      create: { email, password: hash, accountStatus: "VERIFIED", barangayId: poblacion.id, ...data },
+      update: { password: hash, accountStatus: "VERIFIED", barangayId: poblacion.id, ...data },
     });
 
   // ── BUYERS ─────────────────────────────────────────────
@@ -78,8 +94,8 @@ async function main() {
       offersDelivery: true,
       deliveryFee: 30,
       // Pins spread a little around Poblacion so each store has its own spot
-      storeLat: 14.3866 + ((n % 6) - 3) * 0.0012,
-      storeLng: 121.0465 + (Math.floor(n / 6) - 1) * 0.0012,
+      storeLat: 14.3866 + ((n % 10) - 5) * 0.0009,
+      storeLng: 121.0465 + (Math.floor(n / 10) - 2) * 0.0009,
     });
 
     // Starter products only once — re-runs never duplicate them
@@ -106,14 +122,14 @@ async function main() {
 
   // ── EVALUATION ADMIN ───────────────────────────────────
   // For IT experts who evaluate the admin portal
-  await upsertUser("admin.eval@propebuy.test", { name: "Eval Administrator", role: "ADMIN" });
+  await upsertUser("admin.eval@propebuy.test", { name: "Eval Administrator", role: "ADMIN" }, adminHashed);
 
   // ── SUMMARY ────────────────────────────────────────────
   console.log("\nEvaluation accounts ready (all VERIFIED, Barangay Poblacion):");
   console.log(`  Buyers   buyer01.eval@propebuy.test  to buyer${pad(BUYERS)}.eval@propebuy.test`);
   console.log(`  Vendors  vendor01.eval@propebuy.test to vendor${pad(VENDORS)}.eval@propebuy.test`);
   console.log("  Admin    admin.eval@propebuy.test");
-  console.log(`  Password for all: ${password}`);
+  console.log("  Buyers and vendors use the respondent password. The admin uses its own.");
   console.log(`  New starter products: ${newProducts}`);
 }
 
