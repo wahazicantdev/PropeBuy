@@ -31,12 +31,13 @@ PropeBuy is built on three pillars:
 - Cart with live stock checks: sold-out items are removed and lowered quantities are explained
 - Checkout with store pickup or delivery
 - Cash payment, or GCash through PayMongo
+- Cancel an order while it is still reserved; online payments are refunded
 - Real-time order status updates without refreshing the page
 - Saved delivery address and order history
 - Required star ratings for items from completed orders, with optional comments
 
 ### Sellers
-- Product listing management for 7 categories of physical goods
+- Step-by-step product listing with up to 4 photos, for 7 categories of physical goods
 - Inventory monitoring with low stock alerts
 - Order fulfillment: process, fulfill, cancel and confirm cash payments
 - Sales analytics: revenue trends, top-selling products and order summaries
@@ -44,21 +45,30 @@ PropeBuy is built on three pillars:
 - Store location pin on an OpenStreetMap map, shown on the store page
 - Store rating built from buyer reviews
 - Verified Local Vendor badge
+- Earnings page: online sales are held until the order is fulfilled, then paid to the seller's GCash
 
 ### Administrators
 - Verification queue sorted by OCR confidence into three groups: likely safe to approve, needs review, and likely reject
 - View the uploaded documents, OCR results and issues, and re-run OCR
 - User management, product moderation and an orders overview
 - Barangay and category configuration
+- Payouts: record GCash transfers to sellers, track refunds and PropeBuy's commission income
 
 ### Platform
-- Email verification code before registration
+- Step-by-step registration with an email verification code and Terms and Privacy consent
+- Forgot password with an emailed code
+- Store pins checked against the official Muntinlupa City boundary
 - Saved notification list with a bell and unread count for every role
 - Role-based access for buyers, sellers and administrators
 - Security middleware, input validation and rate limiting
 
-### In progress
-- Public deployment for system evaluation
+### Fees and payouts
+- Listing is free. PropeBuy keeps a 5% commission on items paid online, which covers the PayMongo fee. Cash sales and delivery fees have no commission.
+- Online payments are collected by PropeBuy, held until fulfillment, then sent to the seller.
+- BIR RR 16-2023 withholding (1% of one-half of gross remittances) applies once a seller passes PHP 500,000 in a year.
+
+### Live site
+- https://prope-buy.vercel.app (PayMongo test mode, no real money)
 
 ## Tech stack
 
