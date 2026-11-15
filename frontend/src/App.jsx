@@ -17,6 +17,7 @@ import SellerLogin from "./pages/public/SellerLogin.jsx";
 import Browse from "./pages/public/Browse.jsx";
 import ProductDetail from "./pages/public/ProductDetail.jsx";
 import SellerStore from "./pages/public/SellerStore.jsx";
+import ForgotPassword from "./pages/public/ForgotPassword.jsx";
 // Buyer pages - cart onward, all guarded
 import Cart from "./pages/buyer/Cart.jsx";
 import Checkout from "./pages/buyer/Checkout.jsx";
@@ -58,6 +59,7 @@ const App = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/login/buyer" element={<BuyerLogin />} />
       <Route path="/login/seller" element={<SellerLogin />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/browse" element={<Browse />} />
       <Route path="/product/:id" element={<ProductDetail />} />
       <Route path="/store/:sellerId" element={<SellerStore />} />

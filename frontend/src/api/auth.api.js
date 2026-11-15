@@ -16,6 +16,18 @@ export const requestEmailOtp = async (email) => {
   return res.data;
 };
 
+// Forgot password — email a reset code (same answer for unknown emails)
+export const requestPasswordReset = async (email) => {
+  const res = await api.post("/auth/password/forgot", { email });
+  return res.data;
+};
+
+// Forgot password — set a new password with the emailed code
+export const resetPassword = async (email, code, password) => {
+  const res = await api.post("/auth/password/reset", { email, code, password });
+  return res.data;
+};
+
 // Confirm the code — returns data.otpToken for registration
 export const verifyEmailOtp = async (email, code) => {
   const res = await api.post("/auth/otp/verify", { email, code });

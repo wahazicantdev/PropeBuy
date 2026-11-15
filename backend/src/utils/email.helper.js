@@ -1,11 +1,18 @@
 import { BREVO_API_KEY, EMAIL_FROM } from "../config/env.js";
 
-// Sends the registration code. Uses an email API over HTTPS because
-// hosting providers can block direct mail ports.
-export const sendOtpEmail = async (email, code) => {
+// Email wording per purpose: signing up, or resetting a password
+const COPY = {
+  verify: { subject: "Your PropeBuy verification code", intro: "Your PropeBuy verification code is:" },
+  reset: { subject: "Reset your PropeBuy password", intro: "Use this code to reset your PropeBuy password:" },
+};
+
+// Sends a 6-digit code. Uses an email API over HTTPS because hosting
+// providers can block direct mail ports.
+export const sendOtpEmail = async (email, code, purpose = "verify") => {
+  const copy = COPY[purpose] || COPY.verify;
   // Local development without a key — print the code instead of emailing
   if (!BREVO_API_KEY && process.env.NODE_ENV !== "production") {
-    console.log(`[DEV ONLY] Email OTP for ${email}: ${code}`);
+    console.log(`[DEV ONLY] Email OTP (${purpose}) for ${email}: ${code}`);
     return;
   }
 
@@ -24,8 +31,8 @@ export const sendOtpEmail = async (email, code) => {
     body: JSON.stringify({
       sender: { name: "PropeBuy", email: EMAIL_FROM },
       to: [{ email }],
-      subject: "Your PropeBuy verification code",
-      htmlContent: `<p>Your PropeBuy verification code is:</p>
+      subject: copy.subject,
+      htmlContent: `<p>${copy.intro}</p>
         <p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p>
         <p>It expires in 10 minutes. If you did not request this, ignore this email.</p>`,
     }),

@@ -88,7 +88,13 @@ const SellerLogin = () => {
         </div>
         {/* Password */}
         <div>
-          <FieldLabel htmlFor="password">Password</FieldLabel>
+          {/* Label row — forgot link on the right */}
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="password">Password</FieldLabel>
+            <Link to="/forgot-password?from=seller" className="font-body text-xs font-bold underline mb-1.5">
+              Forgot password?
+            </Link>
+          </div>
           <PasswordInput
             {...register("password", { required: true })}
             id="password"
