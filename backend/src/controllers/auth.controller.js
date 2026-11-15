@@ -32,6 +32,14 @@ export const register = async (req, res) => {
     });
   }
 
+  // Consent to the Terms and Privacy Policy (RA 10173) is required
+  if (req.body.acceptTerms !== "true" && req.body.acceptTerms !== true) {
+    return res.status(400).json({
+      success: false,
+      message: "Please agree to the Terms of Use and Privacy Policy",
+    });
+  }
+
   // Email must have passed the code check, before any upload or OCR work
   if (!isEmailProofValid(req.body.otpToken, email)) {
     return res.status(400).json({
@@ -127,6 +135,8 @@ export const register = async (req, res) => {
       certDocumentUrl: certUpload.secure_url,
       // Every new account waits for an admin, whatever OCR found
       accountStatus: "PENDING",
+      // Consent date, checked above
+      termsAcceptedAt: new Date(),
 
       // Store OCR results so the admin queue can group this account
       ocrResult: verificationResult.result,
