@@ -53,7 +53,7 @@ const AdminDashboard = () => {
       {/* Header row — title left, the one urgent action right */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Platform Dashboard
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -113,7 +113,7 @@ const AdminDashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Orders
           </p>
-          <p className="font-header font-bold text-xl md:text-2xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-2xl md:text-[1.7rem] tabular-nums text-black mt-1">
             {orders.total.toLocaleString()}
           </p>
           <p className="font-body text-xs text-passive mt-1">all statuses</p>
@@ -126,7 +126,7 @@ const AdminDashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Listings
           </p>
-          <p className="font-header font-bold text-xl md:text-2xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-2xl md:text-[1.7rem] tabular-nums text-black mt-1">
             {products.total.toLocaleString()}
           </p>
           <p className="font-body text-xs text-passive mt-1">
@@ -161,7 +161,7 @@ const AdminDashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Accounts
           </p>
-          <p className="font-header font-bold text-lg md:text-xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-xl tabular-nums text-black mt-1">
             {users.total.toLocaleString()}
           </p>
         </div>
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Buyers
           </p>
-          <p className="font-header font-bold text-lg md:text-xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-xl tabular-nums text-black mt-1">
             {users.buyers.toLocaleString()}
           </p>
         </div>
@@ -179,7 +179,7 @@ const AdminDashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Vendors
           </p>
-          <p className="font-header font-bold text-lg md:text-xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-xl tabular-nums text-black mt-1">
             {users.sellers.toLocaleString()}
           </p>
         </div>

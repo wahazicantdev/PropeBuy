@@ -144,7 +144,7 @@ const OrderDetailSeller = () => {
 
       {/* Header — id left, LABELED pills right so they never confuse */}
       <div className="flex items-start gap-2 flex-wrap">
-        <h1 className="font-header text-xl md:text-2xl text-gray-900">
+        <h1 className="text-2xl md:text-3xl text-black">
           Order #{order.id}
         </h1>
         <span className="flex gap-3 ml-auto">

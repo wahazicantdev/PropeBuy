@@ -97,7 +97,7 @@ const BackofficeLayout = ({ groups, homePath, area, account, onLogout }) => {
       <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-black/10 sticky top-0 h-screen">
         <div className="px-6 pt-6 pb-5 flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <Link to={homePath} className="font-logo text-2xl text-black">PropeBuy</Link>
+            <Link to={homePath} className="font-logo text-xl text-black">PropeBuy</Link>
             <p className="font-body text-xs text-black/45 mt-0.5">{area}</p>
           </div>
           <NotificationBell side="left" />

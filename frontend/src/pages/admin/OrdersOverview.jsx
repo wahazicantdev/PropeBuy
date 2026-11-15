@@ -56,7 +56,7 @@ const OrdersOverview = () => {
       {/* Header row */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Orders Overview
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -71,7 +71,7 @@ const OrdersOverview = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Order value
           </p>
-          <p className="font-header font-bold text-lg md:text-xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-xl tabular-nums text-black mt-1">
             ₱{viewTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </p>
           <p className="font-body text-xs text-passive mt-1">
@@ -91,7 +91,7 @@ const OrdersOverview = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Unpaid
           </p>
-          <p className="font-header font-bold text-lg md:text-xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-xl tabular-nums text-black mt-1">
             {orders.filter((o) => o.paymentStatus === "PENDING").length}
           </p>
           <p className="font-body text-xs text-passive mt-1">

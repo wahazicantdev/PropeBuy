@@ -109,7 +109,7 @@ const ProductModeration = () => {
       {/* Header row */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Product Moderation
           </h1>
           <p className="font-body text-sm text-passive mt-1">

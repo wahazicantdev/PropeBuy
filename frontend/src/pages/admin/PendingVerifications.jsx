@@ -214,7 +214,7 @@ const PendingVerifications = () => {
       {/* Header row */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Pending Verifications
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -258,7 +258,7 @@ const PendingVerifications = () => {
       {/* Empty queue — the good kind of empty */}
       {users.length === 0 ? (
         <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
-          <p className="font-header text-lg text-gray-900">Queue is clear</p>
+          <p className="heading-body text-base text-black">Queue is clear</p>
           <p className="font-body text-sm text-passive mt-1">
             Nothing waiting for review. New registrations land here
             automatically.

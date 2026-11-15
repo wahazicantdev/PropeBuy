@@ -45,7 +45,7 @@ const Dashboard = () => {
       {/* Header row — actions on the right */}
       <div className="flex items-start gap-3 flex-wrap">
         <div>
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Seller Dashboard
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -88,7 +88,7 @@ const Dashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Orders
           </p>
-          <p className="font-header font-bold text-xl md:text-2xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-2xl md:text-[1.7rem] tabular-nums text-black mt-1">
             {summary.totalOrders.toLocaleString()}
           </p>
           <p className="font-body text-xs text-passive mt-1">
@@ -100,7 +100,7 @@ const Dashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Items sold
           </p>
-          <p className="font-header font-bold text-xl md:text-2xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-2xl md:text-[1.7rem] tabular-nums text-black mt-1">
             {summary.totalItemsSold.toLocaleString()}
           </p>
           <p className="font-body text-xs text-passive mt-1">
