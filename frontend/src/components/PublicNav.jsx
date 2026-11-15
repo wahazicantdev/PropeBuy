@@ -146,7 +146,7 @@ const PublicNav = () => {
           {/* Logo — display font, home follows role */}
           <Link
             to={homePath}
-            className="font-header text-2xl md:text-[32px] text-black shrink-0"
+            className="font-logo text-2xl md:text-[30px] text-black shrink-0"
           >
             PropeBuy
           </Link>

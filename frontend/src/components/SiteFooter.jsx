@@ -73,7 +73,7 @@ const SiteFooter = () => {
           <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-[1.4fr_repeat(4,1fr)]">
             {/* Brand block — the pilot story in one paragraph */}
             <div className="col-span-2 md:col-span-1">
-              <p className="font-header text-3xl text-black">PropeBuy</p>
+              <p className="font-logo text-3xl text-black">PropeBuy</p>
               <p className="mt-4 font-body text-sm text-passive max-w-xs">
                 Muntinlupa's barangay marketplace. Verified local vendors,
                 stock-checked orders, cash or GCash. Now piloting in Barangay
