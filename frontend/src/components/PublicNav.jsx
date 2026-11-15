@@ -133,7 +133,7 @@ const PublicNav = () => {
 
       {/* ── MAIN HEADER — sticky, white ── */}
       <header className="sticky top-0 z-50 bg-white border-b border-black/10">
-        <div className="max-w-7xl mx-auto px-4 h-16 md:h-24 flex items-center gap-4 md:gap-10">
+        <div className="max-w-7xl mx-auto px-4 h-16 md:h-24 flex items-center gap-3 md:gap-10">
           {/* Phone menu button — left of the logo, reference layout */}
           <button
             onClick={() => setOpen(!open)}
@@ -146,7 +146,7 @@ const PublicNav = () => {
           {/* Logo — display font, home follows role */}
           <Link
             to={homePath}
-            className="font-logo text-2xl md:text-[30px] text-black shrink-0"
+            className="font-logo text-xl sm:text-2xl md:text-[30px] text-black shrink-0"
           >
             PropeBuy
           </Link>
@@ -164,7 +164,7 @@ const PublicNav = () => {
           <div className="hidden md:block flex-1 min-w-0">{searchField}</div>
 
           {/* Icon cluster — pushed right on phone */}
-          <div className="ml-auto md:ml-0 flex items-center gap-3 md:gap-4">
+          <div className="ml-auto md:ml-0 flex items-center gap-2 sm:gap-3 md:gap-4">
             {/* Phone search toggle */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
