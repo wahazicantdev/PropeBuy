@@ -4,7 +4,7 @@ const StockPill = ({ stock }) => {
   // Sold out — solid danger, strongest signal on the page
   if (stock === 0) {
     return (
-      <span className="font-body text-xs font-bold rounded-full px-3 py-1 bg-danger text-white">
+      <span className="font-body text-xs font-bold rounded-full px-2.5 py-1 bg-danger text-white whitespace-nowrap">
         Out of stock
       </span>
     );
@@ -12,14 +12,14 @@ const StockPill = ({ stock }) => {
   // Low — soft danger, restock soon (backend uses lte 3)
   if (stock <= 3) {
     return (
-      <span className="font-body text-xs font-bold rounded-full px-3 py-1 bg-danger/10 text-danger">
+      <span className="font-body text-xs font-bold rounded-full px-2.5 py-1 bg-danger/10 text-danger whitespace-nowrap">
         Low — {stock} left
       </span>
     );
   }
   // Healthy — passive gray
   return (
-    <span className="font-body text-xs font-bold rounded-full px-3 py-1 bg-gray-100 text-gray-700">
+    <span className="font-body text-xs font-bold rounded-full px-2.5 py-1 bg-surface text-black/70 whitespace-nowrap">
       {stock} in stock
     </span>
   );
