@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
-import { fetchOrder, checkPayment } from "../../api/order.api.js";
+import { fetchOrder, checkPayment, cancelMyOrder } from "../../api/order.api.js";
+import ConfirmModal from "../../components/ConfirmModal.jsx";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
+import { cld } from "../../utils/photos.js";
 
 // Order detail - one order with items, totals, payment recheck
 const OrderDetail = () => {
@@ -18,6 +20,24 @@ const OrderDetail = () => {
   // Loading flags, page plus recheck button
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  // Cancel confirmation modal and its busy flag
+  const [askCancel, setAskCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  // Buyer cancels while the order is still reserved
+  const cancelOrder = async () => {
+    setCancelling(true);
+    try {
+      const res = await cancelMyOrder(order.id);
+      toast.success(res.message);
+      setOrder((o) => ({ ...o, status: "CANCELLED" }));
+      setAskCancel(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not cancel this order");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   // Load once by id
   // Bumps on status or payment events — the stepper moves on its own
@@ -135,8 +155,33 @@ const OrderDetail = () => {
         <p className="mt-6 font-body text-sm text-danger bg-danger/10 rounded-xl p-4 flex items-center gap-2">
           <Icon name="cancel" />
           This order was cancelled. Reserved stock went back to the sellers.
+          {(order.paymentStatus === "PAID" && order.paymentMethod === "GCASH") || order.deliveryFeeStatus === "PAID"
+            ? " Your online payment will be refunded by PropeBuy."
+            : ""}
         </p>
       )}
+
+      {/* Cancel — only before the seller starts processing */}
+      {order.status === "RESERVED" && (
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={() => setAskCancel(true)}
+            className="font-body text-sm font-bold text-danger underline flex items-center gap-1"
+          >
+            <Icon name="cancel" size={18} /> Cancel order
+          </button>
+        </div>
+      )}
+      <ConfirmModal
+        open={askCancel}
+        title="Cancel this order?"
+        message="The items go back to the seller's stock. If you already paid online, PropeBuy refunds you."
+        confirmLabel="Yes, cancel order"
+        cancelLabel="Keep order"
+        busy={cancelling}
+        onConfirm={cancelOrder}
+        onCancel={() => setAskCancel(false)}
+      />
 
       {/* Ratings — required on fulfilled orders before the next checkout */}
       {order.status === "FULFILLED" && (
@@ -160,7 +205,7 @@ const OrderDetail = () => {
               {/* Thumb with fallback */}
               <span className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 bg-card rounded-xl overflow-hidden">
                 {it.product?.imageUrl ? (
-                  <img src={it.product.imageUrl} alt={it.product?.name} className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={cld(it.product.imageUrl, 200)} alt={it.product?.name} className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center text-black/25">
                     <Icon name="image" />

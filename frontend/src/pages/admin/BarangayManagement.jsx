@@ -95,7 +95,7 @@ const BarangayManagement = () => {
       {/* Header row */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Barangay Management
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -110,7 +110,7 @@ const BarangayManagement = () => {
         onSubmit={handleSubmit(onAdd)}
         className="mt-4 border border-black/10 rounded-xl p-4"
       >
-        <p className="font-body font-bold text-sm text-gray-900">
+        <p className="font-body font-bold text-sm text-black">
           Add a barangay
         </p>
         <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
@@ -179,14 +179,14 @@ const BarangayManagement = () => {
           Loading barangays...
         </div>
       ) : barangays.length === 0 ? (
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
-          <p className="font-header text-lg text-gray-900">No barangays yet</p>
+        <div className="mt-6 border border-dashed border-black/15 rounded-xl p-10 text-center">
+          <p className="heading-body text-base text-black">No barangays yet</p>
           <p className="font-body text-sm text-passive mt-1">
             Run the seed script, or add the first barangay above.
           </p>
         </div>
       ) : (
-        <ul className="mt-5 flex flex-col gap-3">
+        <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
           {barangays.map((b) => (
             // Disabled rows gray out — same visual language as removed
             // products, so "switched off" always reads the same way
@@ -198,7 +198,7 @@ const BarangayManagement = () => {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-body font-bold text-sm md:text-base text-gray-900 truncate">
+                  <p className="font-body font-bold text-sm md:text-base text-black truncate">
                     {b.name}
                   </p>
                   {/* State pill — primary when serving, gray when off */}
@@ -206,7 +206,7 @@ const BarangayManagement = () => {
                     className={`font-body text-xs font-bold rounded-full px-3 py-1 ${
                       b.isActive
                         ? "bg-primary text-white"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-gray-100 text-black/70"
                     }`}
                   >
                     {b.isActive ? "Active" : "Disabled"}

@@ -12,12 +12,9 @@ import { fetchProduct, fetchProducts } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 import { useCartStore } from "../../stores/cart.store.js";
 import { formatPeso } from "../../utils/format.js";
+import { productPhotos, cld } from "../../utils/photos.js";
 
-// How many gallery slots the reference shows per product. Slot 1 is the
-// real photo; the rest are placeholders until products get a multi-image
-// gallery (the schema stores one imageUrl today — no migration needed
-// for this layout, and the slots are ready when a gallery lands).
-const GALLERY_SLOTS = 4;
+// Gallery: up to 4 seller photos, cover first (see utils/photos.js)
 
 // Product detail — public viewing, login wall on actions.
 // SHOP.CO layout: thumbnails + big image left, info right, related below.
@@ -107,19 +104,18 @@ const ProductDetail = () => {
 
   // Sold out flag from stock count
   const soldOut = product.stock <= 0;
-  // Slot 0 = real photo, the rest render as placeholders
-  const slots = Array.from({ length: GALLERY_SLOTS }, (_, i) =>
-    i === 0 && product.imageUrl ? product.imageUrl : null,
-  );
+  // Real photos only, cover first. One empty slot when there are none.
+  const photos = productPhotos(product);
+  const slots = photos.length ? photos : [null];
 
   // One renderer for thumbnails and the big viewer
   const renderSlot = (src, big) =>
     src ? (
-      <img src={src} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
+      <img src={cld(src, big ? 1000 : 200)} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
     ) : (
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-black/25">
         <Icon name="image" size={big ? 56 : 28} />
-        {big && <p className="font-body text-sm">More photos coming soon</p>}
+        {big && <p className="font-body text-sm">No photo yet</p>}
       </div>
     );
 
@@ -152,20 +148,23 @@ const ProductDetail = () => {
           {/* ── GALLERY — thumbs column + big viewer (desktop),
                  big viewer + thumbs row (phone) ── */}
           <div className="flex flex-col-reverse md:flex-row gap-3 min-w-0">
+            {/* Thumbnails only when there is more than 1 photo */}
+            {slots.length > 1 && (
             <div className="grid grid-cols-4 md:grid-cols-1 md:w-28 lg:w-36 gap-3 shrink-0">
               {slots.map((src, i) => (
                 <button
                   key={i}
                   onClick={() => setActive(i)}
-                  aria-label={src ? "Product photo" : `Photo ${i + 1}, coming soon`}
+                  aria-label={`Photo ${i + 1} of ${slots.length}`}
                   className={`relative aspect-square rounded-xl bg-card overflow-hidden border-2 transition-colors ${active === i ? "border-black" : "border-transparent"}`}
                 >
                   {renderSlot(src, false)}
                 </button>
               ))}
             </div>
+            )}
             <div className="relative flex-1 aspect-square rounded-xl bg-card overflow-hidden">
-              {renderSlot(slots[active], true)}
+              {renderSlot(slots[Math.min(active, slots.length - 1)], true)}
             </div>
           </div>
 

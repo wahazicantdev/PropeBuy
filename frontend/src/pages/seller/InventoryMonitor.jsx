@@ -7,6 +7,7 @@ import Spinner from "../../components/Spinner.jsx";
 import { fetchMyProducts } from "../../api/product.api.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
+import Thumb from "../../components/Thumb.jsx";
 
 // InventoryMonitor — full-stocking view of active listings.
 // Data from my-products (includes inactive), monitor only counts live ones.
@@ -64,7 +65,7 @@ const InventoryMonitor = () => {
   return (
     <div className="page-enter">
       {/* Header */}
-      <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+      <h1 className="text-2xl md:text-3xl text-black">
         Inventory Monitor
       </h1>
       <p className="font-body text-sm text-passive mt-1">
@@ -106,7 +107,7 @@ const InventoryMonitor = () => {
       {/* List — worst stock first thanks to the sort */}
       {rows.length === 0 ? (
         <div className="mt-4 border border-black/10 rounded-xl p-6 text-center">
-          <p className="font-header font-bold text-lg text-gray-900">
+          <p className="font-body font-bold text-lg tabular-nums text-black">
             Nothing here
           </p>
           <p className="font-body text-sm text-passive mt-1">
@@ -123,20 +124,10 @@ const InventoryMonitor = () => {
               className="p-3 md:p-4 flex gap-3 items-center overflow-hidden"
             >
               {/* Thumb or letter fallback */}
-              {p.imageUrl ? (
-                <img
-                  src={p.imageUrl}
-                  alt={p.name}
-                  className="w-12 h-12 rounded-lg object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center font-header text-gray-400">
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Thumb src={p.imageUrl} alt={p.name} size="w-12 h-12" />
               {/* Name + price */}
               <div className="min-w-0 flex-1">
-                <p className="font-body font-bold text-sm text-gray-900 truncate">
+                <p className="font-body font-bold text-sm text-black truncate">
                   {p.name}
                 </p>
                 <p className="font-body text-xs text-passive mt-0.5">

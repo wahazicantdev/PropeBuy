@@ -92,7 +92,7 @@ const CategoryManagement = () => {
       {/* Header row */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Category Management
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -114,7 +114,7 @@ const CategoryManagement = () => {
         onSubmit={handleSubmit(onAdd)}
         className="mt-3 border border-black/10 rounded-xl p-4"
       >
-        <p className="font-body font-bold text-sm text-gray-900">
+        <p className="font-body font-bold text-sm text-black">
           Add a category
         </p>
         <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
@@ -165,8 +165,8 @@ const CategoryManagement = () => {
           Loading categories...
         </div>
       ) : categories.length === 0 ? (
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
-          <p className="font-header text-lg text-gray-900">
+        <div className="mt-6 border border-dashed border-black/15 rounded-xl p-10 text-center">
+          <p className="heading-body text-base text-black">
             No categories yet
           </p>
           <p className="font-body text-sm text-passive mt-1">
@@ -174,7 +174,7 @@ const CategoryManagement = () => {
           </p>
         </div>
       ) : (
-        <ul className="mt-5 flex flex-col gap-3">
+        <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
           {categories.map((c) => (
             // Disabled rows gray out — same language as barangays
             <li
@@ -185,14 +185,14 @@ const CategoryManagement = () => {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-body font-bold text-sm md:text-base text-gray-900 line-clamp-2">
+                  <p className="font-body font-bold text-sm md:text-base text-black line-clamp-2">
                     {c.name}
                   </p>
                   <span
                     className={`font-body text-xs font-bold rounded-full px-3 py-1 ${
                       c.isActive
                         ? "bg-primary text-white"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-gray-100 text-black/70"
                     }`}
                   >
                     {c.isActive ? "Active" : "Disabled"}

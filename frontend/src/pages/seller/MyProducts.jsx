@@ -5,7 +5,13 @@ import toast from "react-hot-toast";
 import StockPill from "../../components/StockPill.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import Spinner from "../../components/Spinner.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
+import FilterChips from "../../components/FilterChips.jsx";
+import Thumb from "../../components/Thumb.jsx";
+import EmptyState from "../../components/EmptyState.jsx";
+import Icon from "../../components/Icon.jsx";
 import { fetchMyProducts, deleteProduct } from "../../api/product.api.js";
+import { formatPeso } from "../../utils/format.js";
 
 // MyProducts — listings with status filters and soft-deleted rows
 const MyProducts = () => {
@@ -19,6 +25,8 @@ const MyProducts = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   // Busy while the delete request runs
   const [busy, setBusy] = useState(false);
+  // Name search, matched on the client
+  const [query, setQuery] = useState("");
 
   // Load listings — reusable so delete can refresh the same way
   const load = () => {
@@ -54,7 +62,9 @@ const MyProducts = () => {
     DELETED: products.filter((p) => !p.isActive).length,
   };
   // The visible rows follow the active chip
+  const q = query.trim().toLowerCase();
   const filtered = products.filter((p) => {
+    if (q && !p.name.toLowerCase().includes(q)) return false;
     if (filter === "ACTIVE") return p.isActive && p.stock > 3;
     if (filter === "LOW") return p.isActive && p.stock <= 3;
     if (filter === "DELETED") return !p.isActive;
@@ -92,142 +102,130 @@ const MyProducts = () => {
     );
   }
 
-  return (
-    // page-enter — subtle rise, house motion
-    <div className="page-enter">
-      {/* Header row — title left, CTA right, wraps on phone */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <h1 className="font-header text-xl md:text-2xl text-gray-900">
-            My Products
-          </h1>
-          <p className="font-body text-sm text-passive mt-1">
-            {products.length} {products.length === 1 ? "listing" : "listings"}
-          </p>
-        </div>
+  // Edit and delete buttons — shared by the table and the phone cards
+  const actions = (p) =>
+    p.isActive ? (
+      <div className="flex gap-1.5 justify-end">
         <Link
-          to="/seller/add-product"
-          className="btn-primary rounded-full px-4 py-2.5 font-body text-sm font-bold"
+          to={`/seller/products/${p.id}/edit`}
+          state={{ product: p }}
+          aria-label={`Edit ${p.name}`}
+          className="btn-outline w-9 h-9 flex items-center justify-center"
         >
-          + Add Product
+          <Icon name="edit" size={18} />
         </Link>
+        <button
+          onClick={() => setDeleteTarget(p)}
+          aria-label={`Delete ${p.name}`}
+          className="w-9 h-9 rounded-full border border-danger/30 text-danger flex items-center justify-center hover:bg-danger/10"
+        >
+          <Icon name="delete" size={18} />
+        </button>
       </div>
+    ) : (
+      <span className="font-body text-xs text-passive">Kept for order history</span>
+    );
 
-      {/* Filter chips — counts live inside, tap to switch views */}
-      <div className="flex gap-2 flex-wrap mt-4">
-        {[
-          { key: "ALL", label: "All" },
-          { key: "ACTIVE", label: "Active" },
-          { key: "LOW", label: "Low stock" },
-          { key: "DELETED", label: "Deleted" },
-        ].map((c) => (
-          <button
-            key={c.key}
-            onClick={() => setFilter(c.key)}
-            className={`font-body text-xs font-bold rounded-full px-3 py-1.5 transition-colors ${
-              filter === c.key
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {c.label} ({counts[c.key]})
-          </button>
-        ))}
-      </div>
-
-      {/* Empty list state — guiding CTA when the seller has nothing yet */}
-      {products.length === 0 ? (
-        <div className="mt-10 border border-dashed border-gray-300 rounded-xl p-10 text-center">
-          <p className="font-header text-lg text-gray-900">No products yet</p>
-          <p className="font-body text-sm text-passive mt-1">
-            Add your first product so buyers can find you.
-          </p>
-          <Link
-            to="/seller/add-product"
-            className="btn-outline inline-block rounded-full px-4 py-2.5 font-body text-sm font-bold mt-4"
-          >
-            Add your first product
+  return (
+    <div className="page-enter">
+      <PageHeader
+        title="My products"
+        subtitle={`${products.length} ${products.length === 1 ? "listing" : "listings"}`}
+        actions={
+          <Link to="/seller/add-product" className="btn-primary btn-active px-5 py-2.5 font-body text-sm font-medium flex items-center gap-1.5">
+            <Icon name="add" size={18} /> Add product
           </Link>
+        }
+      />
+
+      {/* Filters and search */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <FilterChips
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { key: "ALL", label: "All", count: counts.ALL },
+            { key: "ACTIVE", label: "Active", count: counts.ACTIVE },
+            { key: "LOW", label: "Low stock", count: counts.LOW },
+            { key: "DELETED", label: "Deleted", count: counts.DELETED },
+          ]}
+        />
+        <div className="relative md:w-72">
+          <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search products"
+            aria-label="Search products"
+            className="w-full pl-11 pr-4 py-2.5 font-body text-sm"
+          />
         </div>
-      ) : filtered.length === 0 ? (
-        // Filtered empty — chip has no rows, say it plainly
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
-          <p className="font-body text-sm text-passive">
-            Nothing in this filter — try another one.
-          </p>
-        </div>
-      ) : (
-        // Rows — one card per product, min-w-0 trio everywhere
-        <ul className="mt-6 flex flex-col gap-3">
-          {filtered.map((p) => (
-            <li
-              key={p.id}
-              className={`border border-black/10 rounded-xl p-3 flex gap-3 items-center overflow-hidden ${
-                // Soft-deleted rows gray out — history intact, honesty kept
-                p.isActive ? "" : "opacity-60"
-              }`}
-            >
-              {/* Thumb — Cloudinary photo or gray placeholder */}
-              {p.imageUrl ? (
-                <img
-                  src={p.imageUrl}
-                  alt={p.name}
-                  className="w-14 h-14 md:w-16 md:h-16 rounded-lg object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center font-header text-gray-400 text-lg">
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              {/* Info — min-w-0 lets text shrink instead of overflowing */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-body font-bold text-sm md:text-base text-gray-900 line-clamp-2">
-                    {p.name}
-                  </p>
-                  {!p.isActive && (
-                    <span className="bg-gray-100 text-gray-500 font-body text-xs font-bold rounded-full px-2 py-0.5">
-                      Deleted
-                    </span>
-                  )}
-                </div>
-                <p className="font-body text-xs text-passive truncate mt-0.5">
-                  {p.category?.name} · {p.barangay?.name}
-                </p>
-                {/* Price + stock — wrap freely on narrow phones */}
-                <div className="flex items-center gap-2 flex-wrap mt-1">
-                  <span className="font-body font-bold text-sm text-primary">
-                    ₱{parseFloat(p.price).toFixed(2)}
-                  </span>
-                  <StockPill stock={p.stock} />
-                </div>
-              </div>
-              {/* Actions — active rows only; deleted rows stay untouched */}
-              {p.isActive ? (
-                <div className="flex md:flex-col gap-2 shrink-0">
-                  <Link
-                    to={`/seller/products/${p.id}/edit`}
-                    state={{ product: p }}
-                    className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold whitespace-nowrap"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => setDeleteTarget(p)}
-                    className="rounded-full px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10 whitespace-nowrap"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ) : (
-                <span className="font-body text-xs text-passive shrink-0 hidden md:block">
-                  Kept for order history
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      </div>
+
+      <div className="mt-5">
+        {products.length === 0 ? (
+          <EmptyState
+            title="No products yet"
+            text="Add your first product so buyers can find you."
+            action={<Link to="/seller/add-product" className="btn-primary inline-block px-5 py-2.5 font-body text-sm font-medium">Add your first product</Link>}
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState icon="search" title="Nothing here" text="Try another filter or search word." />
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block rounded-xl border border-black/10 overflow-hidden">
+              <table className="w-full font-body text-sm">
+                <thead className="bg-surface text-left text-xs text-passive">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Product</th>
+                    <th className="px-4 py-3 font-medium text-right">Price</th>
+                    <th className="px-4 py-3 font-medium">Stock</th>
+                    <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p) => (
+                    <tr key={p.id} className={`border-t border-black/5 ${p.isActive ? "" : "opacity-55"}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Thumb src={p.imageUrl} alt={p.name} size="w-12 h-12" />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-black truncate max-w-[22rem]">
+                              {p.name}
+                              {!p.isActive && <span className="ml-2 rounded-full bg-surface px-2 py-0.5 text-[11px] text-black/50">Deleted</span>}
+                            </p>
+                            <p className="text-xs text-passive truncate">{p.category?.name}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatPeso(p.price)}</td>
+                      <td className="px-4 py-3"><StockPill stock={p.stock} /></td>
+                      <td className="px-4 py-3 text-right">{actions(p)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Phone cards */}
+            <ul className="md:hidden flex flex-col gap-2.5">
+              {filtered.map((p) => (
+                <li key={p.id} className={`rounded-xl border border-black/10 p-3 flex items-center gap-3 ${p.isActive ? "" : "opacity-55"}`}>
+                  <Thumb src={p.imageUrl} alt={p.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-body font-semibold text-sm text-black line-clamp-2">{p.name}</p>
+                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                      <span className="font-body font-bold text-sm tabular-nums">{formatPeso(p.price)}</span>
+                      <StockPill stock={p.stock} />
+                    </div>
+                  </div>
+                  <div className="shrink-0">{actions(p)}</div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
 
       {/* Confirm modal — portal + blur + pop, the new house standard */}
       <ConfirmModal

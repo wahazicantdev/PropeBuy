@@ -7,6 +7,7 @@ import Spinner from "../../components/Spinner.jsx";
 // Revenue trend — objective 1g, recharts column chart
 import RevenueChart from "../../components/RevenueChart.jsx";
 import { fetchSellerAnalytics } from "../../api/analytics.api.js";
+import Thumb from "../../components/Thumb.jsx";
 
 // Dashboard — seller landing page, one analytics call powers everything.
 // revenueChart renders through RevenueChart below the summary cards.
@@ -44,7 +45,7 @@ const Dashboard = () => {
       {/* Header row — actions on the right */}
       <div className="flex items-start gap-3 flex-wrap">
         <div>
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Seller Dashboard
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -61,7 +62,7 @@ const Dashboard = () => {
           </Link>
           <Link
             to="/seller/orders"
-            className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
+            className="btn-outline btn-active rounded-full px-3 py-2 font-body text-xs font-bold text-black"
           >
             Orders
           </Link>
@@ -87,7 +88,7 @@ const Dashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Orders
           </p>
-          <p className="font-header font-bold text-xl md:text-2xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-2xl md:text-[1.7rem] tabular-nums text-black mt-1">
             {summary.totalOrders.toLocaleString()}
           </p>
           <p className="font-body text-xs text-passive mt-1">
@@ -99,7 +100,7 @@ const Dashboard = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Items sold
           </p>
-          <p className="font-header font-bold text-xl md:text-2xl text-gray-900 mt-1">
+          <p className="font-body font-bold text-2xl md:text-[1.7rem] tabular-nums text-black mt-1">
             {summary.totalItemsSold.toLocaleString()}
           </p>
           <p className="font-body text-xs text-passive mt-1">
@@ -116,7 +117,7 @@ const Dashboard = () => {
           </p>
           <p
             className={`font-header font-bold text-xl md:text-2xl mt-1 ${
-              summary.lowStockCount > 0 ? "text-danger" : "text-gray-900"
+              summary.lowStockCount > 0 ? "text-danger" : "text-black"
             }`}
           >
             {summary.lowStockCount}
@@ -135,7 +136,7 @@ const Dashboard = () => {
 
       {/* ── ORDER PIPELINE CHIPS ── */}
       <div className="mt-3 border border-black/10 rounded-xl p-4">
-        <p className="font-body font-bold text-sm text-gray-900">
+        <p className="font-body font-bold text-sm text-black">
           Orders by status
         </p>
         {ordersByStatus.length === 0 ? (
@@ -148,7 +149,7 @@ const Dashboard = () => {
               // Pill plus live count, same pill colors buyers know
               <span key={s.status} className="flex items-center gap-1.5">
                 <OrderPill status={s.status} />
-                <span className="font-body font-bold text-sm text-gray-900">
+                <span className="font-body font-bold text-sm text-black">
                   {s._count.status}
                 </span>
               </span>
@@ -162,7 +163,7 @@ const Dashboard = () => {
         {/* Top products */}
         <div className="border border-black/10 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-black/10 bg-surface">
-            <p className="font-body font-bold text-sm text-gray-900">
+            <p className="font-body font-bold text-sm text-black">
               Top products
             </p>
           </div>
@@ -179,20 +180,10 @@ const Dashboard = () => {
                     className="p-3 flex gap-3 items-center hover:bg-surface transition-colors overflow-hidden"
                   >
                     {/* Thumb or letter fallback — no photos never breaks layout */}
-                    {t.product.imageUrl ? (
-                      <img
-                        src={t.product.imageUrl}
-                        alt={t.product.name}
-                        className="w-10 h-10 rounded-lg object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center font-header text-gray-400">
-                        {t.product.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <Thumb src={t.product.imageUrl} alt={t.product.name} size="w-10 h-10" />
                     {/* Name + stats */}
                     <div className="min-w-0 flex-1">
-                      <p className="font-body font-bold text-sm text-gray-900 truncate">
+                      <p className="font-body font-bold text-sm text-black truncate">
                         {t.product.name}
                       </p>
                       <p className="font-body text-xs text-passive mt-0.5">
@@ -201,7 +192,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     {/* Price */}
-                    <p className="font-body text-xs text-gray-700 shrink-0">
+                    <p className="font-body text-xs text-black/70 shrink-0">
                       ₱{parseFloat(t.product.price).toFixed(2)}
                     </p>
                   </Link>
@@ -214,7 +205,7 @@ const Dashboard = () => {
         {/* Recent orders */}
         <div className="border border-black/10 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-black/10 bg-surface flex items-center justify-between">
-            <p className="font-body font-bold text-sm text-gray-900">
+            <p className="font-body font-bold text-sm text-black">
               Recent orders
             </p>
             <Link
@@ -244,7 +235,7 @@ const Dashboard = () => {
                       className="p-3 flex gap-3 items-center hover:bg-surface transition-colors overflow-hidden"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="font-body font-bold text-sm text-gray-900">
+                        <p className="font-body font-bold text-sm text-black">
                           Order #{o.id} · {o.buyer?.name || "Buyer"}
                         </p>
                         <p className="font-body text-xs text-passive mt-0.5">
@@ -255,7 +246,7 @@ const Dashboard = () => {
                         </p>
                       </div>
                       <OrderPill status={o.status} />
-                      <p className="font-body font-bold text-sm text-gray-900 shrink-0">
+                      <p className="font-body font-bold text-sm text-black shrink-0">
                         ₱{slice.toFixed(2)}
                       </p>
                     </Link>

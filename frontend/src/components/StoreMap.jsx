@@ -1,6 +1,8 @@
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polygon, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import toast from "react-hot-toast";
+import { MUNTINLUPA_RING, inMuntinlupa } from "../utils/muntinlupa.boundary.js";
 
 // Barangay Poblacion — where the map opens before a pin exists
 const DEFAULT_CENTER = [14.3866, 121.0465];
@@ -13,10 +15,19 @@ const pinIcon = L.divIcon({
   iconAnchor: [12, 12],
 });
 
-// Turns a tap on the map into a new pin position
+// Turns a tap on the map into a new pin position.
+// Taps outside Muntinlupa are refused right away, so the seller never
+// saves a pin the server would reject.
 const ClickToPin = ({ onPick }) => {
   useMapEvents({
-    click: (e) => onPick(e.latlng.lat, e.latlng.lng),
+    click: (e) => {
+      const { lat, lng } = e.latlng;
+      if (!inMuntinlupa(lat, lng)) {
+        toast.error("PropeBuy only covers Muntinlupa City. Pin inside the dashed border.", { id: "pin-outside" });
+        return;
+      }
+      onPick(lat, lng);
+    },
   });
   return null;
 };
@@ -38,6 +49,14 @@ const StoreMap = ({ lat, lng, onPick, height = 260 }) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {/* City border — dashed outline, only on the seller's editable map */}
+        {onPick && (
+          <Polygon
+            positions={MUNTINLUPA_RING}
+            interactive={false}
+            pathOptions={{ color: "#000", weight: 2, dashArray: "6 6", fillOpacity: 0.04 }}
+          />
+        )}
         {hasPin && <Marker position={[lat, lng]} icon={pinIcon} />}
         {onPick && <ClickToPin onPick={onPick} />}
       </MapContainer>

@@ -9,6 +9,7 @@ import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchAllProducts, removeProduct } from "../../api/admin.api.js";
 import { fetchBarangays, fetchCategories } from "../../api/product.api.js";
+import Thumb from "../../components/Thumb.jsx";
 
 // ProductModeration — every listing on the platform, live and removed.
 // Removal is a SOFT delete (isActive false): the row stays in the
@@ -108,7 +109,7 @@ const ProductModeration = () => {
       {/* Header row */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Product Moderation
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -120,7 +121,7 @@ const ProductModeration = () => {
       {/* ── FILTER BAR ── */}
       <div className="mt-4 grid gap-3 md:grid-cols-4">
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
+          <label className="font-body text-xs font-semibold text-passive block mb-1.5 pl-1">
             Barangay
           </label>
           <Select
@@ -142,7 +143,7 @@ const ProductModeration = () => {
           />
         </div>
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
+          <label className="font-body text-xs font-semibold text-passive block mb-1.5 pl-1">
             Category
           </label>
           <Select
@@ -162,7 +163,7 @@ const ProductModeration = () => {
           />
         </div>
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
+          <label className="font-body text-xs font-semibold text-passive block mb-1.5 pl-1">
             Listing state
           </label>
           {/* Strings on purpose — the backend compares against "true" */}
@@ -181,7 +182,7 @@ const ProductModeration = () => {
           />
         </div>
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
+          <label className="font-body text-xs font-semibold text-passive block mb-1.5 pl-1">
             Search
           </label>
           <input
@@ -200,7 +201,7 @@ const ProductModeration = () => {
           Loading listings...
         </div>
       ) : visible.length === 0 ? (
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
+        <div className="mt-6 border border-dashed border-black/15 rounded-xl p-10 text-center">
           <p className="font-body text-sm text-passive">
             {products.length === 0
               ? "No listings match these filters."
@@ -208,31 +209,21 @@ const ProductModeration = () => {
           </p>
         </div>
       ) : (
-        <ul className="mt-5 flex flex-col gap-3">
+        <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
           {visible.map((p) => (
             // Removed rows gray out — history intact, honesty kept
             <li
               key={p.id}
-              className={`border border-black/10 rounded-xl p-3 flex gap-3 items-start overflow-hidden ${
+              className={`p-3 md:p-4 flex gap-3 items-start hover:bg-surface/40 ${
                 p.isActive ? "" : "opacity-60"
               }`}
             >
               {/* Thumb — Cloudinary photo or letter fallback */}
-              {p.imageUrl ? (
-                <img
-                  src={p.imageUrl}
-                  alt={p.name}
-                  className="w-14 h-14 md:w-16 md:h-16 rounded-lg object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center font-header text-gray-400 text-lg">
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Thumb src={p.imageUrl} alt={p.name} size="w-14 h-14" />
               {/* Info — min-w-0 lets text shrink instead of overflowing */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-body font-bold text-sm md:text-base text-gray-900 line-clamp-2">
+                  <p className="font-body font-bold text-sm md:text-base text-black line-clamp-2">
                     {p.name}
                   </p>
                   {!p.isActive && (
@@ -246,7 +237,7 @@ const ProductModeration = () => {
                 </p>
                 {/* Vendor line — status pill flags unverified sellers */}
                 <div className="flex items-center gap-2 flex-wrap mt-1">
-                  <span className="font-body text-xs text-gray-700 truncate">
+                  <span className="font-body text-xs text-black/70 truncate">
                     by {p.seller?.name || "Unknown vendor"}
                   </span>
                   <AccountPill status={p.seller?.accountStatus} />
@@ -309,7 +300,7 @@ const ProductModeration = () => {
           setReason("");
         }}
       >
-        <label className="font-body text-xs font-bold text-gray-900 block mb-2">
+        <label className="font-body text-xs font-bold text-black block mb-2">
           Reason for removal (required)
         </label>
         <textarea

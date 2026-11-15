@@ -1,36 +1,9 @@
-/* Archivo for headings — Google Fonts, variable width axis.
-   Stretched to 125% at 800–900 weight it stands in for Integral CF,
-   the paid display face used in the SHOP.CO Figma reference. */
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap");
+/* Fonts — Google Fonts.
+   Archivo (wide, 900): the PropeBuy logo ONLY, via .font-logo.
+   Plus Jakarta Sans: every heading. Inter: body text, forms, prices. */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,900&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
 /* Tailwind v4 entry */
 @import "tailwindcss";
-
-/* Satoshi for body — self-hosted from Fontshare (ITF Free Font License),
-   the exact body face of the Figma reference */
-@font-face {
-  font-family: "Satoshi";
-  src: url("./assets/fonts/satoshi/Satoshi-400.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("./assets/fonts/satoshi/Satoshi-500.woff2") format("woff2");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("./assets/fonts/satoshi/Satoshi-700.woff2") format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("./assets/fonts/satoshi/Satoshi-900.woff2") format("woff2");
-  font-weight: 900;
-  font-display: swap;
-}
 
 /* Design tokens — single source of truth, SHOP.CO palette.
    Names are unchanged from the teal era on purpose: every page already
@@ -44,8 +17,9 @@
   --color-surface: #f0f0f0; /* light gray — inputs, search, footer, panels */
   --color-card: #f2f0f1; /* warm gray — behind product images */
   --color-star: #ffc633; /* rating yellow — reserved for future reviews */
-  --font-header: "Archivo", sans-serif; /* display — wide, heavy, caps */
-  --font-body: "Satoshi", sans-serif; /* everything else */
+  --font-header: "Plus Jakarta Sans", "Inter", sans-serif; /* headings */
+  --font-body: "Inter", system-ui, sans-serif; /* everything else */
+  --font-logo: "Archivo", sans-serif; /* the PropeBuy wordmark only */
   --radius-xl: 1.25rem; /* 20px cards, the Figma card radius */
   --radius-2xl: 1.25rem; /* same — never two card radii on one page */
 }
@@ -54,7 +28,7 @@
 body {
   background-color: white; /* clean bg */
   color: #000000; /* reference body ink */
-  font-family: var(--font-body); /* Satoshi everywhere */
+  font-family: var(--font-body); /* Inter everywhere */
   overflow-x: hidden; /* kill horizontal scroll on phone */
 }
 
@@ -70,35 +44,37 @@ body {
   }
 }
 
-/* Display type — wide, heavy, uppercase, like the reference headings.
-   font-stretch reaches Archivo's width axis; uppercase matches Integral
-   CF, which only ships capitals. */
+/* Headings — Plus Jakarta Sans, bold, normal case, slightly tight */
 h1,
 h2,
 h3,
 .font-header {
   font-family: var(--font-header);
-  font-weight: 900; /* heaviest cut, the reference weight */
-  font-stretch: 125%; /* widest Archivo — the Integral CF stand-in */
-  text-transform: uppercase;
-  letter-spacing: -0.01em; /* wide letters read tighter this way */
-  line-height: 1.1; /* tight display leading */
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
-/* In-card headings — the reference uses Satoshi bold for small titles
-   like "Order Summary" and "Filters". Keeps the h2/h3 semantics while
-   opting out of the display face. Declared after the display rule so it
-   wins at equal specificity. */
+/* Smaller in-card titles ("Order summary", "Filters") — same face,
+   one step lighter. Declared after the rule above so it wins. */
 h1.heading-body,
 h2.heading-body,
 h3.heading-body,
 .heading-body {
-  font-family: var(--font-body);
-  font-stretch: normal;
-  text-transform: none;
-  letter-spacing: normal;
+  font-family: var(--font-header);
   font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.25;
+}
+
+/* The PropeBuy wordmark — wide, heavy, uppercase Archivo. Logo only. */
+.font-logo {
+  font-family: var(--font-logo);
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
 
 /* Global buttons - press motion on every button automatically */

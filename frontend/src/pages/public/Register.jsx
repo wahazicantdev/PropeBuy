@@ -5,7 +5,9 @@ import toast from "react-hot-toast";
 import AuthShell from "../../components/AuthShell.jsx";
 import Icon from "../../components/Icon.jsx";
 import FieldLabel from "../../components/FieldLabel.jsx";
+import PasswordInput from "../../components/PasswordInput.jsx";
 import Select from "../../components/Select.jsx";
+import Stepper from "../../components/Stepper.jsx";
 import {
   registerUser,
   requestEmailOtp,
@@ -14,27 +16,40 @@ import {
 import { fetchBarangays } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 
-// Register — buyer or seller plus 2 docs upload
+// The 4 registration steps
+const STEPS = ["Account", "Email", "Details", "Documents"];
+
+// Account type cards for step 1
+const ROLES = [
+  { value: "BUYER", icon: "shopping_bag", title: "Buyer", text: "Shop from verified vendors in your barangay." },
+  { value: "SELLER", icon: "storefront", title: "Seller", text: "Open a free online store for your shop." },
+];
+
+// Register — 4 steps: account type, email code, details, documents
 const Register = () => {
   // Text fields via hook-form, dropdowns via state for the custom Select
   const {
     register,
-    handleSubmit,
     trigger,
     getValues,
+    handleSubmit,
     formState: { errors },
   } = useForm();
-  // Role and barangay held in state since custom Select is controlled
+  // Which step is on screen
+  const [step, setStep] = useState(0);
+  // Role and barangay held in state since they are not text inputs
   const [role, setRole] = useState("BUYER");
   const [barangayId, setBarangayId] = useState("");
   // Files via state (File objects)
   const [idDoc, setIdDoc] = useState(null);
   const [certDoc, setCertDoc] = useState(null);
+  // Consent to the Terms and Privacy Policy
+  const [agreed, setAgreed] = useState(false);
   // Dropdown options
   const [barangays, setBarangays] = useState([]);
   // Block double submit
   const [loading, setLoading] = useState(false);
-  // Email code steps — otpToken is the proof sent with registration
+  // Email code — otpToken is the proof sent with registration
   const [codeSent, setCodeSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [otpToken, setOtpToken] = useState("");
@@ -45,11 +60,6 @@ const Register = () => {
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
 
-  // Role options for the custom dropdown
-  const roleOptions = [
-    { value: "BUYER", label: "Buyer" },
-    { value: "SELLER", label: "Seller" },
-  ];
   // Barangay options with a prompt entry first
   const barangayOptions = [
     { value: "", label: "Select barangay" },
@@ -76,7 +86,7 @@ const Register = () => {
     err.response?.data?.message ||
     fallback;
 
-  // Back to step 1 so a different email can be used
+  // Back to the start of the email step so a different email can be used
   const resetEmailStep = () => {
     setCodeSent(false);
     setOtpCode("");
@@ -102,7 +112,7 @@ const Register = () => {
     }
   };
 
-  // Confirms the code and unlocks the rest of the form
+  // Confirms the code, then moves on to the details step
   const confirmCode = async () => {
     if (otpCode.length !== 6) return;
     setVerifying(true);
@@ -110,6 +120,7 @@ const Register = () => {
       const res = await verifyEmailOtp(getValues("email"), otpCode);
       setOtpToken(res.data.otpToken);
       toast.success(res.message);
+      setStep(2);
     } catch (err) {
       toast.error(readError(err, "Could not confirm the code"));
     } finally {
@@ -117,23 +128,19 @@ const Register = () => {
     }
   };
 
-  // Enter key and main button follow whichever step is on screen
-  const submitEmailStep = (e) => {
-    e.preventDefault();
-    if (codeSent) confirmCode();
-    else if (cooldown <= 0 && !sending) sendCode();
+  // Details step — name, matching passwords and barangay
+  const finishDetails = async () => {
+    if (!(await trigger(["name", "password", "confirmPassword"]))) return;
+    if (!barangayId) return toast.error("Please select your barangay");
+    setStep(3);
   };
 
-  // Submit — FormData for multer fields
+  // Final submit — FormData for the 2 document files
   const onSubmit = async (values) => {
-    // Barangay required, backend cross-checks documents against it
-    if (!barangayId) return toast.error("Please select your barangay");
-    // Backend requires both docs
-    if (!idDoc || !certDoc)
-      return toast.error("Upload both ID and Barangay Certificate");
+    if (!idDoc || !certDoc) return toast.error("Upload both your ID and Barangay Certificate");
+    if (!agreed) return toast.error("Please agree to the Terms of Use and Privacy Policy");
     setLoading(true);
     try {
-      // Build multipart body
       const fd = new FormData();
       fd.append("name", values.name);
       fd.append("email", values.email);
@@ -141,29 +148,39 @@ const Register = () => {
       fd.append("role", role);
       fd.append("barangayId", barangayId);
       fd.append("otpToken", otpToken);
+      fd.append("acceptTerms", "true");
       fd.append("idDocument", idDoc);
       fd.append("certDocument", certDoc);
       // POST /auth/register
       const res = await registerUser(fd);
-      // Save session globally
       login(res.data, res.token);
-      // OCR-aware message from backend
       toast.success(res.message);
-      // Role redirect
+      // Sellers land on their profile while waiting for approval
       if (res.data.role === "SELLER")
-        navigate(
-          res.data.accountStatus === "VERIFIED"
-            ? "/seller/dashboard"
-            : "/seller/profile",
-        );
+        navigate(res.data.accountStatus === "VERIFIED" ? "/seller/dashboard" : "/seller/profile");
       else navigate("/browse");
     } catch (err) {
-      // The 30-minute proof ran out — send them back to confirm again
-      if (err.response?.data?.emailNotVerified) resetEmailStep();
+      // The 30-minute email proof ran out — confirm the email again
+      if (err.response?.data?.emailNotVerified) {
+        resetEmailStep();
+        setStep(1);
+      }
       toast.error(readError(err, "Registration failed"));
     } finally {
       setLoading(false);
     }
+  };
+
+  // Enter key follows whichever step is on screen
+  const onFormSubmit = (e) => {
+    if (step === 3) return handleSubmit(onSubmit)(e);
+    e.preventDefault();
+    if (step === 0) setStep(1);
+    else if (step === 1) {
+      if (otpToken) setStep(2);
+      else if (codeSent) confirmCode();
+      else if (cooldown <= 0 && !sending) sendCode();
+    } else if (step === 2) finishDetails();
   };
 
   // Upload tile — one look for both documents, check mark once picked
@@ -176,26 +193,31 @@ const Register = () => {
       </span>
       <span className="min-w-0">
         <span className="block font-body font-bold text-sm text-black">{label}</span>
-        <span className="block font-body text-xs text-black/60 truncate">
-          {file ? file.name : hint}
-        </span>
+        <span className="block font-body text-xs text-black/60 truncate">{file ? file.name : hint}</span>
       </span>
       <Icon name="upload_file" className="ml-auto text-black/40" />
-      <input
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => setFile(e.target.files[0])}
-      />
+      <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files[0])} />
     </label>
   );
 
+  // Shared button styles
+  const primaryBtn =
+    "btn-primary btn-active w-full py-3.5 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50";
+  const backBtn = (to) => (
+    <button
+      type="button"
+      onClick={() => setStep(to)}
+      className="btn-outline btn-active px-5 py-3.5 font-body font-medium flex items-center gap-1 shrink-0"
+    >
+      <Icon name="arrow_back" size={18} /> Back
+    </button>
+  );
+
   return (
-    // Shared auth frame — the pitch card explains the two documents
     <AuthShell
       variant="register"
       title="Create account"
-      subtitle="Buyers and sellers both verify with a government ID and a Barangay Certificate."
+      subtitle="Four quick steps. Buyers and sellers both verify with a government ID and a Barangay Certificate."
       footer={
         <>
           Have an account?{" "}
@@ -205,168 +227,219 @@ const Register = () => {
         </>
       }
     >
-      <form
-        onSubmit={otpToken ? handleSubmit(onSubmit) : submitEmailStep}
-        className="space-y-4"
-      >
-        {/* Email — step 1, locked once a code is on its way */}
-        <div>
-          <FieldLabel htmlFor="email">Email address</FieldLabel>
-          <div className="relative">
-            <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-            <input
-              {...register("email", {
-                required: "Email required",
-                pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email" },
-              })}
-              id="email"
-              type="email"
-              readOnly={codeSent}
-              placeholder="you@example.com"
-              autoComplete="email"
-              className="w-full pl-13 pr-5 py-3.5 font-body text-sm read-only:text-black/60"
-            />
-          </div>
-          {errors.email && (
-            <p className="text-danger text-xs mt-1 pl-5">{errors.email.message}</p>
-          )}
-          {/* Verified state — offer a way back if the email was wrong */}
-          {otpToken && (
-            <p className="flex items-center gap-1 font-body text-xs text-success mt-1.5 pl-5">
-              <Icon name="check_circle" className="text-success" />
-              Email verified.
-              <button type="button" onClick={resetEmailStep} className="text-black font-bold underline ml-1">
-                Change email
-              </button>
-            </p>
-          )}
-        </div>
-        {/* Step 1 button — send the first code */}
-        {!codeSent && (
-          <button
-            disabled={sending || cooldown > 0}
-            className="btn-primary btn-active w-full py-3.5 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {sending ? <span className="spinner" /> : <Icon name="mail" />}
-            {sending ? "Sending..." : cooldown > 0 ? `Send code in ${cooldown}s` : "Send code"}
-          </button>
+      <div className="mb-8">
+        <Stepper steps={STEPS} current={step} onJump={(i) => setStep(i)} />
+      </div>
+      <form onSubmit={onFormSubmit} className="space-y-4">
+        {/* ── STEP 1: buyer or seller ── */}
+        {step === 0 && (
+          <>
+            <p className="font-body text-sm font-bold">How will you use PropeBuy?</p>
+            <div className="grid gap-3">
+              {ROLES.map((r) => (
+                <button
+                  type="button"
+                  key={r.value}
+                  onClick={() => setRole(r.value)}
+                  aria-pressed={role === r.value}
+                  className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors ${role === r.value ? "border-black bg-black/[0.03]" : "border-black/10 hover:border-black/30"}`}
+                >
+                  <span className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${role === r.value ? "bg-black text-white" : "bg-surface"}`}>
+                    <Icon name={r.icon} size={24} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-body font-bold text-base">{r.title}</span>
+                    <span className="block font-body text-sm text-black/60">{r.text}</span>
+                  </span>
+                  {role === r.value && <Icon name="check_circle" className="ml-auto" />}
+                </button>
+              ))}
+            </div>
+            <button className={primaryBtn}>
+              Continue as {role === "SELLER" ? "seller" : "buyer"} <Icon name="arrow_forward" size={18} />
+            </button>
+          </>
         )}
-        {/* Step 2 — type the emailed code */}
-        {codeSent && !otpToken && (
+
+        {/* ── STEP 2: email and 6-digit code ── */}
+        {step === 1 && (
           <>
             <div>
-              <FieldLabel htmlFor="otpCode">6-digit code</FieldLabel>
-              <input
-                id="otpCode"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                placeholder="Check your email"
-                className="w-full px-5 py-3.5 font-body text-sm"
-              />
-              <p className="font-body text-xs text-black/60 mt-1.5 pl-5">
-                The code expires in 10 minutes. Check your spam folder too.
-              </p>
+              <FieldLabel htmlFor="email">Email address</FieldLabel>
+              <div className="relative">
+                <Icon name="mail" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+                <input
+                  {...register("email", {
+                    required: "Email required",
+                    pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email" },
+                  })}
+                  id="email"
+                  type="email"
+                  readOnly={codeSent}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className="w-full pl-13 pr-5 py-3.5 font-body text-sm read-only:text-black/60"
+                />
+              </div>
+              {errors.email && <p className="text-danger text-xs mt-1 pl-5">{errors.email.message}</p>}
+              {otpToken && (
+                <p className="flex items-center gap-1 font-body text-xs text-success mt-1.5 pl-5">
+                  <Icon name="check_circle" className="text-success" /> Email verified.
+                  <button type="button" onClick={resetEmailStep} className="text-black font-bold underline ml-1">
+                    Change email
+                  </button>
+                </p>
+              )}
             </div>
-            <button
-              disabled={verifying || otpCode.length !== 6}
-              className="btn-primary btn-active w-full py-3.5 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {verifying ? <span className="spinner" /> : <Icon name="check_circle" />}
-              {verifying ? "Checking..." : "Confirm code"}
-            </button>
-            {/* Resend waits for the cooldown, change email restarts the step */}
-            <div className="flex justify-between font-body text-sm">
-              <button
-                type="button"
-                onClick={sendCode}
-                disabled={sending || cooldown > 0}
-                className="font-bold underline disabled:opacity-50 disabled:no-underline"
-              >
-                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-              </button>
-              <button type="button" onClick={resetEmailStep} className="font-bold underline">
-                Change email
+            {/* Code box appears once a code is on its way */}
+            {codeSent && !otpToken && (
+              <div>
+                <FieldLabel htmlFor="otpCode">6-digit code</FieldLabel>
+                <input
+                  id="otpCode"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="Check your email"
+                  className="w-full px-5 py-3.5 font-body text-sm tracking-[0.3em]"
+                />
+                <p className="font-body text-xs text-black/60 mt-1.5 pl-5">
+                  The code expires in 10 minutes. Check your spam folder too.
+                </p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              {backBtn(0)}
+              {otpToken ? (
+                <button className={primaryBtn}>
+                  Next <Icon name="arrow_forward" size={18} />
+                </button>
+              ) : !codeSent ? (
+                <button disabled={sending || cooldown > 0} className={primaryBtn}>
+                  {sending ? <span className="spinner" /> : <Icon name="mail" />}
+                  {sending ? "Sending..." : cooldown > 0 ? `Send code in ${cooldown}s` : "Send code"}
+                </button>
+              ) : (
+                <button disabled={verifying || otpCode.length !== 6} className={primaryBtn}>
+                  {verifying ? <span className="spinner" /> : <Icon name="check_circle" />}
+                  {verifying ? "Checking..." : "Confirm code"}
+                </button>
+              )}
+            </div>
+            {/* Resend waits for the cooldown; change email restarts the step */}
+            {codeSent && !otpToken && (
+              <div className="flex justify-between font-body text-sm">
+                <button
+                  type="button"
+                  onClick={sendCode}
+                  disabled={sending || cooldown > 0}
+                  className="font-bold underline disabled:opacity-50 disabled:no-underline"
+                >
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                </button>
+                <button type="button" onClick={resetEmailStep} className="font-bold underline">
+                  Change email
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── STEP 3: name, password, barangay ── */}
+        {step === 2 && (
+          <>
+            <div>
+              <FieldLabel htmlFor="name">Full name</FieldLabel>
+              <div className="relative">
+                <Icon name="person" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+                <input
+                  {...register("name", {
+                    required: "Name required",
+                    minLength: { value: 2, message: "At least 2 characters" },
+                  })}
+                  id="name"
+                  placeholder="As shown on your ID"
+                  autoComplete="name"
+                  className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
+                />
+              </div>
+              {errors.name && <p className="text-danger text-xs mt-1 pl-5">{errors.name.message}</p>}
+            </div>
+            <div>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <PasswordInput
+                {...register("password", {
+                  required: "Password required",
+                  minLength: { value: 6, message: "Min 6 chars" },
+                })}
+                id="password"
+                placeholder="At least 6 characters"
+                autoComplete="new-password"
+              />
+              {errors.password && <p className="text-danger text-xs mt-1 pl-5">{errors.password.message}</p>}
+            </div>
+            <div>
+              <FieldLabel htmlFor="confirmPassword">Confirm password</FieldLabel>
+              <PasswordInput
+                {...register("confirmPassword", {
+                  required: "Type your password again",
+                  validate: (v) => v === getValues("password") || "Passwords do not match",
+                })}
+                id="confirmPassword"
+                placeholder="Same password again"
+                autoComplete="new-password"
+              />
+              {errors.confirmPassword && (
+                <p className="text-danger text-xs mt-1 pl-5">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+            <div>
+              <FieldLabel>Barangay</FieldLabel>
+              <Select value={barangayId} onChange={setBarangayId} options={barangayOptions} ariaLabel="Select barangay" />
+            </div>
+            <div className="flex gap-3">
+              {backBtn(1)}
+              <button className={primaryBtn}>
+                Next <Icon name="arrow_forward" size={18} />
               </button>
             </div>
           </>
         )}
-        {/* Step 3 — the rest of the form appears after the email is confirmed */}
-        {otpToken && (
+
+        {/* ── STEP 4: documents and consent ── */}
+        {step === 3 && (
           <>
-        {/* Name */}
-        <div>
-          <FieldLabel htmlFor="name">Full name</FieldLabel>
-          <div className="relative">
-            <Icon name="person" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-            <input
-              {...register("name", { required: "Name required" })}
-              id="name"
-              placeholder="As shown on your ID"
-              autoComplete="name"
-              className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
-            />
-          </div>
-          {errors.name && (
-            <p className="text-danger text-xs mt-1 pl-5">{errors.name.message}</p>
-          )}
-        </div>
-        {/* Password */}
-        <div>
-          <FieldLabel htmlFor="password">Password</FieldLabel>
-          <div className="relative">
-            <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-            <input
-              {...register("password", {
-                required: "Password required",
-                minLength: { value: 6, message: "Min 6 chars" },
-              })}
-              id="password"
-              type="password"
-              placeholder="At least 6 characters"
-              autoComplete="new-password"
-              className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
-            />
-          </div>
-          {errors.password && (
-            <p className="text-danger text-xs mt-1 pl-5">{errors.password.message}</p>
-          )}
-        </div>
-        {/* Role plus barangay — custom dropdowns */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel>I am a</FieldLabel>
-            <Select
-              value={role}
-              onChange={setRole}
-              options={roleOptions}
-              ariaLabel="Select role"
-            />
-          </div>
-          <div>
-            <FieldLabel>Barangay</FieldLabel>
-            <Select
-              value={barangayId}
-              onChange={setBarangayId}
-              options={barangayOptions}
-              ariaLabel="Select barangay"
-            />
-          </div>
-        </div>
-        {/* Document uploads — the dual-document verification */}
-        <div className="grid gap-3 pt-2">
-          {docTile("Government ID", "Any valid government-issued ID, photo", "id_card", idDoc, setIdDoc)}
-          {docTile("Barangay Certificate", "Certificate of Residency, issued within 6 months", "description", certDoc, setCertDoc)}
-        </div>
-        {/* Submit — reading documents takes a few seconds, say so */}
-        <button
-          disabled={loading}
-          className="btn-primary btn-active w-full py-3.5 font-body font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {loading ? <span className="spinner" /> : <Icon name="how_to_reg" />}
-          {loading ? "Checking your documents..." : "Create account"}
-        </button>
+            <div className="grid gap-3">
+              {docTile("Government ID", "Any valid government-issued ID, photo", "id_card", idDoc, setIdDoc)}
+              {docTile("Barangay Certificate", "Certificate of Residency, issued within 6 months", "description", certDoc, setCertDoc)}
+            </div>
+            <p className="font-body text-xs text-black/60 flex items-start gap-2">
+              <Icon name="info" size={16} className="mt-px" />
+              An administrator checks your documents before you can check out or sell.
+            </p>
+            {/* Consent — required by the Data Privacy Act */}
+            <label className="flex items-start gap-3 font-body text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-0.5 w-4 h-4 shrink-0 accent-black"
+              />
+              <span>
+                I agree to the{" "}
+                <Link to="/terms" target="_blank" className="font-bold underline">Terms of Use</Link> and{" "}
+                <Link to="/privacy" target="_blank" className="font-bold underline">Privacy Policy</Link>, and I allow
+                PropeBuy to process my ID and certificate for verification.
+              </span>
+            </label>
+            <div className="flex gap-3">
+              {backBtn(2)}
+              <button disabled={loading} className={primaryBtn}>
+                {loading ? <span className="spinner" /> : <Icon name="how_to_reg" />}
+                {loading ? "Checking your documents..." : "Create account"}
+              </button>
+            </div>
           </>
         )}
       </form>

@@ -62,6 +62,12 @@ export const updateOrderStatus = async (id, status) => {
   return res.data;
 };
 
+// Buyer cancels their own order while it is still RESERVED
+export const cancelMyOrder = async (id) => {
+  const res = await api.put(`/orders/${id}/cancel`);
+  return res.data;
+};
+
 // Seller confirms cash received — CASH orders only
 export const markCashPaid = async (id) => {
   // PUT /orders/:id/payment-status, minimal PENDING → PAID move

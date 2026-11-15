@@ -6,6 +6,7 @@ import ProductCard from "../../components/ProductCard.jsx";
 import Icon from "../../components/Icon.jsx";
 import { fetchCategories, fetchProducts } from "../../api/product.api.js";
 import { categoryMeta } from "../../utils/categories.js";
+import { cld } from "../../utils/photos.js";
 
 // Landing — SHOP.CO homepage structure with PropeBuy's story:
 // hero with the pilot numbers, a black category strip in place of the
@@ -123,7 +124,7 @@ const Landing = () => {
                   className={`relative aspect-square rounded-xl overflow-hidden bg-white ${i % 2 === 1 ? "translate-y-6" : ""}`}
                 >
                   <img
-                    src={p.imageUrl}
+                    src={cld(p.imageUrl, 600)}
                     alt={p.name}
                     className="absolute inset-0 w-full h-full object-cover"
                   />

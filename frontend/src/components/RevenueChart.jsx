@@ -149,14 +149,14 @@ const RevenueChart = ({ data = [] }) => {
                     tickFormatter={(k) => monthLabel(k)}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Satoshi, sans-serif" }}
+                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Inter, sans-serif" }}
                   />
                   <YAxis
                     tickFormatter={pesoCompact}
                     axisLine={false}
                     tickLine={false}
                     width={48}
-                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Satoshi, sans-serif" }}
+                    tick={{ fill: AXIS_INK, fontSize: 12, fontFamily: "Inter, sans-serif" }}
                   />
                   {/* Hover layer — full-column hit area, gray band cursor */}
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: "#f9fafb" }} />

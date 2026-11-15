@@ -17,6 +17,8 @@ import SellerLogin from "./pages/public/SellerLogin.jsx";
 import Browse from "./pages/public/Browse.jsx";
 import ProductDetail from "./pages/public/ProductDetail.jsx";
 import SellerStore from "./pages/public/SellerStore.jsx";
+import ForgotPassword from "./pages/public/ForgotPassword.jsx";
+import { Terms, Privacy } from "./pages/public/Legal.jsx";
 // Buyer pages - cart onward, all guarded
 import Cart from "./pages/buyer/Cart.jsx";
 import Checkout from "./pages/buyer/Checkout.jsx";
@@ -34,6 +36,7 @@ import OrderDetailSeller from "./pages/seller/OrderDetailSeller.jsx";
 import Dashboard from "./pages/seller/Dashboard.jsx";
 import InventoryMonitor from "./pages/seller/InventoryMonitor.jsx";
 import SellerProfile from "./pages/seller/SellerProfile.jsx";
+import Earnings from "./pages/seller/Earnings.jsx";
 // Admin pages - Phase E, all 7 portal pages live
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import PendingVerifications from "./pages/admin/PendingVerifications.jsx";
@@ -42,6 +45,7 @@ import ProductModeration from "./pages/admin/ProductModeration.jsx";
 import OrdersOverview from "./pages/admin/OrdersOverview.jsx";
 import BarangayManagement from "./pages/admin/BarangayManagement.jsx";
 import CategoryManagement from "./pages/admin/CategoryManagement.jsx";
+import Payouts from "./pages/admin/Payouts.jsx";
 
 const App = () => {
   // Mount realtime once — before this, the hook existed but nothing
@@ -56,6 +60,9 @@ const App = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/login/buyer" element={<BuyerLogin />} />
       <Route path="/login/seller" element={<SellerLogin />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/browse" element={<Browse />} />
       <Route path="/product/:id" element={<ProductDetail />} />
       <Route path="/store/:sellerId" element={<SellerStore />} />
@@ -85,6 +92,7 @@ const App = () => {
           <Route path="/seller/orders/:id" element={<OrderDetailSeller />} />
           <Route path="/seller/inventory" element={<InventoryMonitor />} />
           <Route path="/seller/profile" element={<SellerProfile />} />
+          <Route path="/seller/earnings" element={<Earnings />} />
         </Route>
       </Route>
       {/* Admin - top nav shell, all 7 pages guarded by role ADMIN */}
@@ -101,6 +109,7 @@ const App = () => {
           {/* Taxonomy - barangay coverage and the 7 categories */}
           <Route path="/admin/barangays" element={<BarangayManagement />} />
           <Route path="/admin/categories" element={<CategoryManagement />} />
+          <Route path="/admin/payouts" element={<Payouts />} />
         </Route>
       </Route>
     </Routes>

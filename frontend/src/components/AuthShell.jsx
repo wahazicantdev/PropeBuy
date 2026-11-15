@@ -20,6 +20,14 @@ const PITCH = {
       { icon: "notifications", text: "New orders pop up the moment they land" },
     ],
   },
+  reset: {
+    title: "Back in a minute",
+    points: [
+      { icon: "mail", text: "We email a 6-digit code to your account" },
+      { icon: "lock_reset", text: "Choose a new password" },
+      { icon: "login", text: "Log in again right away" },
+    ],
+  },
   register: {
     title: "Join as a verified member",
     points: [

@@ -1,0 +1,211 @@
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import PageHeader from "../../components/PageHeader.jsx";
+import StatCard from "../../components/StatCard.jsx";
+import ConfirmModal from "../../components/ConfirmModal.jsx";
+import FieldLabel from "../../components/FieldLabel.jsx";
+import Spinner from "../../components/Spinner.jsx";
+import Icon from "../../components/Icon.jsx";
+import { fetchPayoutOverview, recordPayout, markRefundDone } from "../../api/payout.api.js";
+import { formatPeso } from "../../utils/format.js";
+
+// Percent label, e.g. 0.05 -> "5%"
+const pct = (r) => `${+(r * 100).toFixed(2)}%`;
+
+// Admin Payouts — pay sellers their online earnings, track refunds and
+// PropeBuy's own commission income
+const Payouts = () => {
+  const [data, setData] = useState(null);
+  // Seller row being paid, and the reference typed in the modal
+  const [paying, setPaying] = useState(null);
+  const [reference, setReference] = useState("");
+  // Refund row being confirmed
+  const [refund, setRefund] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = () =>
+    fetchPayoutOverview()
+      .then((res) => setData(res.data))
+      .catch(() => toast.error("Could not load payouts"));
+  useEffect(() => {
+    load();
+  }, []);
+
+  // Record a transfer the admin already sent in GCash
+  const confirmPayout = async () => {
+    setBusy(true);
+    try {
+      const res = await recordPayout(paying.sellerId, reference);
+      toast.success(res.message);
+      setPaying(null);
+      setReference("");
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not record the payout");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Mark a buyer refund as done
+  const confirmRefund = async () => {
+    setBusy(true);
+    try {
+      const res = await markRefundDone(refund.id);
+      toast.success(res.message);
+      setRefund(null);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not update the refund");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!data) {
+    return (
+      <div className="py-16 flex items-center justify-center gap-3 font-body text-sm text-passive">
+        <Spinner /> Loading payouts...
+      </div>
+    );
+  }
+
+  const { month, toPay, refunds, recent, onHold, rates } = data;
+  const totalToPay = toPay.reduce((s, r) => s + r.amount, 0);
+
+  return (
+    <div className="page-enter">
+      <PageHeader
+        title="Payouts"
+        subtitle={`Online payments land in PropeBuy's PayMongo account first. Send each seller's share, minus the ${pct(rates.commissionRate)} commission, after the order is fulfilled.`}
+      />
+
+      {/* ── This month ── */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <StatCard tone="dark" icon="payments" label="To pay sellers" value={formatPeso(totalToPay)} hint={`${toPay.length} seller(s) waiting`} />
+        <StatCard icon="schedule" label="On hold" value={formatPeso(onHold)} hint="Orders not fulfilled yet" />
+        <StatCard icon="request_quote" label="Commission this month" value={formatPeso(month.commission)} hint={`From ${formatPeso(month.onlineSales)} online sales`} />
+        <StatCard icon="savings" label="PropeBuy net this month" value={formatPeso(month.platformNet)} hint={`After about ${formatPeso(month.gatewayFees)} PayMongo fees`} />
+      </div>
+
+      {/* ── Sellers to pay ── */}
+      <h2 className="heading-body text-lg font-bold mt-8 mb-3">Sellers to pay</h2>
+      {toPay.length === 0 ? (
+        <div className="rounded-xl bg-surface p-8 text-center font-body text-sm text-passive">Nothing to pay right now.</div>
+      ) : (
+        <ul className="rounded-xl border border-black/10 divide-y divide-black/5">
+          {toPay.map((s) => (
+            <li key={s.sellerId} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 font-body text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-bold truncate">{s.name}</p>
+                <p className="text-xs text-passive truncate">
+                  {s.gcashNumber ? `GCash ${s.gcashNumber} · ${s.gcashName}` : "No GCash account yet. Ask the seller to add one in Earnings."}
+                </p>
+                <p className="text-xs text-passive">
+                  {s.orders} order(s){s.withholdingTax ? ` · tax withheld ${formatPeso(s.withholdingTax)}` : ""}
+                </p>
+              </div>
+              <p className="font-bold text-lg tabular-nums">{formatPeso(s.amount)}</p>
+              <button
+                disabled={!s.gcashNumber}
+                onClick={() => setPaying(s)}
+                className="btn-primary btn-active px-5 py-2.5 font-body text-sm font-medium disabled:opacity-40"
+              >
+                Record payout
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* ── Refunds due ── */}
+      <h2 className="heading-body text-lg font-bold mt-8 mb-1">Refunds due</h2>
+      <p className="font-body text-xs text-passive mb-3">
+        Orders cancelled after the buyer paid online. Refund the payment in the PayMongo dashboard, then mark it done.
+      </p>
+      {refunds.length === 0 ? (
+        <div className="rounded-xl bg-surface p-6 text-center font-body text-sm text-passive">No refunds due.</div>
+      ) : (
+        <ul className="rounded-xl border border-black/10 divide-y divide-black/5">
+          {refunds.map((r) => (
+            <li key={r.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 font-body text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">Order #{r.orderId} · {r.order.buyer.name}</p>
+                <p className="text-xs text-passive truncate">{r.order.buyer.email} · seller {r.seller.name}</p>
+              </div>
+              <p className="font-bold tabular-nums">{formatPeso(Number(r.itemsAmount) + Number(r.deliveryFee))}</p>
+              <button onClick={() => setRefund(r)} className="btn-outline btn-active px-5 py-2.5 font-body text-sm font-medium">
+                Mark refunded
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* ── Recent payouts ── */}
+      <h2 className="heading-body text-lg font-bold mt-8 mb-3">Recent payouts</h2>
+      {recent.length === 0 ? (
+        <div className="rounded-xl bg-surface p-6 text-center font-body text-sm text-passive">No payouts recorded yet.</div>
+      ) : (
+        <div className="rounded-xl border border-black/10 overflow-x-auto">
+          <table className="w-full min-w-[36rem] font-body text-sm">
+            <thead className="bg-surface text-left text-xs text-passive">
+              <tr>
+                <th className="px-4 py-3 font-medium">Date</th>
+                <th className="px-4 py-3 font-medium">Seller</th>
+                <th className="px-4 py-3 font-medium">GCash</th>
+                <th className="px-4 py-3 font-medium">Reference</th>
+                <th className="px-4 py-3 font-medium text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.map((p) => (
+                <tr key={p.id} className="border-t border-black/5">
+                  <td className="px-4 py-3 whitespace-nowrap">{new Date(p.createdAt).toLocaleDateString("en-PH", { dateStyle: "medium" })}</td>
+                  <td className="px-4 py-3">{p.seller.name}</td>
+                  <td className="px-4 py-3">{p.gcashNumber}</td>
+                  <td className="px-4 py-3">{p.referenceNo} <span className="text-xs text-passive">by {p.admin.name}</span></td>
+                  <td className="px-4 py-3 text-right font-bold tabular-nums">{formatPeso(p.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Record payout — the admin sends the money first, then saves the reference */}
+      <ConfirmModal
+        open={!!paying}
+        tone="primary"
+        size="md"
+        title="Record payout"
+        message={paying ? `Send ${formatPeso(paying.amount)} to ${paying.gcashName} (GCash ${paying.gcashNumber}) first, then type the reference number from GCash.` : ""}
+        confirmLabel="Save payout"
+        busy={busy}
+        confirmDisabled={reference.trim().length < 4}
+        onConfirm={confirmPayout}
+        onCancel={() => {
+          setPaying(null);
+          setReference("");
+        }}
+      >
+        <FieldLabel htmlFor="ref">GCash reference number</FieldLabel>
+        <input id="ref" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={50} placeholder="Example: 1009 234 567890" className="w-full px-5 py-3 font-body text-sm" />
+      </ConfirmModal>
+
+      {/* Refund done confirmation */}
+      <ConfirmModal
+        open={!!refund}
+        tone="primary"
+        title="Mark refund as done?"
+        message={refund ? `Only do this after refunding Order #${refund.orderId} in the PayMongo dashboard.` : ""}
+        confirmLabel="Yes, refunded"
+        busy={busy}
+        onConfirm={confirmRefund}
+        onCancel={() => setRefund(null)}
+      />
+    </div>
+  );
+};
+
+export default Payouts;

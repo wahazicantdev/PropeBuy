@@ -214,7 +214,7 @@ const PendingVerifications = () => {
       {/* Header row */}
       <div className="flex items-start gap-3 flex-wrap">
         <div className="min-w-0">
-          <h1 className="font-header font-bold text-xl md:text-2xl text-gray-900">
+          <h1 className="text-2xl md:text-3xl text-black">
             Pending Verifications
           </h1>
           <p className="font-body text-sm text-passive mt-1">
@@ -228,7 +228,7 @@ const PendingVerifications = () => {
             setLoading(true);
             load();
           }}
-          className="btn-active ml-auto border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
+          className="btn-active ml-auto border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-black"
         >
           Refresh
         </button>
@@ -257,8 +257,8 @@ const PendingVerifications = () => {
 
       {/* Empty queue — the good kind of empty */}
       {users.length === 0 ? (
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
-          <p className="font-header text-lg text-gray-900">Queue is clear</p>
+        <div className="mt-6 border border-dashed border-black/15 rounded-xl p-10 text-center">
+          <p className="heading-body text-base text-black">Queue is clear</p>
           <p className="font-body text-sm text-passive mt-1">
             Nothing waiting for review. New registrations land here
             automatically.
@@ -266,21 +266,21 @@ const PendingVerifications = () => {
         </div>
       ) : visibleUsers.length === 0 ? (
         // Other groups still have work, only this one is empty
-        <p className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center font-body text-sm text-passive">
+        <p className="mt-6 border border-dashed border-black/15 rounded-xl p-10 text-center font-body text-sm text-passive">
           No accounts in this group.
         </p>
       ) : (
-        <ul className="mt-5 flex flex-col gap-3">
+        <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
           {visibleUsers.map((u) => (
             // min-w-0 + overflow-hidden — the responsive trio on every card
             <li
               key={u.id}
-              className="border border-black/10 rounded-xl p-4 overflow-hidden"
+              className="p-4 hover:bg-surface/40"
             >
               {/* Identity row */}
               <div className="flex items-start gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                  <p className="font-body font-bold text-sm md:text-base text-gray-900 line-clamp-2">
+                  <p className="font-body font-bold text-sm md:text-base text-black line-clamp-2">
                     {u.name}
                   </p>
                   <p className="font-body text-xs text-passive truncate mt-0.5">
@@ -310,7 +310,7 @@ const PendingVerifications = () => {
                   {u.ocrIssues.map((issue, i) => (
                     <li
                       key={i}
-                      className="font-body text-xs text-gray-700 wrap-break-word"
+                      className="font-body text-xs text-black/70 wrap-break-word"
                     >
                       · {issue}
                     </li>
@@ -367,7 +367,7 @@ const PendingVerifications = () => {
                 </button>
                 <button
                   onClick={() => toggleAudit(u.id)}
-                  className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
+                  className="btn-outline btn-active rounded-full px-3 py-2 font-body text-xs font-bold text-black"
                 >
                   {auditId === u.id ? "Hide OCR details" : "OCR details"}
                 </button>
@@ -375,7 +375,7 @@ const PendingVerifications = () => {
                 <button
                   onClick={() => handleRerun(u.id)}
                   disabled={rerunId === u.id}
-                  className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900 disabled:opacity-50 flex items-center gap-2"
+                  className="btn-outline btn-active rounded-full px-3 py-2 font-body text-xs font-bold text-black disabled:opacity-50 flex items-center gap-2"
                 >
                   {rerunId === u.id ? (
                     <>
@@ -399,7 +399,7 @@ const PendingVerifications = () => {
                       Loading OCR audit trail...
                     </p>
                   ) : (
-                    <pre className="font-body text-xs text-gray-700 whitespace-pre-line wrap-break-word">
+                    <pre className="font-body text-xs text-black/70 whitespace-pre-line wrap-break-word">
                       {auditData?.ocrVerification?.summary ||
                         "No OCR data recorded for this user."}
                     </pre>
@@ -427,7 +427,7 @@ const PendingVerifications = () => {
         onConfirm={handleApprove}
         onCancel={() => setApproveTarget(null)}
       >
-        <label className="font-body text-xs font-bold text-gray-900 block mb-2">
+        <label className="font-body text-xs font-bold text-black block mb-2">
           Verified barangay
         </label>
         {/* Custom Select — ids as values, never names */}

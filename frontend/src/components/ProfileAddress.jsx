@@ -52,7 +52,7 @@ const ProfileAddress = ({ isSeller = false }) => {
   };
 
   return (
-    <form onSubmit={save} className="mt-4 border border-black/10 rounded-xl p-5 md:p-6 space-y-4">
+    <form onSubmit={save} className="border border-black/10 rounded-xl p-5 md:p-6 space-y-4">
       <h2 className="heading-body text-lg text-black flex items-center gap-2">
         <Icon name="location_on" />
         {isSeller ? "Store address" : "Delivery address"}
@@ -89,7 +89,7 @@ const ProfileAddress = ({ isSeller = false }) => {
             />
           </Suspense>
           <div className="mt-1 pl-1 flex items-center justify-between gap-3 font-body text-xs text-black/60">
-            <span>{pin ? "Pin placed. Tap again to move it." : "Tap the map where your store is."}</span>
+            <span>{pin ? "Pin placed. Tap again to move it." : "Tap the map where your store is, inside the dashed Muntinlupa border."}</span>
             {pin && (
               <button type="button" onClick={() => setPin(null)} className="font-bold underline text-black shrink-0">
                 Remove pin

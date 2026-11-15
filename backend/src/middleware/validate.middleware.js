@@ -51,6 +51,19 @@ export const validateOtpVerify = [
   handleValidationErrors,
 ];
 
+// Validates a password reset: email, the 6-digit code, the new password
+export const validatePasswordReset = [
+  otpEmailRule(),
+  body("code")
+    .trim()
+    .matches(/^\d{6}$/)
+    .withMessage("Enter the 6-digit code"),
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+  handleValidationErrors,
+];
+
 // Validates registration request body
 // Checks all required fields before reaching controller
 export const validateRegister = [

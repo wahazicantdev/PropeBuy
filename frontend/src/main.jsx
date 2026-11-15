@@ -16,8 +16,8 @@ createRoot(document.getElementById("root")).render(
         position="bottom-right"
         toastOptions={{
           duration: 6000,
-          // SHOP.CO palette — black toasts, red errors, Satoshi type
-          style: { background: "#000000", color: "white", fontFamily: "Satoshi, sans-serif", borderRadius: "16px" },
+          // SHOP.CO palette — black toasts, red errors, Inter type
+          style: { background: "#000000", color: "white", fontFamily: "Inter, sans-serif", borderRadius: "16px" },
           success: { iconTheme: { primary: "#01ab31", secondary: "white" } },
           error: { style: { background: "#ff3333", color: "white" }, iconTheme: { primary: "white", secondary: "#ff3333" } },
         }}

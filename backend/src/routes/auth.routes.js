@@ -7,6 +7,7 @@ import {
   updateMe,
 } from "../controllers/auth.controller.js";
 import { sendOtp, verifyOtp } from "../controllers/otp.controller.js";
+import { forgotPassword, resetPassword } from "../controllers/password.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import { upload } from "../config/cloudinary.js";
 import {
@@ -14,6 +15,7 @@ import {
   validateLogin,
   validateOtpSend,
   validateOtpVerify,
+  validatePasswordReset,
 } from "../middleware/validate.middleware.js";
 
 const authRoutes = Router();
@@ -49,6 +51,10 @@ authRoutes.post("/login", validateLogin, login);
 // Email code — must pass before registration is accepted
 authRoutes.post("/otp/send", otpSendLimiter, validateOtpSend, sendOtp);
 authRoutes.post("/otp/verify", otpVerifyLimiter, validateOtpVerify, verifyOtp);
+
+// Forgot password — email a code, then set a new password with it
+authRoutes.post("/password/forgot", otpSendLimiter, validateOtpSend, forgotPassword);
+authRoutes.post("/password/reset", otpVerifyLimiter, validatePasswordReset, resetPassword);
 
 // Protected route — token required
 authRoutes.get("/me", protect, getMe);

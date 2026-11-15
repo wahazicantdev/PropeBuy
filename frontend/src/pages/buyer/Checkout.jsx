@@ -13,6 +13,7 @@ import { fetchMe } from "../../api/auth.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 import { removeDeadCartItems } from "../../utils/cartCheck.js";
 import { fetchProduct } from "../../api/product.api.js";
+import { cld } from "../../utils/photos.js";
 
 // Checkout - phone-first picks, guarded by BuyerRoute outside
 const Checkout = () => {
@@ -270,7 +271,7 @@ const Checkout = () => {
                 // Row clips long names, total never squeezes out
                 <li key={i.productId} className="py-4 flex items-center gap-3 min-w-0">
                   <span className="relative w-14 h-14 rounded-lg bg-card overflow-hidden shrink-0">
-                    {i.imageUrl && <img src={i.imageUrl} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />}
+                    {i.imageUrl && <img src={cld(i.imageUrl, 200)} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-body font-bold text-sm text-black truncate">{i.name}</span>

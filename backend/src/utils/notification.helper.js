@@ -148,3 +148,31 @@ export const notifyAdminsNewRegistration = (user) => {
     )
     .catch((err) => console.error("Admin alert failed:", err.message));
 };
+
+// ── BUYER CANCELLED AN ORDER ───────────────────────────
+// Live refresh for the seller's order pages plus a bell notice
+export const notifyBuyerCancelled = (sellerId, orderId) => {
+  io.to(`user_${sellerId}`).emit("order_status_update", {
+    orderId,
+    status: "CANCELLED",
+    message: `Order #${orderId} was cancelled by the buyer`,
+    timestamp: new Date().toISOString(),
+  });
+  saveNotification(sellerId, {
+    type: "ORDER_STATUS",
+    title: `Order #${orderId} cancelled`,
+    message: "The buyer cancelled this order. The stock is back in your inventory.",
+    link: `/seller/orders/${orderId}`,
+  });
+};
+
+// ── PAYOUT SENT TO A SELLER ────────────────────────────
+// Bell notice after an admin records a GCash transfer
+export const notifyPayoutSent = (sellerId, payout) => {
+  saveNotification(sellerId, {
+    type: "PAYOUT",
+    title: "Payout sent",
+    message: `₱${Number(payout.amount).toFixed(2)} was sent to your GCash ${payout.gcashNumber}. Reference ${payout.referenceNo}.`,
+    link: "/seller/earnings",
+  });
+};

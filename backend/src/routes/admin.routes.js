@@ -17,6 +17,11 @@ import {
   getAllBarangays,
   getAllCategories,
 } from "../controllers/admin.controller.js";
+import {
+  getPayoutOverview,
+  recordPayout,
+  markRefunded,
+} from "../controllers/payout.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 import {
   validateVerifyUser,
@@ -151,6 +156,18 @@ adminRoutes.put(
   authorize("ADMIN"),
   validateIdParam,
   toggleCategory,
+);
+
+// ── SELLER PAYOUTS ─────────────────────────────────────
+// Who to pay, refunds due, PropeBuy income; record transfers
+adminRoutes.get("/payouts", protect, authorize("ADMIN"), getPayoutOverview);
+adminRoutes.post("/payouts", protect, authorize("ADMIN"), recordPayout);
+adminRoutes.patch(
+  "/payouts/refunds/:id",
+  protect,
+  authorize("ADMIN"),
+  validateIdParam,
+  markRefunded,
 );
 
 export default adminRoutes;

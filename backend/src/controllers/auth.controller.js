@@ -1,3 +1,4 @@
+import { inMuntinlupa } from "../utils/muntinlupa.boundary.js";
 import bcrypt from "bcryptjs";
 import { notifyAdminsNewRegistration } from "../utils/notification.helper.js";
 import jwt from "jsonwebtoken";
@@ -28,6 +29,14 @@ export const register = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Role must be either BUYER or SELLER",
+    });
+  }
+
+  // Consent to the Terms and Privacy Policy (RA 10173) is required
+  if (req.body.acceptTerms !== "true" && req.body.acceptTerms !== true) {
+    return res.status(400).json({
+      success: false,
+      message: "Please agree to the Terms of Use and Privacy Policy",
     });
   }
 
@@ -126,6 +135,8 @@ export const register = async (req, res) => {
       certDocumentUrl: certUpload.secure_url,
       // Every new account waits for an admin, whatever OCR found
       accountStatus: "PENDING",
+      // Consent date, checked above
+      termsAcceptedAt: new Date(),
 
       // Store OCR results so the admin queue can group this account
       ocrResult: verificationResult.result,
@@ -271,10 +282,7 @@ const profileSelect = {
   storeLng: true,
 };
 
-// Muntinlupa City with a small margin — the platform's service area
-const inMuntinlupa = (lat, lng) =>
-  Number.isFinite(lat) && Number.isFinite(lng) &&
-  lat >= 14.33 && lat <= 14.48 && lng >= 120.98 && lng <= 121.09;
+// Service area check: inMuntinlupa() tests the real city boundary (utils/muntinlupa.boundary.js)
 
 export const updateMe = async (req, res) => {
   // Empty text clears the address
