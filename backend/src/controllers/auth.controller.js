@@ -1,3 +1,4 @@
+import { inMuntinlupa } from "../utils/muntinlupa.boundary.js";
 import bcrypt from "bcryptjs";
 import { notifyAdminsNewRegistration } from "../utils/notification.helper.js";
 import jwt from "jsonwebtoken";
@@ -271,10 +272,7 @@ const profileSelect = {
   storeLng: true,
 };
 
-// Muntinlupa City with a small margin — the platform's service area
-const inMuntinlupa = (lat, lng) =>
-  Number.isFinite(lat) && Number.isFinite(lng) &&
-  lat >= 14.33 && lat <= 14.48 && lng >= 120.98 && lng <= 121.09;
+// Service area check: inMuntinlupa() tests the real city boundary (utils/muntinlupa.boundary.js)
 
 export const updateMe = async (req, res) => {
   // Empty text clears the address
