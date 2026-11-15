@@ -62,7 +62,7 @@ const EditProduct = () => {
       >
         <Icon name="arrow_back" size={16} /> My Products
       </Link>
-      <h1 className="heading-body text-2xl md:text-3xl font-bold text-black">Edit product</h1>
+      <h1 className="text-2xl md:text-3xl text-black">Edit product</h1>
       <p className="font-body text-sm text-passive mt-1 mb-6 break-words">{product.name}</p>
       {/* key remounts the wizard if a different product loads */}
       <ProductWizard key={product.id} mode="edit" product={product} saving={saving} onSave={onSave} />

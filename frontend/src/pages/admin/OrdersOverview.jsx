@@ -104,7 +104,7 @@ const OrdersOverview = () => {
       {/* Values come straight from the documented Prisma enums */}
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
+          <label className="font-body text-xs font-semibold text-passive block mb-1.5 pl-1">
             Order status
           </label>
           <Select
@@ -125,7 +125,7 @@ const OrdersOverview = () => {
           />
         </div>
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
+          <label className="font-body text-xs font-semibold text-passive block mb-1.5 pl-1">
             Payment method
           </label>
           <Select
@@ -143,7 +143,7 @@ const OrdersOverview = () => {
           />
         </div>
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
+          <label className="font-body text-xs font-semibold text-passive block mb-1.5 pl-1">
             Payment status
           </label>
           <Select
@@ -170,22 +170,22 @@ const OrdersOverview = () => {
           Loading orders...
         </div>
       ) : orders.length === 0 ? (
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
+        <div className="mt-6 border border-dashed border-black/15 rounded-xl p-10 text-center">
           <p className="font-body text-sm text-passive">
             No orders match these filters.
           </p>
         </div>
       ) : (
-        <ul className="mt-5 flex flex-col gap-3">
+        <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
           {orders.map((o) => (
             <li
               key={o.id}
-              className="border border-black/10 rounded-xl p-4 overflow-hidden"
+              className="p-4 hover:bg-surface/40"
             >
               {/* Summary row */}
               <div className="flex items-start gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                  <p className="font-body font-bold text-sm md:text-base text-gray-900">
+                  <p className="font-body font-bold text-sm md:text-base text-black">
                     Order #{o.id}
                   </p>
                   <p className="font-body text-xs text-passive truncate mt-0.5">
@@ -207,7 +207,7 @@ const OrdersOverview = () => {
                     <OrderPill status={o.status} />
                     <PaymentPill status={o.paymentStatus} />
                   </div>
-                  <p className="font-body font-bold text-sm text-gray-900">
+                  <p className="font-body font-bold text-sm text-black">
                     ₱{parseFloat(o.totalAmount).toFixed(2)}
                   </p>
                 </div>
@@ -216,7 +216,7 @@ const OrdersOverview = () => {
               {/* Toggle — items ride in the list payload already */}
               <button
                 onClick={() => setOpenId(openId === o.id ? null : o.id)}
-                className="btn-active mt-3 border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
+                className="btn-active mt-3 border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-black"
               >
                 {openId === o.id
                   ? "Hide items"
@@ -234,7 +234,7 @@ const OrdersOverview = () => {
                       className="p-3 flex gap-3 items-center justify-between min-w-0"
                     >
                       <div className="min-w-0">
-                        <p className="font-body text-sm text-gray-900 line-clamp-2">
+                        <p className="font-body text-sm text-black line-clamp-2">
                           {i.product?.name || "Removed product"}
                         </p>
                         <p className="font-body text-xs text-passive truncate mt-0.5">
@@ -243,7 +243,7 @@ const OrdersOverview = () => {
                       </div>
                       {/* Price captured AT CHECKOUT, not current price —
                           the TPS snapshot, so history never shifts */}
-                      <p className="font-body text-xs text-gray-700 shrink-0 text-right">
+                      <p className="font-body text-xs text-black/70 shrink-0 text-right">
                         {i.quantity} × ₱{parseFloat(i.price).toFixed(2)}
                       </p>
                     </li>

@@ -174,7 +174,7 @@ const OrderDetailSeller = () => {
       {/* ── YOUR ITEMS ── */}
       <div className="mt-6 border border-black/10 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-black/10 bg-surface">
-          <p className="font-body font-bold text-sm text-gray-900">
+          <p className="font-body font-bold text-sm text-black">
             Your items
           </p>
         </div>
@@ -198,7 +198,7 @@ const OrderDetailSeller = () => {
               )}
               {/* Name + qty */}
               <div className="min-w-0 flex-1">
-                <p className="font-body font-bold text-sm text-gray-900 line-clamp-2">
+                <p className="font-body font-bold text-sm text-black line-clamp-2">
                   {i.product.name}
                 </p>
                 <p className="font-body text-xs text-passive mt-0.5">
@@ -206,7 +206,7 @@ const OrderDetailSeller = () => {
                 </p>
               </div>
               {/* Line total */}
-              <p className="font-body font-bold text-sm text-gray-900 shrink-0">
+              <p className="font-body font-bold text-sm text-black shrink-0">
                 ₱{(parseFloat(i.price) * i.quantity).toFixed(2)}
               </p>
             </li>
@@ -241,7 +241,7 @@ const OrderDetailSeller = () => {
                 className="p-3 md:p-4 flex gap-3 items-center opacity-70"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-body text-sm text-gray-700 truncate">
+                  <p className="font-body text-sm text-black/70 truncate">
                     {i.product.name}
                   </p>
                   <p className="font-body text-xs text-passive mt-0.5">
@@ -256,7 +256,7 @@ const OrderDetailSeller = () => {
             <span className="font-body text-xs text-passive">
               Order total (all sellers)
             </span>
-            <span className="font-body font-bold text-sm text-gray-700">
+            <span className="font-body font-bold text-sm text-black/70">
               ₱{parseFloat(order.totalAmount).toFixed(2)}
             </span>
           </div>
@@ -270,7 +270,7 @@ const OrderDetailSeller = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Buyer
           </p>
-          <p className="font-body font-bold text-sm text-gray-900 mt-1 truncate">
+          <p className="font-body font-bold text-sm text-black mt-1 truncate">
             {order.buyer?.name}
           </p>
           <p className="font-body text-xs text-passive truncate">
@@ -286,7 +286,7 @@ const OrderDetailSeller = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Handover
           </p>
-          <p className="font-body font-bold text-sm text-gray-900 mt-1">
+          <p className="font-body font-bold text-sm text-black mt-1">
             {order.deliveryType === "PICKUP" ? "Pickup / meet-up" : "Delivery"}
           </p>
           <p className="font-body text-xs text-passive">
@@ -297,7 +297,7 @@ const OrderDetailSeller = () => {
           {/* Delivery snapshot, and a clear stop while the fee is unpaid */}
           {order.deliveryType === "DELIVERY" && (
             <div className="mt-2 font-body text-xs space-y-0.5">
-              <p className="text-gray-900 break-words">
+              <p className="text-black break-words">
                 {order.deliveryAddress || "No address on this order"}
               </p>
               {Number(order.deliveryFee) > 0 && (
@@ -316,7 +316,7 @@ const OrderDetailSeller = () => {
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
             Payment
           </p>
-          <p className="font-body font-bold text-sm text-gray-900 mt-1">
+          <p className="font-body font-bold text-sm text-black mt-1">
             {order.paymentMethod === "GCASH" ? "GCash" : "Cash"}
           </p>
           {order.paymentMethod === "GCASH" &&

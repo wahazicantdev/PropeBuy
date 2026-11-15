@@ -7,7 +7,7 @@ import Spinner from "../../components/Spinner.jsx";
 import { fetchMyProducts } from "../../api/product.api.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
-import { cld } from "../../utils/photos.js";
+import Thumb from "../../components/Thumb.jsx";
 
 // InventoryMonitor — full-stocking view of active listings.
 // Data from my-products (includes inactive), monitor only counts live ones.
@@ -124,20 +124,10 @@ const InventoryMonitor = () => {
               className="p-3 md:p-4 flex gap-3 items-center overflow-hidden"
             >
               {/* Thumb or letter fallback */}
-              {p.imageUrl ? (
-                <img
-                  src={cld(p.imageUrl, 200)}
-                  alt={p.name}
-                  className="w-12 h-12 rounded-lg object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center font-header text-gray-400">
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Thumb src={p.imageUrl} alt={p.name} size="w-12 h-12" />
               {/* Name + price */}
               <div className="min-w-0 flex-1">
-                <p className="font-body font-bold text-sm text-gray-900 truncate">
+                <p className="font-body font-bold text-sm text-black truncate">
                   {p.name}
                 </p>
                 <p className="font-body text-xs text-passive mt-0.5">

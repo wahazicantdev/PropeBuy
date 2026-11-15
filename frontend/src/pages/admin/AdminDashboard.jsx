@@ -70,7 +70,7 @@ const AdminDashboard = () => {
           </Link>
           <Link
             to="/admin/orders"
-            className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
+            className="btn-outline btn-active rounded-full px-3 py-2 font-body text-xs font-bold text-black"
           >
             Orders
           </Link>
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
           </p>
           <p
             className={`font-header font-bold text-xl md:text-2xl mt-1 ${
-              users.pendingVerifications > 0 ? "text-danger" : "text-gray-900"
+              users.pendingVerifications > 0 ? "text-danger" : "text-black"
             }`}
           >
             {users.pendingVerifications}
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
 
       {/* ── ORDER PIPELINE CHIPS ── */}
       <div className="mt-3 border border-black/10 rounded-xl p-4">
-        <p className="font-body font-bold text-sm text-gray-900">
+        <p className="font-body font-bold text-sm text-black">
           Orders by status
         </p>
         {orders.byStatus.length === 0 ? (
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
               // Pill plus live count, same colors across all three portals
               <span key={s.status} className="flex items-center gap-1.5">
                 <OrderPill status={s.status} />
-                <span className="font-body font-bold text-sm text-gray-900">
+                <span className="font-body font-bold text-sm text-black">
                   {s._count.status}
                 </span>
               </span>
@@ -213,7 +213,7 @@ const AdminDashboard = () => {
       {/* Plain div bars — relative widths, zero chart library needed */}
       <div className="mt-3 border border-black/10 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-black/10 bg-surface flex items-center justify-between gap-3">
-          <p className="font-body font-bold text-sm text-gray-900">
+          <p className="font-body font-bold text-sm text-black">
             Top barangays by listings
           </p>
           <Link
@@ -234,10 +234,10 @@ const AdminDashboard = () => {
               // min-w-0 so long barangay names shrink instead of overflowing
               <li key={b.barangay?.id || b.barangay?.name} className="min-w-0">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-body text-sm text-gray-900 truncate">
+                  <p className="font-body text-sm text-black truncate">
                     {b.barangay?.name || "Unknown barangay"}
                   </p>
-                  <p className="font-body font-bold text-sm text-gray-900 shrink-0">
+                  <p className="font-body font-bold text-sm text-black shrink-0">
                     {b.productCount}
                   </p>
                 </div>

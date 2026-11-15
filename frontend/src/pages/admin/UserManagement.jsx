@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 // Shared pieces
 import { AccountPill, RolePill, OcrPill } from "../../components/AdminPills.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
+import EmptyState from "../../components/EmptyState.jsx";
+import Icon from "../../components/Icon.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
@@ -109,25 +112,26 @@ const UserManagement = () => {
 
   return (
     <div className="page-enter">
-      {/* Header row */}
-      <div className="flex items-start gap-3 flex-wrap">
-        <div className="min-w-0">
-          <h1 className="text-2xl md:text-3xl text-black">
-            User Management
-          </h1>
-          <p className="font-body text-sm text-passive mt-1">
-            {users.length} account{users.length === 1 ? "" : "s"} in this view
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Users"
+        subtitle={`${users.length} account${users.length === 1 ? "" : "s"} in this view. Open an account to see its documents and listings.`}
+      />
 
       {/* ── FILTER BAR ── */}
       {/* Two server filters plus one local search, stacked on phone */}
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-[1fr_12rem_12rem]">
+        <div className="relative min-w-0 md:order-first">
+          <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+          {/* Client-side — the backend has no search param on users */}
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name or email"
+            aria-label="Search users"
+            className="w-full pl-11 pr-4 py-3 font-body text-sm"
+          />
+        </div>
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
-            Role
-          </label>
           <Select
             value={role}
             onChange={(v) => {
@@ -145,9 +149,6 @@ const UserManagement = () => {
           />
         </div>
         <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
-            Status
-          </label>
           <Select
             value={status}
             onChange={(v) => {
@@ -163,18 +164,6 @@ const UserManagement = () => {
             ]}
           />
         </div>
-        <div className="min-w-0">
-          <label className="font-body text-xs font-bold text-gray-900 block mb-1.5">
-            Search
-          </label>
-          {/* Client-side — the backend has no search param on users */}
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Name or email"
-            className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
-          />
-        </div>
       </div>
 
       {/* Loading state — replaces the list only, filters stay usable */}
@@ -185,15 +174,15 @@ const UserManagement = () => {
         </div>
       ) : visible.length === 0 ? (
         // Empty — honest about which of the two reasons applies
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl p-10 text-center">
-          <p className="font-body text-sm text-passive">
-            {users.length === 0
-              ? "No accounts match these filters."
-              : "No accounts match your search."}
-          </p>
+        <div className="mt-5">
+          <EmptyState
+            icon="group"
+            title="No accounts here"
+            text={users.length === 0 ? "No accounts match these filters." : "No accounts match your search."}
+          />
         </div>
       ) : (
-        <ul className="mt-5 flex flex-col gap-3">
+        <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
           {visible.map((u) => {
             // Your own row — the backend refuses self-suspend, so the
             // button never renders instead of failing after a tap
@@ -201,10 +190,7 @@ const UserManagement = () => {
             // Admins are protected server-side too
             const isAdmin = u.role === "ADMIN";
             return (
-              <li
-                key={u.id}
-                className="border border-black/10 rounded-xl p-4 overflow-hidden"
-              >
+              <li key={u.id} className="p-4 hover:bg-surface/40">
                 {/* Identity row */}
                 <div className="flex items-start gap-3 flex-wrap">
                   <div className="min-w-0 flex-1">
@@ -245,10 +231,10 @@ const UserManagement = () => {
                 </div>
 
                 {/* Action row */}
-                <div className="mt-3 flex gap-2 flex-wrap">
+                <div className="mt-2.5 flex gap-2 flex-wrap">
                   <button
                     onClick={() => toggleDetail(u.id)}
-                    className="btn-active border border-gray-200 rounded-full px-3 py-2 font-body text-xs font-bold text-gray-900"
+                    className="btn-outline btn-active px-3.5 py-1.5 font-body text-xs font-semibold"
                   >
                     {detailId === u.id ? "Hide details" : "View details"}
                   </button>
@@ -257,7 +243,7 @@ const UserManagement = () => {
                   {!isMe && !isAdmin && u.accountStatus !== "REJECTED" && (
                     <button
                       onClick={() => setSuspendTarget(u)}
-                      className="rounded-full px-3 py-2 font-body text-xs font-bold text-danger border border-danger/30 hover:bg-danger/10"
+                      className="rounded-full px-3.5 py-1.5 font-body text-xs font-semibold text-danger border border-danger/30 hover:bg-danger/10"
                     >
                       Suspend
                     </button>
@@ -272,7 +258,7 @@ const UserManagement = () => {
 
                 {/* Detail drawer — documents, OCR verdict, live listings */}
                 {detailId === u.id && (
-                  <div className="mt-3 border border-black/10 rounded-lg bg-surface p-3 overflow-hidden">
+                  <div className="mt-3 rounded-xl bg-surface p-4 overflow-hidden">
                     {detailLoading ? (
                       <p className="flex items-center gap-2 font-body text-xs text-passive">
                         <Spinner />

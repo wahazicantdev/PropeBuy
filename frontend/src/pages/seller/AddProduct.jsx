@@ -40,7 +40,7 @@ const AddProduct = () => {
       >
         <Icon name="arrow_back" size={16} /> My Products
       </Link>
-      <h1 className="heading-body text-2xl md:text-3xl font-bold text-black">Add product</h1>
+      <h1 className="text-2xl md:text-3xl text-black">Add product</h1>
       <p className="font-body text-sm text-passive mt-1 mb-6">
         List an item buyers in your barangay can reserve and pay for.
       </p>
