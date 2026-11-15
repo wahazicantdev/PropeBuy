@@ -7,6 +7,7 @@ import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
+import { cld } from "../../utils/photos.js";
 
 // Order history - buyer past orders with status filter
 const OrderHistory = () => {
@@ -104,7 +105,7 @@ const OrderHistory = () => {
                 <span className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 bg-card rounded-xl overflow-hidden">
                   {o.orderItems?.[0]?.product?.imageUrl ? (
                     <img
-                      src={o.orderItems[0].product.imageUrl}
+                      src={cld(o.orderItems[0].product.imageUrl, 200)}
                       alt={o.orderItems[0].product.name}
                       className="absolute inset-0 w-full h-full object-cover"
                     />

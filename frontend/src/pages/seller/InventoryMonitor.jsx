@@ -7,6 +7,7 @@ import Spinner from "../../components/Spinner.jsx";
 import { fetchMyProducts } from "../../api/product.api.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
+import { cld } from "../../utils/photos.js";
 
 // InventoryMonitor — full-stocking view of active listings.
 // Data from my-products (includes inactive), monitor only counts live ones.
@@ -125,7 +126,7 @@ const InventoryMonitor = () => {
               {/* Thumb or letter fallback */}
               {p.imageUrl ? (
                 <img
-                  src={p.imageUrl}
+                  src={cld(p.imageUrl, 200)}
                   alt={p.name}
                   className="w-12 h-12 rounded-lg object-cover shrink-0"
                 />

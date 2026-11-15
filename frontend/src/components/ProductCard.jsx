@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import VerifiedBadge from "./VerifiedBadge.jsx";
 import Icon from "./Icon.jsx";
 import { formatPeso } from "../utils/format.js";
+import { cld } from "../utils/photos.js";
 
 
 // ProductCard — the SHOP.CO card: warm gray image tile with 20px
@@ -20,7 +21,7 @@ const ProductCard = ({ product }) => {
       <div className="relative aspect-square rounded-xl bg-card overflow-hidden">
         {product.imageUrl ? (
           <img
-            src={product.imageUrl}
+            src={cld(product.imageUrl, 600)}
             alt={product.name}
             // transform-only hover zoom, GPU friendly
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"

@@ -4,6 +4,7 @@ import { useCartStore } from "../../stores/cart.store.js";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 import { removeDeadCartItems } from "../../utils/cartCheck.js";
+import { cld } from "../../utils/photos.js";
 
 // Cart — SHOP.CO "YOUR CART": one bordered card of line items with
 // dividers, quantity pills and a red trash icon, plus an order summary
@@ -63,7 +64,7 @@ const Cart = () => {
               {/* Thumb — card gray tile */}
               <Link to={`/product/${i.productId}`} className="relative w-24 h-24 md:w-32 md:h-32 shrink-0 bg-card rounded-xl overflow-hidden">
                 {i.imageUrl ? (
-                  <img src={i.imageUrl} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={cld(i.imageUrl, 200)} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center text-black/25">
                     <Icon name="image" size={28} />

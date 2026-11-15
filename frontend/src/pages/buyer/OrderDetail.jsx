@@ -9,6 +9,7 @@ import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
+import { cld } from "../../utils/photos.js";
 
 // Order detail - one order with items, totals, payment recheck
 const OrderDetail = () => {
@@ -204,7 +205,7 @@ const OrderDetail = () => {
               {/* Thumb with fallback */}
               <span className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 bg-card rounded-xl overflow-hidden">
                 {it.product?.imageUrl ? (
-                  <img src={it.product.imageUrl} alt={it.product?.name} className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={cld(it.product.imageUrl, 200)} alt={it.product?.name} className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center text-black/25">
                     <Icon name="image" />

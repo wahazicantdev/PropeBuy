@@ -7,6 +7,7 @@ import Spinner from "../../components/Spinner.jsx";
 // Revenue trend — objective 1g, recharts column chart
 import RevenueChart from "../../components/RevenueChart.jsx";
 import { fetchSellerAnalytics } from "../../api/analytics.api.js";
+import { cld } from "../../utils/photos.js";
 
 // Dashboard — seller landing page, one analytics call powers everything.
 // revenueChart renders through RevenueChart below the summary cards.
@@ -181,7 +182,7 @@ const Dashboard = () => {
                     {/* Thumb or letter fallback — no photos never breaks layout */}
                     {t.product.imageUrl ? (
                       <img
-                        src={t.product.imageUrl}
+                        src={cld(t.product.imageUrl, 200)}
                         alt={t.product.name}
                         className="w-10 h-10 rounded-lg object-cover shrink-0"
                       />

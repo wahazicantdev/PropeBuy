@@ -9,6 +9,7 @@ import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchAllProducts, removeProduct } from "../../api/admin.api.js";
 import { fetchBarangays, fetchCategories } from "../../api/product.api.js";
+import { cld } from "../../utils/photos.js";
 
 // ProductModeration — every listing on the platform, live and removed.
 // Removal is a SOFT delete (isActive false): the row stays in the
@@ -220,7 +221,7 @@ const ProductModeration = () => {
               {/* Thumb — Cloudinary photo or letter fallback */}
               {p.imageUrl ? (
                 <img
-                  src={p.imageUrl}
+                  src={cld(p.imageUrl, 200)}
                   alt={p.name}
                   className="w-14 h-14 md:w-16 md:h-16 rounded-lg object-cover shrink-0"
                 />

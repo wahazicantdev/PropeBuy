@@ -12,7 +12,7 @@ import { fetchProduct, fetchProducts } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 import { useCartStore } from "../../stores/cart.store.js";
 import { formatPeso } from "../../utils/format.js";
-import { productPhotos } from "../../utils/photos.js";
+import { productPhotos, cld } from "../../utils/photos.js";
 
 // Gallery: up to 4 seller photos, cover first (see utils/photos.js)
 
@@ -111,7 +111,7 @@ const ProductDetail = () => {
   // One renderer for thumbnails and the big viewer
   const renderSlot = (src, big) =>
     src ? (
-      <img src={src} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
+      <img src={cld(src, big ? 1000 : 200)} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
     ) : (
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-black/25">
         <Icon name="image" size={big ? 56 : 28} />

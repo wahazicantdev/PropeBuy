@@ -12,6 +12,7 @@ import {
   updateOrderStatus,
   markCashPaid,
 } from "../../api/order.api.js";
+import { cld } from "../../utils/photos.js";
 
 // ── ACTION MAP ──
 // Frontend guides transitions — buttons only offer sensible next moves.
@@ -186,7 +187,7 @@ const OrderDetailSeller = () => {
               {/* Thumb */}
               {i.product.imageUrl ? (
                 <img
-                  src={i.product.imageUrl}
+                  src={cld(i.product.imageUrl, 200)}
                   alt={i.product.name}
                   className="w-12 h-12 rounded-lg object-cover shrink-0"
                 />
