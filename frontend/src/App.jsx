@@ -34,6 +34,7 @@ import OrderDetailSeller from "./pages/seller/OrderDetailSeller.jsx";
 import Dashboard from "./pages/seller/Dashboard.jsx";
 import InventoryMonitor from "./pages/seller/InventoryMonitor.jsx";
 import SellerProfile from "./pages/seller/SellerProfile.jsx";
+import Earnings from "./pages/seller/Earnings.jsx";
 // Admin pages - Phase E, all 7 portal pages live
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import PendingVerifications from "./pages/admin/PendingVerifications.jsx";
@@ -42,6 +43,7 @@ import ProductModeration from "./pages/admin/ProductModeration.jsx";
 import OrdersOverview from "./pages/admin/OrdersOverview.jsx";
 import BarangayManagement from "./pages/admin/BarangayManagement.jsx";
 import CategoryManagement from "./pages/admin/CategoryManagement.jsx";
+import Payouts from "./pages/admin/Payouts.jsx";
 
 const App = () => {
   // Mount realtime once — before this, the hook existed but nothing
@@ -85,6 +87,7 @@ const App = () => {
           <Route path="/seller/orders/:id" element={<OrderDetailSeller />} />
           <Route path="/seller/inventory" element={<InventoryMonitor />} />
           <Route path="/seller/profile" element={<SellerProfile />} />
+          <Route path="/seller/earnings" element={<Earnings />} />
         </Route>
       </Route>
       {/* Admin - top nav shell, all 7 pages guarded by role ADMIN */}
@@ -101,6 +104,7 @@ const App = () => {
           {/* Taxonomy - barangay coverage and the 7 categories */}
           <Route path="/admin/barangays" element={<BarangayManagement />} />
           <Route path="/admin/categories" element={<CategoryManagement />} />
+          <Route path="/admin/payouts" element={<Payouts />} />
         </Route>
       </Route>
     </Routes>

@@ -148,3 +148,14 @@ export const notifyAdminsNewRegistration = (user) => {
     )
     .catch((err) => console.error("Admin alert failed:", err.message));
 };
+
+// ── PAYOUT SENT TO A SELLER ────────────────────────────
+// Bell notice after an admin records a GCash transfer
+export const notifyPayoutSent = (sellerId, payout) => {
+  saveNotification(sellerId, {
+    type: "PAYOUT",
+    title: "Payout sent",
+    message: `₱${Number(payout.amount).toFixed(2)} was sent to your GCash ${payout.gcashNumber}. Reference ${payout.referenceNo}.`,
+    link: "/seller/earnings",
+  });
+};

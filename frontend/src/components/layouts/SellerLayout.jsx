@@ -22,6 +22,7 @@ const SellerLayout = () => {
     { to: "/seller/add-product", label: "Add Product", icon: "add" },
     { to: "/seller/orders", label: "Orders Received", icon: "receipt_long" },
     { to: "/seller/inventory", label: "Inventory", icon: "monitoring" },
+    { to: "/seller/earnings", label: "Earnings", icon: "account_balance_wallet" },
     { to: "/seller/profile", label: "Profile", icon: "person" },
   ];
 

@@ -23,6 +23,7 @@ const AdminLayout = () => {
     { to: "/admin/users", label: "Users", icon: "group" },
     { to: "/admin/products", label: "Products", icon: "inventory_2" },
     { to: "/admin/orders", label: "Orders", icon: "receipt_long" },
+    { to: "/admin/payouts", label: "Payouts", icon: "payments" },
     { to: "/admin/barangays", label: "Barangays", icon: "location_on" },
     { to: "/admin/categories", label: "Categories", icon: "category" },
   ];

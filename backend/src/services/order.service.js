@@ -10,6 +10,7 @@ import {
   notifyNewOrder,
 } from "../utils/notification.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
+import { createEarnings, releaseEarnings, cancelEarnings } from "../utils/payout.helper.js";
 
 // Error the buyer or seller should read — 400 keeps the message visible
 // in production, where unknown 500 errors are hidden
@@ -367,6 +368,8 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
         data: { status: "CANCELLED" },
       });
     });
+    // Online money not yet paid out goes back to the buyer
+    await cancelEarnings(order.id);
   } else {
     await prisma.order.update({
       where: { id: cleanInt(orderId) },
@@ -376,6 +379,8 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
         ...(status === "FULFILLED" ? { fulfilledAt: new Date() } : {}),
       },
     });
+    // Fulfilled — the seller's held online money can now be paid out
+    if (status === "FULFILLED") await releaseEarnings(order.id);
   }
 
   // ── REAL-TIME NOTIFICATION TO BUYER ───────────────
@@ -406,6 +411,9 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
 // GCash orders: items and any fee are paid. Cash delivery orders: the
 // online payment was the delivery fee only, so the items stay cash.
 const settleOnlinePayment = async (order) => {
+  // Record each seller's share first. If anything below fails, PayMongo
+  // retries the webhook and this runs again without duplicates.
+  await createEarnings(order.id);
   if (order.paymentMethod === "CASH") {
     await prisma.order.update({
       where: { id: order.id },
