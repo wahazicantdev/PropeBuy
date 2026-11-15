@@ -8,6 +8,7 @@ import {
   notifyOrderStatus,
   notifyPaymentConfirmed,
   notifyNewOrder,
+  notifyBuyerCancelled,
 } from "../utils/notification.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 import { createEarnings, releaseEarnings, cancelEarnings } from "../utils/payout.helper.js";
@@ -343,6 +344,12 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
 
   if (!isSellerOrder) throw userError("Not authorized to update this order");
 
+  // Closed orders stay closed — cancelling a fulfilled order would
+  // return stock that was already handed over
+  if (["FULFILLED", "CANCELLED"].includes(order.status)) {
+    throw userError(`This order is already ${order.status.toLowerCase()}`);
+  }
+
   // Cash delivery waits for the online delivery fee before work starts.
   // Cancelling is still allowed, and it returns the stock.
   if (
@@ -407,6 +414,43 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
   });
 };
 
+// ── BUYER CANCELS A RESERVED ORDER ─────────────────────
+// Allowed only before the seller starts processing. Stock goes back,
+// and any online payment becomes a refund for the admin.
+export const cancelOrderByBuyer = async (orderId, buyerId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: cleanInt(orderId) },
+    include: { orderItems: { include: { product: { select: { sellerId: true } } } } },
+  });
+  if (!order || order.buyerId !== buyerId) throw userError("Order not found");
+  if (order.status !== "RESERVED") {
+    throw userError("Only reserved orders can be cancelled. Ask the seller to cancel it.");
+  }
+
+  // Stock back and status change together — both or neither
+  await prisma.$transaction(async (tx) => {
+    // Only flips if it is still RESERVED, so a seller acting at the same
+    // moment cannot be overwritten
+    const flipped = await tx.order.updateMany({
+      where: { id: order.id, status: "RESERVED" },
+      data: { status: "CANCELLED" },
+    });
+    if (!flipped.count) throw userError("The seller already started this order");
+    for (const item of order.orderItems) {
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: { increment: item.quantity } },
+      });
+    }
+  });
+  await cancelEarnings(order.id);
+
+  // Tell each seller in the order
+  const sellerIds = [...new Set(order.orderItems.map((i) => i.product.sellerId))];
+  sellerIds.forEach((id) => notifyBuyerCancelled(id, order.id));
+  return { id: order.id, status: "CANCELLED" };
+};
+
 // ── SETTLE AN ONLINE PAYMENT ───────────────────────────
 // GCash orders: items and any fee are paid. Cash delivery orders: the
 // online payment was the delivery fee only, so the items stay cash.
@@ -414,6 +458,16 @@ const settleOnlinePayment = async (order) => {
   // Record each seller's share first. If anything below fails, PayMongo
   // retries the webhook and this runs again without duplicates.
   await createEarnings(order.id);
+  // Paid after it was cancelled (the buyer finished paying late): keep
+  // it cancelled, record the payment, and queue the refund
+  if (order.status === "CANCELLED") {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: order.paymentMethod === "CASH" ? { deliveryFeeStatus: "PAID" } : { paymentStatus: "PAID" },
+    });
+    await cancelEarnings(order.id);
+    return;
+  }
   if (order.paymentMethod === "CASH") {
     await prisma.order.update({
       where: { id: order.id },

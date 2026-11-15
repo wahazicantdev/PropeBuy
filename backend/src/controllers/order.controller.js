@@ -5,6 +5,7 @@ import {
   getOrderById,
   getOrdersBySeller,
   changeOrderStatus,
+  cancelOrderByBuyer,
   confirmPaymentStatus,
   setPaymentStatus,
   processWebhookEvent,
@@ -196,6 +197,13 @@ export const updateOrderStatus = async (req, res) => {
     message: `Order status updated to ${status}`,
     data: updatedOrder,
   });
+};
+
+// ── BUYER CANCEL ───────────────────────────────────────
+// PUT /api/orders/:id/cancel — only while the order is RESERVED
+export const cancelMyOrder = async (req, res) => {
+  const data = await cancelOrderByBuyer(req.params.id, req.user.id);
+  res.status(200).json({ success: true, message: "Order cancelled", data });
 };
 
 // ── UPDATE PAYMENT STATUS — SELLER, CASH ONLY ──────────

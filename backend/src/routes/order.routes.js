@@ -8,6 +8,7 @@ import {
   updatePaymentStatus,
   handlePaymongoWebhook,
   checkPaymentStatus,
+  cancelMyOrder,
 } from "../controllers/order.controller.js";
 import { validateCartItem } from "../controllers/cart.controller.js";
 import {
@@ -66,6 +67,9 @@ orderRoutes.get(
 );
 
 orderRoutes.get("/:id", protect, validateIdParam, getOrder);
+
+// Buyer cancels their own order before the seller starts it
+orderRoutes.put("/:id/cancel", protect, authorize("BUYER"), validateIdParam, cancelMyOrder);
 
 // ── SELLER ORDER ROUTES ────────────────────────────────
 orderRoutes.get(
