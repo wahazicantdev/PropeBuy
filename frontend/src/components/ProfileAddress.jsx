@@ -52,7 +52,7 @@ const ProfileAddress = ({ isSeller = false }) => {
   };
 
   return (
-    <form onSubmit={save} className="mt-4 border border-black/10 rounded-xl p-5 md:p-6 space-y-4">
+    <form onSubmit={save} className="border border-black/10 rounded-xl p-5 md:p-6 space-y-4">
       <h2 className="heading-body text-lg text-black flex items-center gap-2">
         <Icon name="location_on" />
         {isSeller ? "Store address" : "Delivery address"}

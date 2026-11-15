@@ -4,155 +4,85 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../stores/auth.store.js";
 import { fetchMe } from "../../api/auth.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
-// House badge — shows only when the account is VERIFIED
-import VerifiedBadge from "../../components/VerifiedBadge.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
+import ProfileView from "../../components/ProfileView.jsx";
 import ProfileAddress from "../../components/ProfileAddress.jsx";
+import Icon from "../../components/Icon.jsx";
 
-// SellerProfile — read-only account info, mirrors BuyerProfile.
-// No edit endpoint exists on the backend yet, so the page never fakes one.
+// Shop profile — same layout as the buyer profile, plus store settings
 const SellerProfile = () => {
-  // Store user plus the writer sync helper
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  // Barangay id → name for the display row
   const [barangayName, setBarangayName] = useState("");
-  // True once the fresh profile is in. The address form waits for it, so a
-  // quick Save can never send the empty address from the login copy.
+  // True once the fresh profile is in, so a quick Save never sends the
+  // empty address from the login copy
   const [loaded, setLoaded] = useState(false);
 
-  // Refresh from server truth so the status is never a stale store copy
+  // Refresh from the server so the status is never a stale store copy
   useEffect(() => {
     fetchMe()
       .then((res) => {
-        // Sync store with fresh server data
         setUser(res.data);
         setLoaded(true);
-        // Resolve barangay name when the seller picked one
         if (res.data?.barangayId) {
           fetchBarangays()
-            .then((b) =>
-              setBarangayName(
-                b.data?.find((x) => x.id === res.data.barangayId)?.name || "",
-              ),
-            )
+            .then((b) => setBarangayName(b.data?.find((x) => x.id === res.data.barangayId)?.name || ""))
             .catch(() => setBarangayName(""));
         }
       })
       .catch(() => toast.error("Failed to load profile"));
   }, [setUser]);
 
-  // Logout — hard reload pattern from the sidebar plate so protected
-  // routes never race the store clear on the way back to login
+  // Hard reload to the seller door so protected routes never race the store clear
   const handleLogout = () => {
     useAuthStore.getState().logout();
     toast.success("Logged out");
     window.location.href = "/login/seller";
   };
 
-  // Member-since helper, short local format
-  const since = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("en-PH", {
-        month: "long",
-        year: "numeric",
-      })
-    : "";
+  const verified = user?.accountStatus === "VERIFIED";
 
   return (
-    <div className="page-enter max-w-lg">
-      {/* Bold header */}
-      <h1 className="font-header font-bold text-2xl text-gray-900">
-        Shop profile
-      </h1>
-      <p className="font-body text-sm text-passive mt-1">
-        Your vendor account at a glance.
-      </p>
-      {/* Info card */}
-      <div className="mt-4 border border-black/10 rounded-xl p-5 space-y-3 font-body text-sm">
-        {/* Name row */}
-        <div className="flex justify-between gap-3">
-          <span className="text-passive">Name</span>
-          <span className="font-bold text-gray-900 text-right">
-            {user?.name || "-"}
-          </span>
-        </div>
-        {/* Email row */}
-        <div className="flex justify-between gap-3">
-          <span className="text-passive">Email</span>
-          <span className="font-bold text-gray-900 text-right break-all">
-            {user?.email || "-"}
-          </span>
-        </div>
-        {/* Role row */}
-        <div className="flex justify-between gap-3">
-          <span className="text-passive">Role</span>
-          <span className="font-bold text-gray-900">{user?.role || "-"}</span>
-        </div>
-        {/* Shop location row */}
-        <div className="flex justify-between gap-3">
-          <span className="text-passive">Barangay</span>
-          <span className="font-bold text-gray-900 text-right">
-            {barangayName || "-"}
-          </span>
-        </div>
-        {/* Status row — words plus the VERIFIED badge when earned */}
-        <div className="flex justify-between gap-3">
-          <span className="text-passive">Account</span>
-          <span className="flex items-center gap-1.5">
-            <span
-              className={`font-bold ${
-                user?.accountStatus === "VERIFIED"
-                  ? "text-primary"
-                  : user?.accountStatus === "REJECTED"
-                    ? "text-danger"
-                    : "text-gray-700"
-              }`}
-            >
-              {user?.accountStatus === "VERIFIED"
-                ? "Verified"
-                : user?.accountStatus === "REJECTED"
-                  ? "Rejected"
-                  : "Pending review"}
-            </span>
-            {/* Badge only renders for VERIFIED — component honestly gates */}
-            {user?.accountStatus === "VERIFIED" && <VerifiedBadge />}
-          </span>
-        </div>
-        {/* Member since row */}
-        {since && (
-          <div className="flex justify-between gap-3">
-            <span className="text-passive">Member since</span>
-            <span className="font-bold text-gray-900">{since}</span>
-          </div>
-        )}
-      </div>
-      {/* Store address — key remounts it with fresh values */}
-      {loaded && (
-      <ProfileAddress
-        isSeller
-        key={`${user?.id}-${user?.address ?? ""}-${user?.offersDelivery}-${user?.deliveryFee}-${user?.storeLat}-${user?.storeLng}`}
+    <div className="page-enter">
+      <PageHeader
+        title="Shop profile"
+        subtitle="Your store details, location and delivery settings."
+        actions={
+          verified && (
+            <Link to={`/store/${user?.id}`} className="btn-outline btn-active px-5 py-2.5 font-body text-sm font-medium flex items-center gap-1.5">
+              <Icon name="storefront" size={18} /> View my store
+            </Link>
+          )
+        }
       />
+      {/* Pending sellers land here first — say what happens next */}
+      {user?.accountStatus === "PENDING" && (
+        <div className="mb-5 rounded-xl bg-surface p-4 font-body text-sm flex items-start gap-3">
+          <Icon name="pending" className="mt-px" />
+          <span>Your documents are being checked by the barangay administrator. You can set up your store address now; selling opens once you are verified.</span>
+        </div>
       )}
-      {/* Shortcuts plus logout */}
-      <div className="mt-4 grid gap-3">
-        <Link
-          to="/seller/products"
-          className="btn-active border border-gray-200 text-center font-body py-3 rounded-lg text-gray-900"
-        >
-          My Products
-        </Link>
-        <Link
-          to="/seller/orders"
-          className="btn-active border border-gray-200 text-center font-body py-3 rounded-lg text-gray-900"
-        >
-          Orders Received
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="btn-active border border-danger text-danger font-body py-3 rounded-lg"
-        >
-          Log Out
-        </button>
-      </div>
+      <ProfileView
+        user={user}
+        barangayName={barangayName}
+        verifiedLabel="Verified Local Vendor"
+        LinkComp={Link}
+        links={[
+          { to: "/seller/products", label: "My products", icon: "inventory_2" },
+          { to: "/seller/earnings", label: "Earnings and payouts", icon: "account_balance_wallet" },
+        ]}
+        onLogout={handleLogout}
+      >
+        {/* Store address, pin and delivery — key remounts it with fresh values */}
+        {loaded ? (
+          <ProfileAddress
+            isSeller
+            key={`${user?.id}-${user?.address ?? ""}-${user?.offersDelivery}-${user?.deliveryFee}-${user?.storeLat}-${user?.storeLng}`}
+          />
+        ) : (
+          <div className="h-96 rounded-xl bg-surface animate-pulse" />
+        )}
+      </ProfileView>
     </div>
   );
 };
