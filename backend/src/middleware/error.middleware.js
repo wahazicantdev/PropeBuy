@@ -69,11 +69,12 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Wrong file type — not JPG, PNG, or PDF
+  // Too many files for a field (e.g. more than 4 product photos), or a
+  // field name the route does not accept
   if (err.code === "LIMIT_UNEXPECTED_FILE") {
     return res.status(400).json({
       success: false,
-      message: "Unexpected file field",
+      message: "Too many files. Products take up to 4 photos.",
     });
   }
 
