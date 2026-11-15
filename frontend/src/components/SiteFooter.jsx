@@ -31,6 +31,13 @@ const SiteFooter = () => {
         { to: "/profile", label: "My profile" },
       ],
     },
+    {
+      title: "Legal",
+      links: [
+        { to: "/terms", label: "Terms of Use" },
+        { to: "/privacy", label: "Privacy Policy" },
+      ],
+    },
   ];
 
   return (
@@ -63,9 +70,9 @@ const SiteFooter = () => {
       {/* Gray footer body */}
       <div className="bg-surface px-4 pt-12 pb-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-[1.4fr_repeat(4,1fr)]">
             {/* Brand block — the pilot story in one paragraph */}
-            <div>
+            <div className="col-span-2 md:col-span-1">
               <p className="font-header text-3xl text-black">PropeBuy</p>
               <p className="mt-4 font-body text-sm text-passive max-w-xs">
                 Muntinlupa's barangay marketplace. Verified local vendors,
