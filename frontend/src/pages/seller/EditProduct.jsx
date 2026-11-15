@@ -1,137 +1,51 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate, useLocation, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-// Custom dropdown + spinner — house components
-import Select from "../../components/Select.jsx";
+import ProductWizard from "../../components/ProductWizard.jsx";
 import Spinner from "../../components/Spinner.jsx";
-import FieldLabel from "../../components/FieldLabel.jsx";
-import {
-  fetchProduct,
-  fetchCategories,
-  updateProduct,
-} from "../../api/product.api.js";
+import Icon from "../../components/Icon.jsx";
+import { fetchProduct, updateProduct } from "../../api/product.api.js";
 
-// EditProduct — prefilled form; photo optional; stock can drop to 0
+// EditProduct — same 4 steps as Add, prefilled. Any step can be opened
+// and saved; stock can drop to 0 to mark the item sold out.
 const EditProduct = () => {
-  // Route id + optional fast prefill from the list page
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
-  // Text fields via hook-form, dropdown via state
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm();
-  // Resolved product object — route state first, API fallback
+  // Product loaded fresh from the API so the photo list is current
   const [product, setProduct] = useState(null);
-  // Resolving flag — covers state-less loads
-  const [resolving, setResolving] = useState(true);
-  // Category pick
-  const [categoryId, setCategoryId] = useState("");
-  const [categories, setCategories] = useState([]);
-  // Physical-goods confirmation, only asked when moving into Others
-  const [deliverable, setDeliverable] = useState(false);
-  // Replacement photo — stays null to keep the current one
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const categoryOptions = [
-    { value: "", label: "Select category" },
-    ...categories.map((c) => ({ value: String(c.id), label: c.name })),
-  ];
-
-  // Others is open-ended, so the seller confirms it is a physical good
-  const isOthers =
-    categories
-      .find((c) => String(c.id) === categoryId)
-      ?.name.toLowerCase() === "others";
-  // Listings already in Others were confirmed when they entered it
-  const needsConfirm = isOthers && String(product?.categoryId) !== categoryId;
-
-  // Categories load once
+  // Load the product once per id
   useEffect(() => {
-    fetchCategories()
-      .then((res) => setCategories(res.data || []))
-      .catch(() => toast.error("Failed to load categories"));
-  }, []);
-
-  // Resolve the product — state passes instantly, API covers refreshes
-  useEffect(() => {
-    const run = async () => {
-      try {
-        let src = location.state?.product;
-        if (!src) {
-          // Public endpoint — resolves active products after refresh
-          const res = await fetchProduct(id);
-          src = res.data;
-        }
-        setProduct(src);
-        // Prefill — numbers as strings for inputs and Select matching
-        reset({
-          name: src.name,
-          price: String(src.price),
-          stock: String(src.stock),
-          description: src.description || "",
-        });
-        setCategoryId(src.categoryId ? String(src.categoryId) : "");
-      } catch (err) {
+    fetchProduct(id)
+      .then((res) => setProduct(res.data))
+      .catch(() => {
         // Deleted or foreign product — back to the list, honest message
         toast.error("Product not found or already deleted");
         navigate("/seller/products", { replace: true });
-      } finally {
-        setResolving(false);
-      }
-    };
-    run();
-    // Runs per id change only — prefill needs no re-trigger
-  }, [id]);
+      });
+  }, [id, navigate]);
 
-  // Replacement preview — same revoke discipline as Add
-  useEffect(() => {
-    if (!image) {
-      setPreview(null);
-      return;
-    }
-    const url = URL.createObjectURL(image);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [image]);
-
-  // Submit — full field set, photo only when replaced
-  const onSubmit = async (values) => {
-    if (!categoryId) return toast.error("Please select a category");
-    if (needsConfirm && !deliverable)
-      return toast.error("Please confirm this is a physical item");
-    setLoading(true);
+  // Called by the wizard with the edited listing
+  const onSave = async ({ data, photos }) => {
+    setSaving(true);
     try {
-      const data = {
-        name: values.name,
-        price: values.price,
-        stock: values.stock,
-        categoryId,
-        description: values.description || "",
-        deliverableConfirmed: needsConfirm && deliverable,
-      };
-      const res = await updateProduct(id, { data, image });
+      const res = await updateProduct(id, { data, photos });
       toast.success(res.message || "Product updated");
       navigate("/seller/products");
     } catch (err) {
-      const msg =
+      toast.error(
         err.response?.data?.errors?.[0]?.message ||
-        err.response?.data?.message ||
-        "Product update failed";
-      toast.error(msg);
+          err.response?.data?.message ||
+          "Product update failed",
+      );
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  // Resolving — spinner while the product loads
-  if (resolving) {
+  // Spinner while the product loads
+  if (!product) {
     return (
       <div className="py-16 flex items-center justify-center gap-3 font-body text-sm text-passive">
         <Spinner />
@@ -141,164 +55,17 @@ const EditProduct = () => {
   }
 
   return (
-    <div className="page-enter max-w-xl">
-      {/* Back link — one tap to the list, above the title */}
+    <div className="page-enter max-w-2xl">
       <Link
         to="/seller/products"
-        className="font-body text-xs text-passive hover:text-primary inline-block mb-2"
+        className="font-body text-sm text-passive hover:text-primary inline-flex items-center gap-1 mb-3"
       >
-        Back to My Products
+        <Icon name="arrow_back" size={16} /> My Products
       </Link>
-      <h1 className="font-header text-xl md:text-2xl text-gray-900">
-        Edit Product
-      </h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-        {/* Name — same rules as create */}
-        <div>
-          <FieldLabel htmlFor="name">Product name</FieldLabel>
-          <input
-            id="name"
-            {...register("name", {
-              required: "Product name is required",
-              minLength: { value: 2, message: "At least 2 characters" },
-            })}
-            placeholder="Example: Handwoven bayong"
-            className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
-          />
-          {errors.name && (
-            <p className="text-danger text-xs mt-1">{errors.name.message}</p>
-          )}
-        </div>
-        {/* Category — prefilled from the product */}
-        <div>
-          <FieldLabel>Category</FieldLabel>
-          <Select
-            value={categoryId}
-            onChange={setCategoryId}
-            options={categoryOptions}
-            ariaLabel="Select category"
-          />
-        </div>
-        {/* Others confirmation — keeps services and non-deliverables out */}
-        {needsConfirm && (
-          <label className="flex items-start gap-3 bg-surface rounded-xl p-4 font-body text-sm text-black cursor-pointer">
-            <input
-              type="checkbox"
-              checked={deliverable}
-              onChange={(e) => setDeliverable(e.target.checked)}
-              className="mt-0.5 w-4 h-4 shrink-0 accent-black"
-            />
-            <span>
-              I confirm this is a physical item that can be picked up or
-              delivered. Services, dine-in meals and fresh produce are not
-              allowed.
-            </span>
-          </label>
-        )}
-        {/* Price and stock — edit allows stock 0 (sold out), STEP 1 patch */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel htmlFor="price">Price (₱)</FieldLabel>
-            <input
-              id="price"
-              {...register("price", {
-                required: "Price is required",
-                validate: (v) =>
-                  parseFloat(v) > 0 || "Price must be greater than 0",
-              })}
-              type="number"
-              min="1"
-              step="0.01"
-              placeholder="0.00"
-              className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
-            />
-            {errors.price && (
-              <p className="text-danger text-xs mt-1">{errors.price.message}</p>
-            )}
-          </div>
-          <div>
-            <FieldLabel htmlFor="stock">Stock</FieldLabel>
-            <input
-              id="stock"
-              {...register("stock", {
-                required: "Stock is required",
-                validate: (v) =>
-                  // 0 is legal on EDIT — marks the product sold out,
-                  // hidden from browse by the backend stock filter
-                  (parseInt(v, 10) >= 0 && !isNaN(v)) ||
-                  "Stock must be 0 or more",
-              })}
-              type="number"
-              min="0"
-              placeholder="How many you have"
-              className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary"
-            />
-            {errors.stock && (
-              <p className="text-danger text-xs mt-1">{errors.stock.message}</p>
-            )}
-          </div>
-        </div>
-        {/* Description — optional, clearable now via the 4.1 patch */}
-        <div>
-          <FieldLabel htmlFor="description">Description (optional)</FieldLabel>
-          <textarea
-            id="description"
-            {...register("description", {
-              maxLength: {
-                value: 1000,
-                message: "Description cannot exceed 1000 characters",
-              },
-            })}
-            rows={4}
-            placeholder="Condition, size, what is included"
-            className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-primary resize-y"
-          />
-          {errors.description && (
-            <p className="text-danger text-xs mt-1">
-              {errors.description.message}
-            </p>
-          )}
-        </div>
-        {/* Photo — current shown by default, replace only when picked */}
-        <div>
-          <FieldLabel>Product photo</FieldLabel>
-          <label className="border border-dashed border-gray-300 rounded-lg p-4 font-body text-sm text-passive cursor-pointer block">
-            {image
-              ? `New photo — ${image.name}`
-              : "Replace photo (optional — keep current if skipped)"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => setImage(e.target.files[0] || null)}
-            />
-          </label>
-          {/* New preview wins, else the live Cloudinary photo */}
-          {preview ? (
-            <img
-              src={preview}
-              alt="New preview"
-              className="mt-3 h-40 w-full object-cover rounded-lg border border-black/10"
-            />
-          ) : (
-            product?.imageUrl && (
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="mt-3 h-40 w-full object-cover rounded-lg border border-black/10"
-              />
-            )
-          )}
-        </div>
-        {/* Submit — spinner while the multipart PUT runs */}
-        <button
-          disabled={loading}
-          className="btn-primary w-full rounded-lg py-3 font-body text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {loading && <Spinner />}
-          {loading ? "Saving changes..." : "Save changes"}
-        </button>
-      </form>
+      <h1 className="heading-body text-2xl md:text-3xl font-bold text-black">Edit product</h1>
+      <p className="font-body text-sm text-passive mt-1 mb-6 break-words">{product.name}</p>
+      {/* key remounts the wizard if a different product loads */}
+      <ProductWizard key={product.id} mode="edit" product={product} saving={saving} onSave={onSave} />
     </div>
   );
 };

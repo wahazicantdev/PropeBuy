@@ -39,9 +39,10 @@ export const fetchProduct = async (id) => {
   return res.data;
 };
 
-// Build FormData helper — multipart shape the backend multer
-// upload.single("image") expects, reuses the proven register pattern
-const buildProductForm = ({ data, image }) => {
+// Build FormData helper — multipart shape the backend expects.
+// photos: [{ url } saved | { file } new], cover first. New files go up
+// as "images", and photoOrder tells the backend the final order.
+const buildProductForm = ({ data, image, photos }) => {
   // FormData because product images ride along as binary
   const form = new FormData();
   // Text fields — exact keys validateCreateProduct expects
@@ -54,14 +55,26 @@ const buildProductForm = ({ data, image }) => {
   form.append("description", data.description || "");
   // Sent only when the seller ticked the Others confirmation
   if (data.deliverableConfirmed) form.append("deliverableConfirmed", "true");
-  // Image optional — edit keeps old photo when skipped
+  // Gallery photos — saved ones by URL, new ones as "new:N"
+  if (photos) {
+    let n = 0;
+    const order = photos.map((p) => {
+      if (p.file) {
+        form.append("images", p.file);
+        return `new:${n++}`;
+      }
+      return p.url;
+    });
+    form.append("photoOrder", JSON.stringify(order));
+  }
+  // Old single-photo callers still work
   if (image) form.append("image", image);
   return form;
 };
 
 // Create product — multipart POST, seller only, VERIFIED required
-export const createProduct = async ({ data, image }) => {
-  const form = buildProductForm({ data, image });
+export const createProduct = async ({ data, image, photos }) => {
+  const form = buildProductForm({ data, image, photos });
   const res = await api.post("/products", form, {
     // Override default json header for multipart boundary
     headers: { "Content-Type": "multipart/form-data" },
@@ -79,8 +92,8 @@ export const fetchMyProducts = async () => {
 };
 
 // Update product — multipart PUT, all fields optional server-side
-export const updateProduct = async (id, { data, image }) => {
-  const form = buildProductForm({ data, image });
+export const updateProduct = async (id, { data, image, photos }) => {
+  const form = buildProductForm({ data, image, photos });
   const res = await api.put(`/products/${id}`, form, {
     // Same multipart override as create
     headers: { "Content-Type": "multipart/form-data" },

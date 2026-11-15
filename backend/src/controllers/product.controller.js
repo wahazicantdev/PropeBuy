@@ -4,6 +4,24 @@ import { uploadToCloudinary } from "../config/cloudinary.js";
 import { cleanInt, cleanPrice } from "../utils/format.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 
+// ── PRODUCT PHOTOS ─────────────────────────────────────
+// Max photos per product, matching the 4 gallery slots on the product page
+const MAX_PHOTOS = 4;
+
+// Files sent as "images" (new) or "image" (old single field)
+const photoFiles = (req) => [
+  ...(req.files?.images || []),
+  ...(req.files?.image || []),
+];
+
+// Product photos must be pictures — the shared uploader also allows PDFs
+// for verification documents, so block those here
+const hasNonImage = (files) => files.some((f) => !f.mimetype.startsWith("image/"));
+
+// Uploads all photos at once and returns their URLs in the same order
+const uploadPhotos = (files) =>
+  Promise.all(files.map((f) => uploadToCloudinary(f.buffer, "products").then((u) => u.secure_url)));
+
 // ── CREATE PRODUCT ─────────────────────────────────────
 // Seller only
 export const createProduct = async (req, res) => {
@@ -41,12 +59,17 @@ export const createProduct = async (req, res) => {
     });
   }
 
-  // Upload product image if provided
-  let imageUrl = null;
-  if (req.file) {
-    const upload = await uploadToCloudinary(req.file.buffer, "products");
-    imageUrl = upload.secure_url;
+  // Up to 4 photos, pictures only
+  const files = photoFiles(req);
+  if (files.length > MAX_PHOTOS || hasNonImage(files)) {
+    return res.status(400).json({
+      success: false,
+      message: `Upload up to ${MAX_PHOTOS} photos (JPG or PNG)`,
+    });
   }
+  const images = await uploadPhotos(files);
+  // The first photo is the cover shown on cards, cart and orders
+  const imageUrl = images[0] || null;
 
   const product = await prisma.product.create({
     data: {
@@ -58,6 +81,7 @@ export const createProduct = async (req, res) => {
       price: cleanPrice(price),
       stock: cleanInt(stock),
       imageUrl,
+      images,
     },
     include: {
       seller: {
@@ -305,12 +329,54 @@ export const updateProduct = async (req, res) => {
     });
   }
 
-  // Upload new image if provided
-  let imageUrl = product.imageUrl;
-  if (req.file) {
-    const upload = await uploadToCloudinary(req.file.buffer, "products");
-    imageUrl = upload.secure_url;
+  // ── PHOTOS ─────────────────────────────────────────
+  // Current photos — older products only have the single cover
+  const current = product.images.length
+    ? product.images
+    : product.imageUrl ? [product.imageUrl] : [];
+  const files = photoFiles(req);
+  if (files.length > MAX_PHOTOS || hasNonImage(files)) {
+    return res.status(400).json({
+      success: false,
+      message: `Upload up to ${MAX_PHOTOS} photos (JPG or PNG)`,
+    });
   }
+  const added = await uploadPhotos(files);
+
+  // photoOrder (JSON list) is the final gallery, cover first. Each entry
+  // is a photo URL this product already has, or "new:N" for the Nth
+  // uploaded file. Unknown URLs are dropped, so nobody can attach
+  // someone else's photo.
+  let images;
+  if (req.body.photoOrder !== undefined) {
+    let order = [];
+    try {
+      order = JSON.parse(req.body.photoOrder);
+    } catch {
+      order = [];
+    }
+    images = (Array.isArray(order) ? order : [])
+      .map((entry) => {
+        const m = /^new:(\d+)$/.exec(String(entry));
+        if (m) return added[Number(m[1])];
+        return current.includes(entry) ? entry : undefined;
+      })
+      .filter(Boolean);
+  } else if (req.files?.image?.length) {
+    // Old single "image" field: the new photo replaces the cover
+    images = [...added, ...current.slice(1)];
+  } else {
+    // No photo changes sent: keep the current photos, add any new ones
+    images = [...current, ...added];
+  }
+  images = [...new Set(images)];
+  if (images.length > MAX_PHOTOS) {
+    return res.status(400).json({
+      success: false,
+      message: `A product can have up to ${MAX_PHOTOS} photos`,
+    });
+  }
+  const imageUrl = images[0] || null;
 
   // ── FIELD PATCHING RULE ───────────────────────────────
   // "0" and "" are falsy — plain `||` was silently ignoring
@@ -340,6 +406,7 @@ export const updateProduct = async (req, res) => {
           ? cleanInt(categoryId)
           : product.categoryId,
       imageUrl,
+      images,
     },
     include: {
       category: {

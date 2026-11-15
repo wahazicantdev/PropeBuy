@@ -28,11 +28,17 @@ productRoutes.get("/:id", validateIdParam, getProduct);
 
 // ── PROTECTED ROUTES — SELLER ONLY ────────────────────
 // Token required + must be SELLER role
+// Up to 4 photos as "images". The old single "image" field still works.
+const productPhotos = upload.fields([
+  { name: "images", maxCount: 4 },
+  { name: "image", maxCount: 1 },
+]);
+
 productRoutes.post(
   "/",
   protect,
   authorize("SELLER"),
-  upload.single("image"),
+  productPhotos,
   validateCreateProduct,
   createProduct,
 );
@@ -48,7 +54,7 @@ productRoutes.put(
   "/:id",
   protect,
   authorize("SELLER"),
-  upload.single("image"),
+  productPhotos,
   validateUpdateProduct,
   updateProduct,
 );
