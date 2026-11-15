@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import AuthShell from "../../components/AuthShell.jsx";
 import Icon from "../../components/Icon.jsx";
 import FieldLabel from "../../components/FieldLabel.jsx";
+import PasswordInput from "../../components/PasswordInput.jsx";
 import { loginUser } from "../../api/auth.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 
@@ -86,17 +87,12 @@ const BuyerLogin = () => {
         {/* Password */}
         <div>
           <FieldLabel htmlFor="password">Password</FieldLabel>
-          <div className="relative">
-            <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-            <input
-              {...register("password", { required: true })}
-              id="password"
-              type="password"
-              placeholder="Your password"
-              autoComplete="current-password"
-              className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
-            />
-          </div>
+          <PasswordInput
+            {...register("password", { required: true })}
+            id="password"
+            placeholder="Your password"
+            autoComplete="current-password"
+          />
         </div>
         {/* Submit — black pill, spinner while waiting */}
         <button

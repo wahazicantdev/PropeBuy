@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import AuthShell from "../../components/AuthShell.jsx";
 import Icon from "../../components/Icon.jsx";
 import FieldLabel from "../../components/FieldLabel.jsx";
+import PasswordInput from "../../components/PasswordInput.jsx";
 import Select from "../../components/Select.jsx";
 import {
   registerUser,
@@ -315,20 +316,15 @@ const Register = () => {
         {/* Password */}
         <div>
           <FieldLabel htmlFor="password">Password</FieldLabel>
-          <div className="relative">
-            <Icon name="lock" className="absolute left-5 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
-            <input
-              {...register("password", {
+          <PasswordInput
+            {...register("password", {
                 required: "Password required",
                 minLength: { value: 6, message: "Min 6 chars" },
               })}
-              id="password"
-              type="password"
-              placeholder="At least 6 characters"
-              autoComplete="new-password"
-              className="w-full pl-13 pr-5 py-3.5 font-body text-sm"
-            />
-          </div>
+            id="password"
+            placeholder="At least 6 characters"
+            autoComplete="new-password"
+          />
           {errors.password && (
             <p className="text-danger text-xs mt-1 pl-5">{errors.password.message}</p>
           )}
