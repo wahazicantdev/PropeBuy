@@ -124,7 +124,7 @@ const Earnings = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">{formatPeso(Number(e.itemsAmount) + Number(e.deliveryFee))}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-passive">−{formatPeso(e.commission)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-passive">{Number(e.commission) ? `−${formatPeso(e.commission)}` : "—"}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-passive">{Number(e.withholdingTax) ? `−${formatPeso(e.withholdingTax)}` : "—"}</td>
                       <td className="px-4 py-3 text-right tabular-nums font-bold">{formatPeso(e.netAmount)}</td>
                       <td className="px-4 py-3">
