@@ -12,6 +12,7 @@
     "demoImage": "node prisma/images.demo.js",
     "demoPurchases": "node prisma/purchases.demo.js",
     "evalAccounts": "node prisma/evaluation.accounts.js",
+    "productPhotos": "node prisma/product.photos.js",
     "postinstall": "prisma generate"
   },
   "keywords": [],
