@@ -36,6 +36,13 @@ const ProductReviews = ({ productId }) => {
                 <Stars value={r.rating} size={18} />
                 <p className="mt-2 font-body font-bold text-sm text-black">{r.buyerName}</p>
                 {r.comment && <p className="mt-1 font-body text-sm text-black/70 break-words">{r.comment}</p>}
+                {/* Seller's public answer */}
+                {r.sellerReply && (
+                  <div className="mt-3 rounded-xl bg-surface p-3">
+                    <p className="font-body text-xs font-bold text-black">Seller's reply</p>
+                    <p className="mt-1 font-body text-sm text-black/70 break-words">{r.sellerReply}</p>
+                  </div>
+                )}
                 <p className="mt-2 font-body text-xs text-black/40">
                   {new Date(r.createdAt).toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })}
                 </p>

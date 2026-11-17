@@ -1,6 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import { pendingReviewWhere } from "../utils/review.helper.js";
-import { notifyNewReview } from "../utils/notification.helper.js";
+import { notifyNewReview, notifyReviewReply } from "../utils/notification.helper.js";
 
 // ── ITEMS WAITING FOR MY RATING ────────────────────────
 export const getPendingReviews = async (req, res) => {
@@ -107,6 +107,8 @@ export const getProductReviews = async (req, res) => {
         id: true,
         rating: true,
         comment: true,
+        sellerReply: true,
+        repliedAt: true,
         createdAt: true,
         buyer: { select: { name: true } },
       },
@@ -134,5 +136,87 @@ export const getProductReviews = async (req, res) => {
         return { ...r, buyerName: shortName };
       }),
     },
+  });
+};
+
+// First name and last initial — buyers stay private on public pages
+const shortBuyerName = (name) => {
+  const parts = (name || "Buyer").trim().split(/\s+/);
+  return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : parts[0];
+};
+
+// ── SELLER: REVIEWS OF MY PRODUCTS ─────────────────────
+// GET /api/reviews/seller?filter=all|unreplied|comments (E2E #419)
+export const getSellerReviews = async (req, res) => {
+  const filter = String(req.query.filter || "all");
+  const where = { sellerId: req.user.id };
+  if (filter === "unreplied") Object.assign(where, { comment: { not: null }, sellerReply: null });
+  if (filter === "comments") Object.assign(where, { comment: { not: null } });
+
+  const [reviews, summary] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        sellerReply: true,
+        repliedAt: true,
+        createdAt: true,
+        product: { select: { id: true, name: true, imageUrl: true } },
+        buyer: { select: { name: true } },
+      },
+    }),
+    prisma.review.aggregate({
+      where: { sellerId: req.user.id },
+      _avg: { rating: true },
+      _count: { rating: true },
+    }),
+  ]);
+  const unreplied = await prisma.review.count({
+    where: { sellerId: req.user.id, comment: { not: null }, sellerReply: null },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Reviews loaded",
+    data: {
+      average: summary._count.rating ? Math.round(summary._avg.rating * 10) / 10 : 0,
+      count: summary._count.rating,
+      unreplied,
+      reviews: reviews.map(({ buyer, ...r }) => ({ ...r, buyerName: shortBuyerName(buyer?.name) })),
+    },
+  });
+};
+
+// ── SELLER: REPLY TO A REVIEW ──────────────────────────
+// PUT /api/reviews/:id/reply { reply } — saving again edits the reply,
+// an empty reply removes it. Only the seller of the product can answer.
+export const replyToReview = async (req, res) => {
+  const reply = typeof req.body.reply === "string" ? req.body.reply.trim() : "";
+  if (reply.length > 500) {
+    return res.status(400).json({ success: false, message: "Reply must be 500 characters or less" });
+  }
+  const review = await prisma.review.findUnique({
+    where: { id: parseInt(req.params.id) },
+    select: { id: true, sellerId: true, buyerId: true, sellerReply: true, product: { select: { id: true, name: true } } },
+  });
+  if (!review || review.sellerId !== req.user.id) {
+    return res.status(404).json({ success: false, message: "Review not found" });
+  }
+  const saved = await prisma.review.update({
+    where: { id: review.id },
+    data: { sellerReply: reply || null, repliedAt: reply ? new Date() : null },
+    select: { id: true, sellerReply: true, repliedAt: true },
+  });
+  // Tell the buyer only on the first reply, not on every edit
+  if (reply && !review.sellerReply) notifyReviewReply(review.buyerId, review.product);
+
+  res.status(200).json({
+    success: true,
+    message: reply ? "Reply saved" : "Reply removed",
+    data: saved,
   });
 };

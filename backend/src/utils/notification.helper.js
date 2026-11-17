@@ -127,7 +127,18 @@ export const notifyNewReview = (sellerId, productName, rating) => {
     type: "NEW_REVIEW",
     title: `New ${rating}-star rating`,
     message: `A buyer rated "${productName}" ${rating} out of 5.`,
-    link: "/seller/products",
+    link: "/seller/reviews",
+  });
+};
+
+// ── SELLER REPLIED TO A REVIEW ─────────────────────────
+// The buyer sees the answer on the product page
+export const notifyReviewReply = (buyerId, product) => {
+  saveNotification(buyerId, {
+    type: "NEW_REVIEW",
+    title: "The seller replied to your review",
+    message: `The seller answered your rating of "${product.name}".`,
+    link: `/product/${product.id}`,
   });
 };
 

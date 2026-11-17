@@ -21,6 +21,7 @@ const GROUPS = [
     links: [
       { to: "/seller/orders", label: "Orders", icon: "receipt_long" },
       { to: "/seller/earnings", label: "Earnings", icon: "account_balance_wallet" },
+      { to: "/seller/reviews", label: "Reviews", icon: "reviews" },
     ],
   },
   { title: "Account", links: [{ to: "/seller/profile", label: "Shop profile", icon: "person" }] },

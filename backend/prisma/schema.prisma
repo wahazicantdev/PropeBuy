@@ -171,6 +171,8 @@ model Review {
   sellerId    Int       // copied so store averages need no join
   rating      Int       // 1 to 5 stars
   comment     String?
+  sellerReply String?   // the seller's public answer, one per review
+  repliedAt   DateTime? // when the seller last saved the reply
   createdAt   DateTime  @default(now())
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
