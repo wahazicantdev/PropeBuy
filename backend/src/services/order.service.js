@@ -41,6 +41,7 @@ export const processCheckout = async (
     // Process each item in the order
     for (const item of items) {
       const { productId, quantity } = item;
+      const variantId = item.variantId ? cleanInt(item.variantId) : null;
 
       if (!productId || !quantity || quantity < 1) {
         throw userError("Invalid item — productId and quantity are required");
@@ -65,6 +66,37 @@ export const processCheckout = async (
       const product = lockedProduct[0];
       sellerIds.add(product.sellerId);
 
+      // ── VARIANT — LOCKED THE SAME WAY ─────────────
+      // A product with options needs one picked. Its row is locked too,
+      // and its own price and stock apply.
+      const activeVariantCount = await tx.productVariant.count({
+        where: { productId: product.id, isActive: true },
+      });
+      let variant = null;
+      if (activeVariantCount > 0 || variantId) {
+        if (!variantId) throw userError(`Choose an option for "${product.name}"`);
+        const lockedVariant = await tx.$queryRaw`
+          SELECT id, name, stock, price
+          FROM product_variants
+          WHERE id = ${variantId}
+          AND "productId" = ${product.id}
+          AND "isActive" = true
+          FOR UPDATE
+        `;
+        if (!lockedVariant?.length) throw userError(`That option of "${product.name}" is no longer available`);
+        variant = lockedVariant[0];
+        if (variant.stock < quantity) {
+          throw userError(
+            `Insufficient stock for "${product.name} (${variant.name})". ` +
+              `Available: ${variant.stock}, Requested: ${quantity}`,
+          );
+        }
+        await tx.productVariant.update({
+          where: { id: variant.id },
+          data: { stock: { decrement: quantity } },
+        });
+      }
+
       // ── STOCK CHECK ───────────────────────────────
       // If insufficient — throw triggers automatic ROLLBACK
       if (product.stock < quantity) {
@@ -81,13 +113,17 @@ export const processCheckout = async (
         data: { stock: { decrement: quantity } },
       });
 
-      const itemTotal = cleanPrice(product.price) * quantity;
+      // The option's price when one was picked
+      const unitPrice = cleanPrice(variant ? variant.price : product.price);
+      const itemTotal = unitPrice * quantity;
       totalAmount += itemTotal;
 
       validatedItems.push({
         productId: cleanInt(productId),
+        variantId: variant ? variant.id : null,
+        variantName: variant ? variant.name : null,
         quantity,
-        price: cleanPrice(product.price),
+        price: unitPrice,
       });
     }
 
@@ -157,6 +193,8 @@ export const processCheckout = async (
       data: validatedItems.map((item) => ({
         orderId: newOrder.id,
         productId: item.productId,
+        variantId: item.variantId,
+        variantName: item.variantName,
         quantity: item.quantity,
         price: item.price,
       })),
@@ -389,6 +427,12 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
           where: { id: item.productId },
           data: { stock: { increment: item.quantity } },
         });
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
       }
       await tx.order.update({
         where: { id: cleanInt(orderId) },
@@ -461,6 +505,12 @@ export const cancelOrderByBuyer = async (orderId, buyerId) => {
         where: { id: item.productId },
         data: { stock: { increment: item.quantity } },
       });
+      if (item.variantId) {
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
     }
   });
   await cancelEarnings(order.id);

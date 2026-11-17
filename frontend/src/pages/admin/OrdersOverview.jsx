@@ -236,6 +236,7 @@ const OrdersOverview = () => {
                       <div className="min-w-0">
                         <p className="font-body text-sm text-black line-clamp-2">
                           {i.product?.name || "Removed product"}
+                          {i.variantName ? ` (${i.variantName})` : ""}
                         </p>
                         <p className="font-body text-xs text-passive truncate mt-0.5">
                           vendor: {i.product?.seller?.name || "unknown"} · {i.product?.barangay?.name || "no barangay"}

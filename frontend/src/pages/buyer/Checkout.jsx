@@ -8,7 +8,7 @@ import Spinner from "../../components/Spinner.jsx";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 import Select from "../../components/Select.jsx";
-import { useCartStore } from "../../stores/cart.store.js";
+import { useCartStore, lineKey } from "../../stores/cart.store.js";
 import { checkoutOrder } from "../../api/order.api.js";
 // Fresh account status — the stored copy goes stale after admin review
 import { fetchMe } from "../../api/auth.api.js";
@@ -144,6 +144,8 @@ const Checkout = () => {
       // Shape backend validateCheckout expects
       const payload = items.map((i) => ({
         productId: i.productId,
+        // The picked option, when the product has options
+        ...(i.variantId ? { variantId: i.variantId } : {}),
         quantity: i.quantity,
       }));
       // TPS call, throws on short stock
@@ -302,12 +304,12 @@ const Checkout = () => {
             <ul className="mt-2 divide-y divide-black/10">
               {items.map((i) => (
                 // Row clips long names, total never squeezes out
-                <li key={i.productId} className="py-4 flex items-center gap-3 min-w-0">
+                <li key={lineKey(i)} className="py-4 flex items-center gap-3 min-w-0">
                   <span className="relative w-14 h-14 rounded-lg bg-card overflow-hidden shrink-0">
                     {i.imageUrl && <img src={cld(i.imageUrl, 200)} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block font-body font-bold text-sm text-black truncate">{i.name}</span>
+                    <span className="block font-body font-bold text-sm text-black truncate">{i.name}{i.variantName ? ` (${i.variantName})` : ""}</span>
                     <span className="block font-body text-xs text-black/60">Qty {i.quantity} × {formatPeso(i.price)}</span>
                   </span>
                   <span className="font-body font-bold text-base text-black shrink-0">
@@ -326,9 +328,9 @@ const Checkout = () => {
             {/* Each item: price × quantity = line total, then the items subtotal */}
             <div className="space-y-2">
               {items.map((i) => (
-                <div key={i.productId} className="flex justify-between gap-3 text-sm">
+                <div key={lineKey(i)} className="flex justify-between gap-3 text-sm">
                   <dt className="min-w-0 text-black/60">
-                    <span className="block truncate text-black">{i.name}</span>
+                    <span className="block truncate text-black">{i.name}{i.variantName ? ` (${i.variantName})` : ""}</span>
                     <span className="block text-xs">{formatPeso(i.price)} × {i.quantity}</span>
                   </dt>
                   <dd className="font-bold text-black shrink-0">{formatPeso(Number(i.price) * i.quantity)}</dd>

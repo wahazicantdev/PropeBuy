@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 import { fetchProduct } from "../api/product.api.js";
-import { useCartStore } from "../stores/cart.store.js";
+import { useCartStore, lineKey } from "../stores/cart.store.js";
 
 // Compares the saved cart with live products and drops anything gone
 // or sold out, so buyers see why a line left their cart.
@@ -22,19 +22,26 @@ export const removeDeadCartItems = async () => {
 
   const removedNames = [];
   const loweredNames = [];
-  checks.forEach(({ item, product, unknown }) => {
+  checks.forEach(({ item, product: live, unknown }) => {
     // Could not check this line, leave it for the backend to judge
     if (unknown) return;
-    if (!product || product.stock <= 0) {
-      removeItem(item.productId);
-      removedNames.push(item.name);
+    const label = item.variantName ? `${item.name} (${item.variantName})` : item.name;
+    // A line with an option is checked against that option. A plain line
+    // whose product now has options must be picked again.
+    const variants = live?.variants || [];
+    const option = item.variantId ? variants.find((v) => v.id === item.variantId) : null;
+    const gone = !live || (item.variantId ? !option : variants.length > 0);
+    const product = option ? { ...live, stock: option.stock, price: option.price } : live;
+    if (gone || product.stock <= 0) {
+      removeItem(lineKey(item));
+      removedNames.push(label);
       return;
     }
     // Seller has fewer left than the buyer wanted — say so
     if (product.stock < item.quantity) {
-      loweredNames.push(`${item.name} (only ${product.stock} left)`);
+      loweredNames.push(`${label} (only ${product.stock} left)`);
     }
-    syncLine(item.productId, {
+    syncLine(lineKey(item), {
       stock: product.stock,
       price: Number(product.price),
     });

@@ -55,6 +55,9 @@ const buildProductForm = ({ data, image, photos }) => {
   form.append("description", data.description || "");
   // Sent only when the seller ticked the Others confirmation
   if (data.deliverableConfirmed) form.append("deliverableConfirmed", "true");
+  // Variations as one JSON list — sent even when empty, so removing
+  // every option on edit really removes them
+  if (data.variants) form.append("variants", JSON.stringify(data.variants));
   // Gallery photos — saved ones by URL, new ones as "new:N"
   if (photos) {
     let n = 0;

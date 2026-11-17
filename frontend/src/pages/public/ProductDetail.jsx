@@ -30,6 +30,8 @@ const ProductDetail = () => {
   const [active, setActive] = useState(0);
   // Quantity picker, minimum 1
   const [qty, setQty] = useState(1);
+  // Picked option id, when the product has options
+  const [variantId, setVariantId] = useState(null);
   // Auth check for the wall, cart writer, redirect
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const addItem = useCartStore((s) => s.addItem);
@@ -43,6 +45,9 @@ const ProductDetail = () => {
         // Back to the real photo whenever the product changes
         setActive(0);
         setQty(1);
+        // First option that still has stock is picked by default
+        const options = res.data?.variants || [];
+        setVariantId((options.find((x) => x.stock > 0) || options[0])?.id ?? null);
         // Related — same category, this product left out, max 4
         return fetchProducts({ categoryId: res.data?.category?.id }).then((r) =>
           setRelated((r.data || []).filter((p) => String(p.id) !== String(id)).slice(0, 4)),
@@ -66,15 +71,15 @@ const ProductDetail = () => {
   // Add to cart — guarded, stays on the page so shoppers keep browsing
   const handleAdd = () => {
     if (!requireLogin()) return;
-    // Cap quantity at available stock
-    addItem(product, Math.min(qty, product.stock));
+    // Cap quantity at available stock — the option's own stock when picked
+    addItem(product, Math.min(qty, stock), variant);
     toast.success("Added to cart");
   };
 
   // Buy now — guarded, same cart then straight to cart page
   const handleBuy = () => {
     if (!requireLogin()) return;
-    addItem(product, Math.min(qty, product.stock));
+    addItem(product, Math.min(qty, stock), variant);
     navigate("/cart");
   };
 
@@ -102,8 +107,13 @@ const ProductDetail = () => {
       </div>
     );
 
+  // Options: the picked one sets the price and stock shown
+  const variants = product.variants || [];
+  const variant = variants.find((x) => x.id === variantId) || null;
+  const price = variant ? variant.price : product.price;
+  const stock = variant ? variant.stock : product.stock;
   // Sold out flag from stock count
-  const soldOut = product.stock <= 0;
+  const soldOut = stock <= 0;
   // Real photos only, cover first. One empty slot when there are none.
   const photos = productPhotos(product);
   const slots = photos.length ? photos : [null];
@@ -179,8 +189,32 @@ const ProductDetail = () => {
               </p>
             )}
             <p className="mt-3 font-body font-bold text-2xl md:text-3xl text-black">
-              {formatPeso(product.price)}
+              {formatPeso(price)}
             </p>
+            {/* Option chips — sizes, colors, pack sizes */}
+            {variants.length > 0 && (
+              <div className="mt-4">
+                <p className="font-body text-sm text-black/60">Choose an option</p>
+                <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Product options">
+                  {variants.map((x) => (
+                    <button
+                      key={x.id}
+                      role="radio"
+                      aria-checked={x.id === variantId}
+                      onClick={() => {
+                        setVariantId(x.id);
+                        setQty(1);
+                      }}
+                      className={`rounded-full px-4 py-2 font-body text-sm border transition-colors ${
+                        x.id === variantId ? "bg-primary text-white border-primary" : "border-black/15 hover:border-black"
+                      } ${x.stock <= 0 ? "opacity-40 line-through" : ""}`}
+                    >
+                      {x.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Description in plain words */}
             {product.description && (
               <p className="mt-4 font-body text-sm md:text-base text-black/60">
@@ -216,9 +250,9 @@ const ProductDetail = () => {
             <hr className="my-6 border-black/10" />
 
             {/* Stock line — red when low, plain otherwise */}
-            <p className={`font-body text-sm flex items-center gap-1.5 ${soldOut || product.stock <= 3 ? "text-danger" : "text-black/60"}`}>
+            <p className={`font-body text-sm flex items-center gap-1.5 ${soldOut || stock <= 3 ? "text-danger" : "text-black/60"}`}>
               <Icon name="inventory_2" size={18} />
-              {soldOut ? "Out of stock" : product.stock <= 3 ? `Only ${product.stock} left` : `${product.stock} in stock`}
+              {soldOut ? "Out of stock" : stock <= 3 ? `Only ${stock} left` : `${stock} in stock`}
             </p>
 
             {/* Quantity pill + actions — login wall fires on tap */}
@@ -229,7 +263,7 @@ const ProductDetail = () => {
                     <Icon name="remove" />
                   </button>
                   <span className="font-body font-medium text-black">{qty}</span>
-                  <button onClick={() => setQty(Math.min(product.stock, qty + 1))} aria-label="Increase quantity" className="p-1">
+                  <button onClick={() => setQty(Math.min(stock, qty + 1))} aria-label="Increase quantity" className="p-1">
                     <Icon name="add" />
                   </button>
                 </div>

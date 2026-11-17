@@ -131,8 +131,14 @@ const InventoryMonitor = () => {
                   {p.name}
                 </p>
                 <p className="font-body text-xs text-passive mt-0.5">
-                  ₱{parseFloat(p.price).toFixed(2)}
+                  {/* Products with options show the lowest price and each option's stock */}
+                  {p.variants?.length ? "From " : ""}₱{parseFloat(p.price).toFixed(2)}
                 </p>
+                {p.variants?.length > 0 && (
+                  <p className="font-body text-xs text-passive mt-0.5 truncate">
+                    {p.variants.map((v) => `${v.name}: ${v.stock}`).join(" · ")}
+                  </p>
+                )}
               </div>
               {/* Pill carries the state words */}
               <StockPill stock={p.stock} />

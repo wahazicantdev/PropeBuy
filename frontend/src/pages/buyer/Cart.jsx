@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCartStore } from "../../stores/cart.store.js";
+import { useCartStore, lineKey } from "../../stores/cart.store.js";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 import { removeDeadCartItems } from "../../utils/cartCheck.js";
@@ -60,7 +60,7 @@ const Cart = () => {
         {/* ── LINE ITEMS — one card, divided rows ── */}
         <ul className="min-w-0 border border-black/10 rounded-xl px-4 md:px-6 divide-y divide-black/10">
           {items.map((i) => (
-            <li key={i.productId} className="py-4 md:py-6 flex gap-4 min-w-0">
+            <li key={lineKey(i)} className="py-4 md:py-6 flex gap-4 min-w-0">
               {/* Thumb — card gray tile */}
               <Link to={`/product/${i.productId}`} className="relative w-24 h-24 md:w-32 md:h-32 shrink-0 bg-card rounded-xl overflow-hidden">
                 {i.imageUrl ? (
@@ -77,10 +77,12 @@ const Cart = () => {
                 <div className="flex items-start gap-2">
                   <Link to={`/product/${i.productId}`} className="font-body font-bold text-base md:text-xl text-black line-clamp-2 hover:underline">
                     {i.name}
+                    {/* Picked option, e.g. Small or Red */}
+                    {i.variantName && <span className="block font-normal text-sm text-black/60">{i.variantName}</span>}
                   </Link>
                   {/* Trash — red, the reference's delete affordance */}
                   <button
-                    onClick={() => removeItem(i.productId)}
+                    onClick={() => removeItem(lineKey(i))}
                     className="ml-auto p-1 text-danger shrink-0"
                     aria-label={`Remove ${i.name}`}
                   >
@@ -97,11 +99,11 @@ const Cart = () => {
                   </p>
                   {/* Pill stepper — capped at known stock by the store */}
                   <div className="h-10 md:h-11 bg-surface rounded-full flex items-center gap-4 px-4">
-                    <button onClick={() => updateQty(i.productId, i.quantity - 1)} aria-label="Decrease" className="disabled:opacity-30" disabled={i.quantity <= 1}>
+                    <button onClick={() => updateQty(lineKey(i), i.quantity - 1)} aria-label="Decrease" className="disabled:opacity-30" disabled={i.quantity <= 1}>
                       <Icon name="remove" />
                     </button>
                     <span className="font-body font-medium text-sm w-5 text-center">{i.quantity}</span>
-                    <button onClick={() => updateQty(i.productId, i.quantity + 1)} aria-label="Increase" className="disabled:opacity-30" disabled={i.quantity >= i.stock}>
+                    <button onClick={() => updateQty(lineKey(i), i.quantity + 1)} aria-label="Increase" className="disabled:opacity-30" disabled={i.quantity >= i.stock}>
                       <Icon name="add" />
                     </button>
                   </div>

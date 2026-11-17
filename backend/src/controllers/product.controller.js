@@ -3,6 +3,8 @@ import prisma from "../config/prismaClient.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
 import { cleanInt, cleanPrice } from "../utils/format.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
+// Sizes, colors and pack sizes with their own price and stock
+import { parseVariants, saveVariants, activeVariants } from "../utils/variant.helper.js";
 
 // ── PRODUCT PHOTOS ─────────────────────────────────────
 // Max photos per product, matching the 4 gallery slots on the product page
@@ -67,11 +69,17 @@ export const createProduct = async (req, res) => {
       message: `Upload up to ${MAX_PHOTOS} photos (JPG or PNG)`,
     });
   }
+  // Optional variations, checked before any upload
+  const variants = parseVariants(req.body.variants);
+  if (variants?.error) {
+    return res.status(400).json({ success: false, message: variants.error });
+  }
+
   const images = await uploadPhotos(files);
   // The first photo is the cover shown on cards, cart and orders
   const imageUrl = images[0] || null;
 
-  const product = await prisma.product.create({
+  const created = await prisma.product.create({
     data: {
       sellerId: req.user.id,
       barangayId: req.user.barangayId,
@@ -83,7 +91,15 @@ export const createProduct = async (req, res) => {
       imageUrl,
       images,
     },
+  });
+  // Variations set the product's price (lowest) and stock (total)
+  if (variants?.list?.length) {
+    await prisma.$transaction((tx) => saveVariants(tx, created.id, variants.list));
+  }
+  const product = await prisma.product.findUnique({
+    where: { id: created.id },
     include: {
+      variants: activeVariants,
       seller: {
         select: {
           id: true,
@@ -153,6 +169,8 @@ export const getProducts = async (req, res) => {
   const products = await prisma.product.findMany({
     where,
     include: {
+      // Option ids only — cards say "From" when a product has options
+      variants: { where: { isActive: true }, select: { id: true } },
       seller: {
         select: {
           id: true,
@@ -211,6 +229,7 @@ export const getProduct = async (req, res) => {
       isActive: true,
     },
     include: {
+      variants: activeVariants,
       seller: {
         select: {
           id: true,
@@ -268,6 +287,7 @@ export const getMyProducts = async (req, res) => {
       sellerId: req.user.id,
     },
     include: {
+      variants: activeVariants,
       category: {
         select: {
           id: true,
@@ -341,6 +361,12 @@ export const updateProduct = async (req, res) => {
       message: `Upload up to ${MAX_PHOTOS} photos (JPG or PNG)`,
     });
   }
+  // Optional variations — sent means replace the list, empty list removes them
+  const variants = parseVariants(req.body.variants);
+  if (variants?.error) {
+    return res.status(400).json({ success: false, message: variants.error });
+  }
+
   const added = await uploadPhotos(files);
 
   // photoOrder (JSON list) is the final gallery, cover first. Each entry
@@ -382,7 +408,7 @@ export const updateProduct = async (req, res) => {
   // "0" and "" are falsy — plain `||` was silently ignoring
   // stock resets to zero and description clears. Explicit
   // undefined checks decide: sent → update, absent → keep.
-  const updatedProduct = await prisma.product.update({
+  const updated = await prisma.product.update({
     where: { id: cleanInt(id) },
     data: {
       // Bug fix: cleanInts did not exist — every edit with a
@@ -408,7 +434,22 @@ export const updateProduct = async (req, res) => {
       imageUrl,
       images,
     },
+  });
+
+  // Variations win over the plain price and stock: saving them
+  // recalculates both. Products with variations ignore a plain stock edit.
+  if (variants) {
+    await prisma.$transaction((tx) => saveVariants(tx, updated.id, variants.list));
+  } else {
+    const hasVariants = await prisma.productVariant.count({ where: { productId: updated.id, isActive: true } });
+    if (hasVariants) {
+      await prisma.product.update({ where: { id: updated.id }, data: { price: product.price, stock: product.stock } });
+    }
+  }
+  const updatedProduct = await prisma.product.findUnique({
+    where: { id: updated.id },
     include: {
+      variants: activeVariants,
       category: {
         select: { id: true, name: true },
       },

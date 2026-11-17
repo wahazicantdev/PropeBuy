@@ -22,7 +22,7 @@ const subtotal = (o) => o.orderItems.reduce((s, i) => s + parseFloat(i.price) * 
 
 // Items line, e.g. "Sardines Pack + 2 more"
 const itemsLine = (o) =>
-  `${o.orderItems[0]?.product?.name || "Item"}${o.orderItems.length > 1 ? ` + ${o.orderItems.length - 1} more` : ""}`;
+  `${o.orderItems[0]?.product?.name || "Item"}${o.orderItems[0]?.variantName ? ` (${o.orderItems[0].variantName})` : ""}${o.orderItems.length > 1 ? ` + ${o.orderItems.length - 1} more` : ""}`;
 
 // OrdersReceived — orders touching this seller, newest first
 const OrdersReceived = () => {

@@ -255,6 +255,8 @@ const OrderDetail = () => {
               <span className="flex-1 min-w-0">
                 <span className="block font-body font-bold text-base text-black truncate">
                   {it.product?.name || "Item"}
+                  {/* Picked option, copied at checkout */}
+                  {it.variantName ? ` (${it.variantName})` : ""}
                 </span>
                 {/* Vendor plus barangay, per item */}
                 <span className="flex items-center gap-1 font-body text-xs text-black/60 mt-1 truncate">
