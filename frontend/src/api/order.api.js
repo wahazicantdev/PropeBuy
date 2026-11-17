@@ -85,3 +85,9 @@ export const markCashPaid = async (id) => {
   // Returns { success, message, data: updated order }
   return res.data;
 };
+// Buyer saves the GCash that gets the refund of a cancelled paid order
+export const saveRefundGcash = async (id, gcashName, gcashNumber) => {
+  const res = await api.put(`/orders/${id}/refund-gcash`, { gcashName, gcashNumber });
+  // Returns { success, message, data: { refundGcash: "09•••••4567" } }
+  return res.data;
+};
