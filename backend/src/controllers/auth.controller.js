@@ -124,7 +124,10 @@ export const register = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, salt);
 
   // ── CREATE USER WITH OCR RESULTS ──────────────────
-  const user = await prisma.user.create({
+  // A double tap can send two registrations; the second one hits the
+  // unique email and gets a readable answer instead of a server error
+  const user = await prisma.user
+    .create({
     data: {
       name,
       email,
@@ -149,7 +152,14 @@ export const register = async (req, res) => {
       // Store extracted data as JSON string for admin reference
       ocrExtractedData: JSON.stringify(verificationResult.extractedData),
     },
-  });
+  })
+    .catch((err) => {
+      if (err.code === "P2002") return null;
+      throw err;
+    });
+  if (!user) {
+    return res.status(400).json({ success: false, message: "Email already registered. Try logging in." });
+  }
 
   // Admins see the new applicant in their bell
   notifyAdminsNewRegistration(user);
