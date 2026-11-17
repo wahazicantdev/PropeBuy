@@ -176,3 +176,26 @@ export const notifyPayoutSent = (sellerId, payout) => {
     link: "/seller/earnings",
   });
 };
+
+// ── ONLINE PAYMENT RECEIVED, FOR THE SELLER ────────────
+// The buyer finished paying through PayMongo. The seller's open order
+// pages refresh, and the bell keeps a record (E2E #420).
+// sellerId — a seller with items in the order
+// orderId  — the paid order
+// feeOnly  — true when only the delivery fee of a cash order was paid
+export const notifySellerPaymentReceived = (sellerId, orderId, feeOnly = false) => {
+  const message = feeOnly
+    ? `The buyer paid the delivery fee for Order #${orderId}. You can start processing it.`
+    : `The buyer paid Order #${orderId} through GCash. You can start processing it.`;
+  io.to(`user_${sellerId}`).emit("seller_payment_received", {
+    orderId,
+    message,
+    timestamp: new Date().toISOString(),
+  });
+  saveNotification(sellerId, {
+    type: "PAYMENT",
+    title: feeOnly ? `Delivery fee paid for Order #${orderId}` : `Order #${orderId} paid`,
+    message,
+    link: `/seller/orders/${orderId}`,
+  });
+};

@@ -53,6 +53,11 @@ export const useSocket = () => {
       toast.success(payload.message || `New order #${payload.orderId}`);
       broadcast("new_order", payload);
     });
+    // Buyer finished an online payment — seller pages refresh (E2E #420)
+    socket.on("seller_payment_received", (payload) => {
+      toast.success(payload.message || `Order #${payload.orderId} was paid`);
+      broadcast("seller_payment_received", payload);
+    });
     socket.on("low_stock_alert", (payload) => {
       // Backend field is currentStock — the old listener read .stock
       toast(

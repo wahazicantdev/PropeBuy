@@ -9,6 +9,7 @@ import {
   notifyPaymentConfirmed,
   notifyNewOrder,
   notifyBuyerCancelled,
+  notifySellerPaymentReceived,
 } from "../utils/notification.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 import { createEarnings, releaseEarnings, cancelEarnings } from "../utils/payout.helper.js";
@@ -485,6 +486,13 @@ const settleOnlinePayment = async (order) => {
   }
   // Real-time notification to the buyer
   notifyPaymentConfirmed(order.buyerId, order.id);
+  // And to every seller in the order, so their page updates too (E2E #420)
+  const items = await prisma.orderItem.findMany({
+    where: { orderId: order.id },
+    select: { product: { select: { sellerId: true } } },
+  });
+  const sellerIds = [...new Set(items.map((i) => i.product.sellerId))];
+  sellerIds.forEach((id) => notifySellerPaymentReceived(id, order.id, order.paymentMethod === "CASH"));
 };
 
 // True once the online part of this order is paid

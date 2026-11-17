@@ -13,6 +13,8 @@ import {
   markCashPaid,
 } from "../../api/order.api.js";
 import { cld } from "../../utils/photos.js";
+// Realtime tick — refetch when a socket event arrives
+import { useLiveTick } from "../../hooks/useSocket.js";
 
 // ── ACTION MAP ──
 // Frontend guides transitions — buttons only offer sensible next moves.
@@ -49,9 +51,13 @@ const OrderDetailSeller = () => {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmPaid, setConfirmPaid] = useState(false);
 
-  // Load order — reusable so actions refresh after success
-  const load = () => {
-    setLoading(true);
+  // Socket tick — a payment, cancel or status change refetches this page
+  const live = useLiveTick();
+
+  // Load order — reusable so actions refresh after success.
+  // quiet = live refresh, keeps the page on screen instead of a spinner
+  const load = (quiet = false) => {
+    if (!quiet) setLoading(true);
     fetchOrder(id)
       .then((res) => setOrder(res.data))
       .catch((err) => {
@@ -68,6 +74,12 @@ const OrderDetailSeller = () => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Live refresh — the buyer paid or cancelled while this page is open
+  useEffect(() => {
+    if (live > 0) load(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live]);
 
   // Run a status action — direct for safe moves, modal path for cancel
   const handleAction = async (status) => {
