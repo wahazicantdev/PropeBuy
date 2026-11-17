@@ -3,8 +3,11 @@ import api from "./axios.js";
 // Register — multipart, files included
 export const registerUser = async (formData) => {
   // FormData needs multipart, override default json header
+  // 2 minutes, not the usual 15 seconds: uploading and reading both
+  // documents can take a while on the free live server
   const res = await api.post("/auth/register", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
   });
   // Returns { success, message, ocrResult, ocrConfidence, token, data }
   return res.data;

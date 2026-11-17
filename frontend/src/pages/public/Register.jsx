@@ -165,7 +165,15 @@ const Register = () => {
         resetEmailStep();
         setStep(1);
       }
-      toast.error(readError(err, "Registration failed"));
+      // No answer in time — the server may still have saved the account
+      if (err.code === "ECONNABORTED" || !err.response) {
+        toast.error(
+          "This took too long. Your account may already be created, so try logging in before registering again.",
+          { duration: 8000 },
+        );
+      } else {
+        toast.error(readError(err, "Registration failed"));
+      }
     } finally {
       setLoading(false);
     }
@@ -441,7 +449,7 @@ const Register = () => {
               {backBtn(2)}
               <button disabled={loading} className={primaryBtn}>
                 {loading ? <span className="spinner" /> : <Icon name="how_to_reg" />}
-                {loading ? "Checking your documents..." : "Create account"}
+                {loading ? "Checking your documents (up to 1 minute)..." : "Create account"}
               </button>
             </div>
           </>
