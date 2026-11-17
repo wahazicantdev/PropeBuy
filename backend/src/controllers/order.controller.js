@@ -251,6 +251,14 @@ export const updatePaymentStatus = async (req, res) => {
     });
   }
 
+  // A cancelled order has no money to collect (E2E #417)
+  if (order.status === "CANCELLED") {
+    return res.status(400).json({
+      success: false,
+      message: "This order was cancelled, so there is no payment to collect",
+    });
+  }
+
   // Already confirmed — nothing to do
   if (order.paymentStatus === "PAID") {
     return res.status(400).json({

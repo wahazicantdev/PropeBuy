@@ -128,9 +128,12 @@ const OrderDetailSeller = () => {
   );
   // Multi-seller warning for the cancel modal
   const hasOtherSellers = otherItems.length > 0;
-  // Cash-paid button — ONLY for cash orders awaiting money
+  // Cash-paid button — ONLY for open cash orders awaiting money.
+  // A cancelled order has nothing to collect (E2E #417).
   const showCashPaid =
-    order.paymentMethod === "CASH" && order.paymentStatus === "PENDING";
+    order.paymentMethod === "CASH" &&
+    order.paymentStatus === "PENDING" &&
+    order.status !== "CANCELLED";
 
   return (
     <div className="page-enter">
@@ -325,8 +328,7 @@ const OrderDetailSeller = () => {
                 Buyer has not completed GCash payment yet
               </p>
             )}
-          {order.paymentMethod === "CASH" &&
-            order.paymentStatus === "PENDING" && (
+          {showCashPaid && (
               <p className="font-body text-xs text-passive mt-0.5">
                 Collect on{" "}
                 {order.deliveryType === "PICKUP" ? "pickup" : "delivery"}
