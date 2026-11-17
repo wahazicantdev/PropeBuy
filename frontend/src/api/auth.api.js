@@ -59,7 +59,10 @@ export const fetchMe = async () => {
 export const updateAvatar = async (file) => {
   const form = new FormData();
   form.append("avatar", file);
-  const res = await api.put("/auth/me/avatar", form);
+  // Multipart override — the shared client defaults to JSON
+  const res = await api.put("/auth/me/avatar", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return res.data;
 };
 
