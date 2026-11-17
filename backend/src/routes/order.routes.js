@@ -10,6 +10,7 @@ import {
   checkPaymentStatus,
   cancelMyOrder,
   payAgain,
+  saveRefundGcash,
 } from "../controllers/order.controller.js";
 import { validateCartItem } from "../controllers/cart.controller.js";
 import {
@@ -74,6 +75,9 @@ orderRoutes.post("/:id/pay", protect, authorize("BUYER"), validateIdParam, payAg
 
 // Buyer cancels their own order before the seller starts it
 orderRoutes.put("/:id/cancel", protect, authorize("BUYER"), validateIdParam, cancelMyOrder);
+
+// Buyer tells PropeBuy which GCash gets the refund of a cancelled paid order
+orderRoutes.put("/:id/refund-gcash", protect, authorize("BUYER"), validateIdParam, saveRefundGcash);
 
 // ── SELLER ORDER ROUTES ────────────────────────────────
 orderRoutes.get(

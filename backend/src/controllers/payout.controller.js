@@ -243,7 +243,14 @@ export const markRefunded = async (req, res) => {
   // Only a row still REFUND_DUE flips, so a refund is never recorded twice
   const result = await prisma.sellerEarning.updateMany({
     where: { id, status: "REFUND_DUE" },
-    data: { status: "REFUNDED", refundReference: referenceNo, refundedAt: new Date() },
+    // The buyer's GCash is no longer needed once the money is sent (RA 10173)
+    data: {
+      status: "REFUNDED",
+      refundReference: referenceNo,
+      refundedAt: new Date(),
+      refundGcashName: null,
+      refundGcashNumber: null,
+    },
   });
   if (!result.count) {
     return res.status(404).json({ success: false, message: "Refund not found or already done" });

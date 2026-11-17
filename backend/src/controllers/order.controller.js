@@ -13,6 +13,11 @@ import {
 } from "../services/order.service.js";
 // Webhook HMAC — proves a callback really came from PayMongo
 import { verifyWebhookSignature } from "../utils/paymongo.helper.js";
+import prisma from "../config/prismaClient.js";
+import { notifyRefundGcashAdded } from "../utils/notification.helper.js";
+
+// 09171234567 -> 09•••••4567, so the order page never shows the full number
+const maskGcash = (n) => (n ? `${n.slice(0, 2)}•••••${n.slice(-4)}` : null);
 
 // ── CHECKOUT ───────────────────────────────────────────
 // Validates request then delegates to service
@@ -162,7 +167,52 @@ export const getOrder = async (req, res) => {
     });
   }
 
+  // Refund GCash: sellers never see it, buyers and admins see it masked.
+  // The full number lives only in the admin's Refunds due list.
+  order.earnings = (order.earnings || []).map(({ refundGcashNumber, ...e }) => ({
+    ...e,
+    refundGcash: req.user.role === "SELLER" ? null : maskGcash(refundGcashNumber),
+  }));
+
   res.status(200).json({ success: true, data: order });
+};
+
+// ── BUYER: WHERE TO SEND MY REFUND ─────────────────────
+// PUT /api/orders/:id/refund-gcash { gcashName, gcashNumber }
+// Asked only after a paid order is cancelled, never stored on the
+// profile, so PropeBuy keeps it only while a refund is waiting.
+export const saveRefundGcash = async (req, res) => {
+  const gcashName = String(req.body?.gcashName || "").trim();
+  // Accept 09XXXXXXXXX or +639XXXXXXXXX, store as 09XXXXXXXXX
+  const digits = String(req.body?.gcashNumber || "").replace(/[\s-]/g, "").replace(/^\+63/, "0");
+  if (gcashName.length < 2 || gcashName.length > 100) {
+    return res.status(400).json({ success: false, message: "Enter the full name on the GCash account" });
+  }
+  if (!/^09\d{9}$/.test(digits)) {
+    return res.status(400).json({ success: false, message: "Enter an 11-digit GCash number starting with 09" });
+  }
+  const orderId = Number(req.params.id);
+  // Own order only: someone else's id answers the same as no refund
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, buyerId: req.user.id },
+    select: { id: true },
+  });
+  // Only refunds still waiting take the number; finished ones stay as they are
+  const result = order
+    ? await prisma.sellerEarning.updateMany({
+        where: { orderId, status: "REFUND_DUE" },
+        data: { refundGcashName: gcashName, refundGcashNumber: digits },
+      })
+    : { count: 0 };
+  if (!result.count) {
+    return res.status(404).json({ success: false, message: "This order has no refund waiting" });
+  }
+  notifyRefundGcashAdded(orderId);
+  res.status(200).json({
+    success: true,
+    message: "Saved. PropeBuy will send your refund to this GCash.",
+    data: { refundGcash: maskGcash(digits) },
+  });
 };
 
 // ── GET SELLER ORDERS ──────────────────────────────────
