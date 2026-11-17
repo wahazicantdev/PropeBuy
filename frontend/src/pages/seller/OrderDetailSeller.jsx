@@ -69,17 +69,12 @@ const OrderDetailSeller = () => {
       .finally(() => setLoading(false));
   };
 
-  // First load on mount + on id change
+  // First load on mount + on id change. A socket tick (the buyer paid or
+  // cancelled while this page is open) reloads quietly, no spinner.
   useEffect(() => {
-    load();
+    load(live > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  // Live refresh — the buyer paid or cancelled while this page is open
-  useEffect(() => {
-    if (live > 0) load(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live]);
+  }, [id, live]);
 
   // Run a status action — direct for safe moves, modal path for cancel
   const handleAction = async (status) => {
@@ -215,6 +210,8 @@ const OrderDetailSeller = () => {
               <div className="min-w-0 flex-1">
                 <p className="font-body font-bold text-sm text-black line-clamp-2">
                   {i.product.name}
+                  {/* Picked option, copied at checkout */}
+                  {i.variantName ? ` (${i.variantName})` : ""}
                 </p>
                 <p className="font-body text-xs text-passive mt-0.5">
                   {i.quantity} × ₱{parseFloat(i.price).toFixed(2)}
@@ -258,6 +255,7 @@ const OrderDetailSeller = () => {
                 <div className="min-w-0 flex-1">
                   <p className="font-body text-sm text-black/70 truncate">
                     {i.product.name}
+                    {i.variantName ? ` (${i.variantName})` : ""}
                   </p>
                   <p className="font-body text-xs text-passive mt-0.5">
                     {i.quantity} × ₱{parseFloat(i.price).toFixed(2)}
