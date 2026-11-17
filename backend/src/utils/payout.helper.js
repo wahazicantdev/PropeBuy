@@ -1,5 +1,7 @@
 import prisma from "../config/prismaClient.js";
 import { COMMISSION_RATE, WHT_THRESHOLD, WHT_RATE, round2 } from "../config/fees.js";
+// Refund notices for the buyer and the admins
+import { notifyRefundDue } from "./notification.helper.js";
 
 // ── SELLER EARNINGS ────────────────────────────────────
 // Money flow: the buyer pays PropeBuy online, PropeBuy holds it until the
@@ -8,6 +10,7 @@ import { COMMISSION_RATE, WHT_THRESHOLD, WHT_RATE, round2 } from "../config/fees
 //   AVAILABLE  order fulfilled, included in the next payout
 //   PAID_OUT   admin sent it and recorded the reference number
 //   REFUND_DUE order cancelled after payment, buyer gets the money back
+//   REFUNDED   admin sent the money back and recorded the reference
 
 // Splits an order's online payment per seller.
 // GCash orders: items + delivery fee are online. Cash orders: only the
@@ -91,9 +94,19 @@ export const releaseEarnings = async (orderId) => {
 
 // Called when an order is cancelled. Money not yet sent to the seller
 // becomes a refund the admin must return to the buyer.
+// The buyer and the admins are told how much goes back (E2E #441).
 export const cancelEarnings = async (orderId) => {
-  await prisma.sellerEarning.updateMany({
+  const due = await prisma.sellerEarning.findMany({
     where: { orderId, status: { in: ["ON_HOLD", "AVAILABLE"] } },
+    select: { id: true, itemsAmount: true, deliveryFee: true },
+  });
+  if (!due.length) return;
+  await prisma.sellerEarning.updateMany({
+    where: { id: { in: due.map((e) => e.id) } },
     data: { status: "REFUND_DUE" },
   });
+  // The buyer paid items plus fee, so that whole amount goes back
+  const amount = round2(due.reduce((s, e) => s + Number(e.itemsAmount) + Number(e.deliveryFee), 0));
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { buyerId: true } });
+  if (order) notifyRefundDue(order.buyerId, orderId, amount);
 };

@@ -21,6 +21,8 @@ const Payouts = () => {
   const [reference, setReference] = useState("");
   // Refund row being confirmed
   const [refund, setRefund] = useState(null);
+  // Reference number of the refund the admin already sent
+  const [refundRef, setRefundRef] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = () =>
@@ -51,9 +53,10 @@ const Payouts = () => {
   const confirmRefund = async () => {
     setBusy(true);
     try {
-      const res = await markRefundDone(refund.id);
+      const res = await markRefundDone(refund.id, refundRef);
       toast.success(res.message);
       setRefund(null);
+      setRefundRef("");
       load();
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not update the refund");
@@ -121,7 +124,7 @@ const Payouts = () => {
       {/* ── Refunds due ── */}
       <h2 className="heading-body text-lg font-bold mt-8 mb-1">Refunds due</h2>
       <p className="font-body text-xs text-passive mb-3">
-        Orders cancelled after the buyer paid online. Refund the payment in the PayMongo dashboard, then mark it done.
+        Orders cancelled after the buyer paid online. Send the amount back to the buyer's GCash, then record the reference number. The buyer gets a notice with it.
       </p>
       {refunds.length === 0 ? (
         <div className="rounded-xl bg-surface p-6 text-center font-body text-sm text-passive">No refunds due.</div>
@@ -135,7 +138,7 @@ const Payouts = () => {
               </div>
               <p className="font-bold tabular-nums">{formatPeso(Number(r.itemsAmount) + Number(r.deliveryFee))}</p>
               <button onClick={() => setRefund(r)} className="btn-outline btn-active px-5 py-2.5 font-body text-sm font-medium">
-                Mark refunded
+                Record refund
               </button>
             </li>
           ))}
@@ -193,17 +196,31 @@ const Payouts = () => {
         <input id="ref" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={50} placeholder="Example: 1009 234 567890" className="w-full px-5 py-3 font-body text-sm" />
       </ConfirmModal>
 
-      {/* Refund done confirmation */}
+      {/* Record refund — the admin sends the money first, then saves the reference.
+          PayMongo only refunds live payments, and not every QR Ph payment,
+          so a GCash transfer to the buyer is the method that always works. */}
       <ConfirmModal
         open={!!refund}
         tone="primary"
-        title="Mark refund as done?"
-        message={refund ? `Only do this after refunding Order #${refund.orderId} in the PayMongo dashboard.` : ""}
-        confirmLabel="Yes, refunded"
+        size="md"
+        title="Record refund"
+        message={
+          refund
+            ? `Send ${formatPeso(Number(refund.itemsAmount) + Number(refund.deliveryFee))} back to ${refund.order.buyer.name} (${refund.order.buyer.email}) through GCash first. Ask the buyer for their GCash number by email if needed. Then type the reference number.`
+            : ""
+        }
+        confirmLabel="Save refund"
         busy={busy}
+        confirmDisabled={refundRef.trim().length < 4}
         onConfirm={confirmRefund}
-        onCancel={() => setRefund(null)}
-      />
+        onCancel={() => {
+          setRefund(null);
+          setRefundRef("");
+        }}
+      >
+        <FieldLabel htmlFor="refund-ref">Refund reference number</FieldLabel>
+        <input id="refund-ref" value={refundRef} onChange={(e) => setRefundRef(e.target.value)} maxLength={50} placeholder="Example: 1009 234 567890" className="w-full px-5 py-3 font-body text-sm" />
+      </ConfirmModal>
     </div>
   );
 };

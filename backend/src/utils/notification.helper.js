@@ -199,3 +199,44 @@ export const notifySellerPaymentReceived = (sellerId, orderId, feeOnly = false) 
     link: `/seller/orders/${orderId}`,
   });
 };
+
+// ── REFUND DUE ─────────────────────────────────────────
+// An order was cancelled after the buyer paid online (E2E #441).
+// The buyer learns the money is coming back, and every admin gets a
+// bell item that opens the Refunds due list.
+// buyerId — who paid
+// orderId — the cancelled order
+// amount  — total to return, in pesos
+export const notifyRefundDue = (buyerId, orderId, amount) => {
+  const peso = `₱${Number(amount).toFixed(2)}`;
+  saveNotification(buyerId, {
+    type: "REFUND",
+    title: `Refund coming for Order #${orderId}`,
+    message: `Order #${orderId} was cancelled. PropeBuy will send your ${peso} back to your GCash. You get a notice with the reference number once it is sent.`,
+    link: `/orders/${orderId}`,
+  });
+  prisma.user
+    .findMany({ where: { role: "ADMIN" }, select: { id: true } })
+    .then((admins) =>
+      admins.forEach((admin) =>
+        saveNotification(admin.id, {
+          type: "REFUND",
+          title: "Refund to send",
+          message: `Order #${orderId} was cancelled after payment. Send ${peso} back to the buyer.`,
+          link: "/admin/payouts",
+        }),
+      ),
+    )
+    .catch((err) => console.error("Refund alert failed:", err.message));
+};
+
+// ── REFUND SENT ────────────────────────────────────────
+// The admin returned the money and saved the reference number
+export const notifyRefundSent = (buyerId, orderId, amount, referenceNo) => {
+  saveNotification(buyerId, {
+    type: "REFUND",
+    title: `Refund sent for Order #${orderId}`,
+    message: `₱${Number(amount).toFixed(2)} was sent back to you. Reference ${referenceNo}.`,
+    link: `/orders/${orderId}`,
+  });
+};

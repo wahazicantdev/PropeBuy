@@ -155,9 +155,20 @@ const OrderDetail = () => {
         <p className="mt-6 font-body text-sm text-danger bg-danger/10 rounded-xl p-4 flex items-center gap-2">
           <Icon name="cancel" />
           This order was cancelled. Reserved stock went back to the sellers.
-          {(order.paymentStatus === "PAID" && order.paymentMethod === "GCASH") || order.deliveryFeeStatus === "PAID"
-            ? " Your online payment will be refunded by PropeBuy."
-            : ""}
+          {/* Refund state — sent with its reference, or still on its way (E2E #441) */}
+          {(() => {
+            const refunds = order.earnings || [];
+            const total = refunds.reduce((s, e) => s + Number(e.itemsAmount) + Number(e.deliveryFee), 0);
+            const sent = refunds.length > 0 && refunds.every((e) => e.status === "REFUNDED");
+            if (sent) {
+              const refs = refunds.map((e) => e.refundReference).filter(Boolean).join(", ");
+              return ` Your refund of ₱${total.toFixed(2)} was sent. Reference ${refs}.`;
+            }
+            if (refunds.length > 0) return ` PropeBuy will send your ₱${total.toFixed(2)} back to your GCash. You get a notice with the reference number.`;
+            return (order.paymentStatus === "PAID" && order.paymentMethod === "GCASH") || order.deliveryFeeStatus === "PAID"
+              ? " Your online payment will be refunded by PropeBuy."
+              : "";
+          })()}
         </p>
       )}
 

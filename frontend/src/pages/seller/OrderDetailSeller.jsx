@@ -402,7 +402,7 @@ const OrderDetailSeller = () => {
         message={
           hasOtherSellers
             ? `This cancels the WHOLE order #${order.id} — including other sellers' items — and restores all reserved stock. This cannot be undone.`
-            : `Reserved stock for order #${order.id} goes back automatically. This cannot be undone.`
+            : `Reserved stock for order #${order.id} goes back automatically.${order.paymentStatus === "PAID" && order.paymentMethod === "GCASH" ? " The buyer already paid online, so PropeBuy refunds them and this sale leaves your earnings." : ""} This cannot be undone.`
         }
         confirmLabel="Cancel order"
         cancelLabel="Keep order"

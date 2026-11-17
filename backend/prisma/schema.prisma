@@ -197,6 +197,8 @@ model SellerEarning {
   status         EarningStatus @default(ON_HOLD)
   payoutId       Int?
   releasedAt     DateTime?     // order fulfilled, money can be paid out
+  refundReference String?      // GCash or PayMongo reference of the refund to the buyer
+  refundedAt     DateTime?     // when the admin recorded the refund
   createdAt      DateTime      @default(now())
   order          Order         @relation(fields: [orderId], references: [id])
   seller         User          @relation(fields: [sellerId], references: [id])

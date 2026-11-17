@@ -283,6 +283,11 @@ export const getOrderById = async (orderId) => {
           },
         },
       },
+      // Refund state of a cancelled paid order — no seller money details
+      earnings: {
+        where: { status: { in: ["REFUND_DUE", "REFUNDED"] } },
+        select: { status: true, itemsAmount: true, deliveryFee: true, refundReference: true, refundedAt: true },
+      },
       // Buyer's barangay, shown on the seller's order page
       buyer: {
         select: {
