@@ -75,7 +75,7 @@ const SellerProfile = () => {
         onLogout={handleLogout}
       >
         {/* Store address, pin and delivery — key remounts it with fresh values */}
-        {loaded && <AccountSettings key={`${user?.name}-${user?.email}`} />}
+        {loaded && <AccountSettings key={`${user?.email}-${user?.storeName ?? ""}`} />}
         {loaded ? (
           <ProfileAddress
             isSeller

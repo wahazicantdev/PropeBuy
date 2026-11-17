@@ -26,8 +26,10 @@ model User {
   // Account settings — each can change once every 7 days
   avatarUrl       String?       // profile photo on Cloudinary
   avatarChangedAt DateTime?
-  nameChangedAt   DateTime?
   emailChangedAt  DateTime?
+  // Seller's public name. Buyers never see the real name (Yoy, 11-17)
+  storeName          String?   @unique
+  storeNameChangedAt DateTime?
   // Seller payout account — where PropeBuy sends online sales
   payoutGcashName   String?
   payoutGcashNumber String?

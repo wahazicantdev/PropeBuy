@@ -233,6 +233,9 @@ export const login = async (req, res) => {
       email: user.email,
       role: user.role,
       accountStatus: user.accountStatus,
+      // Sellers: public store name, so the store-name prompt knows
+      storeName: user.storeName,
+      avatarUrl: user.avatarUrl,
     },
   });
 };
@@ -251,7 +254,8 @@ export const getMe = async (req, res) => {
       address: true,
       avatarUrl: true,
       avatarChangedAt: true,
-      nameChangedAt: true,
+      storeName: true,
+      storeNameChangedAt: true,
       emailChangedAt: true,
       offersDelivery: true,
       deliveryFee: true,
@@ -270,9 +274,9 @@ export const getMe = async (req, res) => {
 };
 
 // ── UPDATE MY PROFILE ──────────────────────────────────
-// Fields a user may change here. Name, email and photo have their own
-// endpoints with a 7-day wait (account.controller.js). Barangay stays
-// admin-only because it comes from the verified documents.
+// Fields a user may change here. Photo, email and store name have their
+// own endpoints with a 7-day wait (account.controller.js). The real name
+// and barangay come from the verified documents and never change here.
 const profileSelect = {
   id: true,
   name: true,
@@ -283,7 +287,8 @@ const profileSelect = {
   address: true,
   avatarUrl: true,
   avatarChangedAt: true,
-  nameChangedAt: true,
+  storeName: true,
+  storeNameChangedAt: true,
   emailChangedAt: true,
   offersDelivery: true,
   deliveryFee: true,

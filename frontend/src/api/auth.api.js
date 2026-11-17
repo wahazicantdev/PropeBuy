@@ -66,9 +66,9 @@ export const updateAvatar = async (file) => {
   return res.data;
 };
 
-// Name — once every 7 days
-export const updateName = async (name) => {
-  const res = await api.put("/auth/me/name", { name });
+// Store name (sellers) — first one any time, then once every 7 days
+export const updateStoreName = async (storeName) => {
+  const res = await api.put("/auth/me/store-name", { storeName });
   return res.data;
 };
 

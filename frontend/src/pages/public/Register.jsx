@@ -365,6 +365,10 @@ const Register = () => {
                 />
               </div>
               {errors.name && <p className="text-danger text-xs mt-1 pl-5">{errors.name.message}</p>}
+              {/* The ID and certificate check compares this exact name */}
+              <p className="font-body text-xs text-black/60 mt-1 pl-5">
+                Must match the name on your ID and certificate. Sellers pick a public store name after verification.
+              </p>
             </div>
             <div>
               <FieldLabel htmlFor="password">Password</FieldLabel>

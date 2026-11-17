@@ -5,6 +5,8 @@ import { cleanInt, cleanPrice } from "../utils/format.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 // Sizes, colors and pack sizes with their own price and stock
 import { parseVariants, saveVariants, activeVariants } from "../utils/variant.helper.js";
+// Buyers see the store name, never the real name
+import { toPublicSeller, withPublicSellers } from "../utils/seller.helper.js";
 
 // ── PRODUCT PHOTOS ─────────────────────────────────────
 // Max photos per product, matching the 4 gallery slots on the product page
@@ -42,6 +44,16 @@ export const createProduct = async (req, res) => {
     return res.status(403).json({
       success: false,
       message: "Your account must be verified before listing products",
+    });
+  }
+
+  // Buyers see the store name, so it must exist before the first listing
+  const owner = await prisma.user.findUnique({ where: { id: req.user.id }, select: { storeName: true } });
+  if (!owner?.storeName) {
+    return res.status(400).json({
+      success: false,
+      message: "Set your store name first. Buyers see it instead of your real name.",
+      needsStoreName: true,
     });
   }
 
@@ -103,7 +115,7 @@ export const createProduct = async (req, res) => {
       seller: {
         select: {
           id: true,
-          name: true,
+          storeName: true,
           accountStatus: true,
         },
       },
@@ -128,7 +140,7 @@ export const createProduct = async (req, res) => {
   res.status(201).json({
     success: true,
     message: "Product created successfully",
-    data: product,
+    data: { ...product, seller: toPublicSeller(product.seller) },
   });
 };
 
@@ -174,7 +186,7 @@ export const getProducts = async (req, res) => {
       seller: {
         select: {
           id: true,
-          name: true,
+          storeName: true,
           accountStatus: true,
           address: true,
           storeLat: true,
@@ -203,7 +215,7 @@ export const getProducts = async (req, res) => {
     success: true,
     count: products.length,
     // Product and seller ratings for the cards and store page
-    data: await attachRatings(products),
+    data: withPublicSellers(await attachRatings(products)),
   });
 };
 
@@ -233,7 +245,7 @@ export const getProduct = async (req, res) => {
       seller: {
         select: {
           id: true,
-          name: true,
+          storeName: true,
           accountStatus: true,
           offersDelivery: true,
           deliveryFee: true,
@@ -271,7 +283,7 @@ export const getProduct = async (req, res) => {
   }
 
   // Product and seller rating for the detail page
-  const [rated] = await attachRatings([product]);
+  const [rated] = withPublicSellers(await attachRatings([product]));
 
   res.status(200).json({
     success: true,

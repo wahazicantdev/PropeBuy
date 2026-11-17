@@ -134,7 +134,7 @@ const Payouts = () => {
             <li key={r.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 font-body text-sm">
               <div className="min-w-0 flex-1">
                 <p className="font-bold">Order #{r.orderId} · {r.order.buyer.name}</p>
-                <p className="text-xs text-passive truncate">{r.order.buyer.email} · seller {r.seller.name}</p>
+                <p className="text-xs text-passive truncate">{r.order.buyer.email} · seller {r.seller.storeName || r.seller.name}{r.seller.storeName ? ` (${r.seller.name})` : ""}</p>
               </div>
               <p className="font-bold tabular-nums">{formatPeso(Number(r.itemsAmount) + Number(r.deliveryFee))}</p>
               <button onClick={() => setRefund(r)} className="btn-outline btn-active px-5 py-2.5 font-body text-sm font-medium">
@@ -165,7 +165,7 @@ const Payouts = () => {
               {recent.map((p) => (
                 <tr key={p.id} className="border-t border-black/5">
                   <td className="px-4 py-3 whitespace-nowrap">{new Date(p.createdAt).toLocaleDateString("en-PH", { dateStyle: "medium" })}</td>
-                  <td className="px-4 py-3">{p.seller.name}</td>
+                  <td className="px-4 py-3">{p.seller.storeName || p.seller.name}{p.seller.storeName && <span className="block text-xs text-passive">{p.seller.name}</span>}</td>
                   <td className="px-4 py-3">{p.gcashNumber}</td>
                   <td className="px-4 py-3">{p.referenceNo} <span className="text-xs text-passive">by {p.admin.name}</span></td>
                   <td className="px-4 py-3 text-right font-bold tabular-nums">{formatPeso(p.amount)}</td>

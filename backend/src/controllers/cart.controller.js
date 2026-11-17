@@ -1,5 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import { cleanInt } from "../utils/format.helper.js";
+import { toPublicSeller } from "../utils/seller.helper.js";
 
 // In-memory cart is handled on the frontend
 // Backend cart validation happens at checkout
@@ -28,7 +29,7 @@ export const validateCartItem = async (req, res) => {
       seller: {
         select: {
           id: true,
-          name: true,
+          storeName: true,
           accountStatus: true,
         },
       },
@@ -63,7 +64,7 @@ export const validateCartItem = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Product is available",
-      data: { ...product, price: variant.price, stock: variant.stock, variant },
+      data: { ...product, seller: toPublicSeller(product.seller), price: variant.price, stock: variant.stock, variant },
     });
   }
 
@@ -77,6 +78,6 @@ export const validateCartItem = async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Product is available",
-    data: product,
+    data: { ...product, seller: toPublicSeller(product.seller) },
   });
 };

@@ -13,6 +13,7 @@ import {
   notifySellerPaymentReceived,
 } from "../utils/notification.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
+import { toPublicSeller } from "../utils/seller.helper.js";
 import { createEarnings, releaseEarnings, cancelEarnings } from "../utils/payout.helper.js";
 
 // Error the buyer or seller should read — 400 keeps the message visible
@@ -289,7 +290,7 @@ export const processCheckout = async (
 // ── GET BUYER ORDERS SERVICE ───────────────────────────
 // Fetches all orders for a specific buyer
 export const getBuyerOrders = async (buyerId) => {
-  return await prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: { buyerId },
     include: {
       orderItems: {
@@ -300,7 +301,7 @@ export const getBuyerOrders = async (buyerId) => {
               name: true,
               imageUrl: true,
               seller: {
-                select: { id: true, name: true },
+                select: { id: true, storeName: true },
               },
             },
           },
@@ -309,12 +310,23 @@ export const getBuyerOrders = async (buyerId) => {
     },
     orderBy: { createdAt: "desc" },
   });
+  // Store names only — the real seller name stays hidden from buyers
+  return orders.map(publicOrderSellers);
 };
+
+// Swaps each item's seller for the public store name
+const publicOrderSellers = (order) =>
+  order && {
+    ...order,
+    orderItems: order.orderItems.map((i) =>
+      i.product?.seller ? { ...i, product: { ...i.product, seller: toPublicSeller(i.product.seller) } } : i,
+    ),
+  };
 
 // ── GET SINGLE ORDER SERVICE ───────────────────────────
 // Fetches one order by ID with full relations
 export const getOrderById = async (orderId) => {
-  return await prisma.order.findUnique({
+  const order = await prisma.order.findUnique({
     where: { id: cleanInt(orderId) },
     include: {
       orderItems: {
@@ -329,7 +341,7 @@ export const getOrderById = async (orderId) => {
               imageUrl: true,
               sellerId: true,
               // Vendor plus barangay, per item
-              seller: { select: { id: true, name: true } },
+              seller: { select: { id: true, storeName: true } },
               barangay: { select: { name: true } },
             },
           },
@@ -351,6 +363,8 @@ export const getOrderById = async (orderId) => {
       },
     },
   });
+  // Buyers, sellers and admins all get the store name here
+  return publicOrderSellers(order);
 };
 
 // ── GET SELLER ORDERS SERVICE ──────────────────────────

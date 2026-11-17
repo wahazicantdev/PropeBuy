@@ -37,7 +37,13 @@ const ProfileView = ({ user, barangayName, verifiedLabel, links = [], onLogout, 
             )}
           </span>
           <div className="min-w-0">
-            <p className="heading-body text-xl break-words">{user?.name || "-"}</p>
+            {/* Sellers: store name first, real name under it (private) */}
+            <p className="heading-body text-xl break-words">
+              {user?.role === "SELLER" && user?.storeName ? user.storeName : user?.name || "-"}
+            </p>
+            {user?.role === "SELLER" && user?.storeName && (
+              <p className="font-body text-xs text-black/60 break-words">{user.name} (only you and the admin see this)</p>
+            )}
             {/* Status in plain words; green mark only when verified */}
             <p
               className={`mt-1 font-body text-sm font-medium flex items-center gap-1.5 ${
@@ -81,8 +87,8 @@ const ProfileView = ({ user, barangayName, verifiedLabel, links = [], onLogout, 
           </button>
         </div>
         <p className="px-5 pb-5 font-body text-xs text-black/45">
-          Photo, name and email can change once every 7 days in Account settings. Your
-          barangay comes from your verified documents, so ask your barangay administrator to change it.
+          Photo, email and store name can change once every 7 days in Account settings. Your
+          name and barangay come from your verified documents, so ask your barangay administrator to change them.
         </p>
       </aside>
 

@@ -363,6 +363,7 @@ export const getAllUsers = async (req, res) => {
       id: true,
       name: true,
       email: true,
+      storeName: true,
       role: true,
       accountStatus: true,
       createdAt: true,
@@ -392,6 +393,7 @@ export const getUser = async (req, res) => {
       id: true,
       name: true,
       email: true,
+      storeName: true,
       role: true,
       accountStatus: true,
       idDocumentUrl: true,
@@ -523,6 +525,7 @@ export const getAllProducts = async (req, res) => {
         select: {
           id: true,
           name: true,
+          storeName: true,
           email: true,
           accountStatus: true,
         },
@@ -637,7 +640,7 @@ export const getAllOrders = async (req, res) => {
               // Barangay the goods are listed under
               barangay: { select: { name: true } },
               seller: {
-                select: { id: true, name: true },
+                select: { id: true, name: true, storeName: true },
               },
             },
           },

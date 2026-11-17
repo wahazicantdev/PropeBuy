@@ -96,7 +96,8 @@ const ProductModeration = () => {
     const q = search.trim().toLowerCase();
     return (
       p.name.toLowerCase().includes(q) ||
-      (p.seller?.name || "").toLowerCase().includes(q)
+      (p.seller?.name || "").toLowerCase().includes(q) ||
+      (p.seller?.storeName || "").toLowerCase().includes(q)
     );
   });
 
@@ -238,7 +239,8 @@ const ProductModeration = () => {
                 {/* Vendor line — status pill flags unverified sellers */}
                 <div className="flex items-center gap-2 flex-wrap mt-1">
                   <span className="font-body text-xs text-black/70 truncate">
-                    by {p.seller?.name || "Unknown vendor"}
+                    by {p.seller?.storeName || p.seller?.name || "Unknown vendor"}
+                    {p.seller?.storeName && ` (${p.seller.name})`}
                   </span>
                   <AccountPill status={p.seller?.accountStatus} />
                 </div>

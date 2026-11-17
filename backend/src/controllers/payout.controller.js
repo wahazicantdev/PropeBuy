@@ -113,7 +113,7 @@ export const getPayoutOverview = async (req, res) => {
       orderBy: { createdAt: "asc" },
       include: {
         order: { select: { id: true, paymentMethod: true, buyer: { select: { name: true, email: true } } } },
-        seller: { select: { name: true } },
+        seller: { select: { name: true, storeName: true } },
       },
     }),
     prisma.payout.findMany({

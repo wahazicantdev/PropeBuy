@@ -6,7 +6,7 @@ import Spinner from "./Spinner.jsx";
 import { useAuthStore } from "../stores/auth.store.js";
 import {
   updateAvatar,
-  updateName,
+  updateStoreName,
   updateEmail,
   requestEmailOtp,
   verifyEmailOtp,
@@ -25,26 +25,28 @@ const nextAllowed = (changedAt) => {
 // "Nov 24, 2026"
 const shortDate = (d) => d.toLocaleDateString("en-PH", { dateStyle: "medium" });
 
-// Account settings — profile photo, name and email for buyers and sellers.
-// Each can change once every 7 days (Yoy, 11-17). A new email must pass
+// Account settings — profile photo, email and (sellers) store name.
+// Each can change once every 7 days (Yoy, 11-17). The real name is fixed. A new email must pass
 // the 6-digit code first, so a typo never locks anyone out.
 const AccountSettings = () => {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   // Hidden file input behind the photo button
   const fileRef = useRef(null);
-  // Name form
-  const [name, setName] = useState(user?.name || "");
+  // Store name form (sellers only)
+  const [storeName, setStoreName] = useState(user?.storeName || "");
+  const isSeller = user?.role === "SELLER";
   // Email form: step "edit" -> "code"
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState("edit");
-  // Which action is running: avatar | name | send | email
+  // Which action is running: avatar | store | send | email
   const [busy, setBusy] = useState(null);
 
   // Wait dates per field
   const avatarNext = nextAllowed(user?.avatarChangedAt);
-  const nameNext = nextAllowed(user?.nameChangedAt);
+  // The first store name is free, a rename waits 7 days
+  const storeNext = user?.storeName ? nextAllowed(user?.storeNameChangedAt) : null;
   const emailNext = nextAllowed(user?.emailChangedAt);
 
   // Run one call, save the returned user, show the message
@@ -73,10 +75,10 @@ const AccountSettings = () => {
     await run("avatar", () => updateAvatar(file));
   };
 
-  // Save the new name
-  const saveName = async (e) => {
+  // Save the store name
+  const saveStoreName = async (e) => {
     e.preventDefault();
-    await run("name", () => updateName(name));
+    await run("store", () => updateStoreName(storeName));
   };
 
   // Step 1: email the code to the new address
@@ -138,29 +140,43 @@ const AccountSettings = () => {
         </div>
       </div>
 
-      {/* ── Name ── */}
-      <form onSubmit={saveName}>
-        <FieldLabel htmlFor="acc-name">Name</FieldLabel>
-        <div className="flex gap-2">
-          <input
-            id="acc-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={100}
-            disabled={!!nameNext}
-            className="min-w-0 flex-1 px-5 py-3 font-body text-sm disabled:opacity-60"
-          />
-          <button
-            disabled={!!nameNext || busy !== null || name.trim().length < 2 || name.trim() === user?.name}
-            className="btn-primary btn-active px-5 py-3 font-body text-sm font-medium flex items-center gap-2 disabled:opacity-50 shrink-0"
-          >
-            {busy === "name" && <Spinner />} Save
-          </button>
-        </div>
-        <p className="mt-1 pl-1 font-body text-xs text-black/60">
-          {nameNext ? `You can change it again on ${shortDate(nameNext)}.` : "Use the name on your ID. Once every 7 days."}
+      {/* ── Real name — fixed, it must match the verified ID ── */}
+      <div>
+        <FieldLabel>Name</FieldLabel>
+        <p className="font-body text-sm text-black">{user?.name}</p>
+        <p className="mt-1 font-body text-xs text-black/60">
+          {isSeller
+            ? "Your real name matches your ID. Buyers never see it, they see your store name."
+            : "Your name matches your ID, so it cannot be changed here."}
         </p>
-      </form>
+      </div>
+
+      {/* ── Store name — sellers only, the public name ── */}
+      {isSeller && (
+        <form onSubmit={saveStoreName}>
+          <FieldLabel htmlFor="acc-store">Store name</FieldLabel>
+          <div className="flex gap-2">
+            <input
+              id="acc-store"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              maxLength={60}
+              disabled={!!storeNext}
+              placeholder="Example: Aling Nena's Kakanin"
+              className="min-w-0 flex-1 px-5 py-3 font-body text-sm disabled:opacity-60"
+            />
+            <button
+              disabled={!!storeNext || busy !== null || storeName.trim().length < 3 || storeName.trim() === user?.storeName}
+              className="btn-primary btn-active px-5 py-3 font-body text-sm font-medium flex items-center gap-2 disabled:opacity-50 shrink-0"
+            >
+              {busy === "store" && <Spinner />} Save
+            </button>
+          </div>
+          <p className="mt-1 pl-1 font-body text-xs text-black/60">
+            {storeNext ? `You can change it again on ${shortDate(storeNext)}.` : "Shown to buyers on every product. Once every 7 days."}
+          </p>
+        </form>
+      )}
 
       {/* ── Email ── */}
       <form onSubmit={step === "edit" ? sendCode : saveEmail}>

@@ -239,7 +239,7 @@ const OrdersOverview = () => {
                           {i.variantName ? ` (${i.variantName})` : ""}
                         </p>
                         <p className="font-body text-xs text-passive truncate mt-0.5">
-                          vendor: {i.product?.seller?.name || "unknown"} · {i.product?.barangay?.name || "no barangay"}
+                          vendor: {i.product?.seller?.name || "unknown"}{i.product?.seller?.storeName ? ` (${i.product.seller.storeName})` : ""} · {i.product?.barangay?.name || "no barangay"}
                         </p>
                       </div>
                       {/* Price captured AT CHECKOUT, not current price —

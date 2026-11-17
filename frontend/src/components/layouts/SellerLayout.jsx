@@ -4,6 +4,8 @@ import { useAuthStore } from "../../stores/auth.store.js";
 // Verified badge — UI rule: show on seller surfaces
 import VerifiedBadge from "../VerifiedBadge.jsx";
 import Icon from "../Icon.jsx";
+// Newly verified sellers name their store before listing
+import StoreNamePrompt from "../StoreNamePrompt.jsx";
 
 // Seller links, grouped like a seller center: overview, catalog, sales, account
 const GROUPS = [
@@ -39,6 +41,8 @@ const SellerLayout = () => {
   };
 
   return (
+    <>
+    <StoreNamePrompt />
     <BackofficeLayout
       groups={GROUPS}
       homePath="/seller/dashboard"
@@ -46,7 +50,9 @@ const SellerLayout = () => {
       onLogout={handleLogout}
       account={
         <>
-          <p className="font-body text-sm font-bold text-black truncate">{user?.name}</p>
+          {/* Store name is the public one, the real name stays private */}
+          <p className="font-body text-sm font-bold text-black truncate">{user?.storeName || user?.name}</p>
+          {user?.storeName && <p className="font-body text-xs text-black/60 truncate">{user?.name}</p>}
           <p className="font-body text-xs text-black/60 truncate">{user?.email}</p>
           <div className="mt-2">
             {user?.accountStatus === "VERIFIED" ? (
@@ -61,6 +67,7 @@ const SellerLayout = () => {
         </>
       }
     />
+    </>
   );
 };
 

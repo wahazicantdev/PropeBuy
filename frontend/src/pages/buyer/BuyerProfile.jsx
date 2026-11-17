@@ -64,7 +64,7 @@ const BuyerProfile = () => {
         {loaded ? (
           <>
             {/* key remounts the forms with fresh values after a change */}
-            <AccountSettings key={`${user?.name}-${user?.email}`} />
+            <AccountSettings key={`${user?.email}-${user?.storeName ?? ""}`} />
             <AddressBook />
           </>
         ) : (

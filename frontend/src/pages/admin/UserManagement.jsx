@@ -106,7 +106,9 @@ const UserManagement = () => {
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
     return (
-      u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      (u.storeName || "").toLowerCase().includes(q)
     );
   });
 
@@ -197,6 +199,8 @@ const UserManagement = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-body font-bold text-sm md:text-base text-gray-900 line-clamp-2">
                         {u.name}
+                        {/* Seller's public store name */}
+                        {u.storeName && <span className="block font-normal text-xs text-passive">Store: {u.storeName}</span>}
                       </p>
                       {isMe && (
                         <span className="bg-primary/10 text-primary font-body text-xs font-bold rounded-full px-2 py-0.5">
