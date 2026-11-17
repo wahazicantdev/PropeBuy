@@ -54,3 +54,23 @@ export const fetchMe = async () => {
   const res = await api.get("/auth/me");
   return res.data;
 };
+
+// Profile photo — multipart "avatar", once every 7 days
+export const updateAvatar = async (file) => {
+  const form = new FormData();
+  form.append("avatar", file);
+  const res = await api.put("/auth/me/avatar", form);
+  return res.data;
+};
+
+// Name — once every 7 days
+export const updateName = async (name) => {
+  const res = await api.put("/auth/me/name", { name });
+  return res.data;
+};
+
+// Email — needs the otpToken from verifyEmailOtp for the NEW address
+export const updateEmail = async (email, otpToken) => {
+  const res = await api.put("/auth/me/email", { email, otpToken });
+  return res.data;
+};

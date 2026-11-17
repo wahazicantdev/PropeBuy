@@ -1,4 +1,5 @@
 import Icon from "./Icon.jsx";
+import { cld } from "../utils/photos.js";
 
 // Shared profile layout for buyers and sellers, so both look the same.
 // Desktop: identity card on the left, editable settings on the right.
@@ -27,8 +28,13 @@ const ProfileView = ({ user, barangayName, verifiedLabel, links = [], onLogout, 
       {/* ── Identity card ── */}
       <aside className="rounded-xl border border-black/10 overflow-hidden lg:sticky lg:top-6">
         <div className="bg-card p-6 flex items-center gap-4">
-          <span className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center font-header text-2xl shrink-0">
-            {(user?.name || "?").charAt(0).toUpperCase()}
+          <span className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center font-header text-2xl shrink-0 overflow-hidden">
+            {/* Profile photo when set, else the first letter */}
+            {user?.avatarUrl ? (
+              <img src={cld(user.avatarUrl, 160)} alt="" className="w-full h-full object-cover" />
+            ) : (
+              (user?.name || "?").charAt(0).toUpperCase()
+            )}
           </span>
           <div className="min-w-0">
             <p className="heading-body text-xl break-words">{user?.name || "-"}</p>
@@ -75,8 +81,8 @@ const ProfileView = ({ user, barangayName, verifiedLabel, links = [], onLogout, 
           </button>
         </div>
         <p className="px-5 pb-5 font-body text-xs text-black/45">
-          Your name, email and barangay come from your verified documents. Ask your barangay
-          administrator to change them.
+          Photo, name and email can change once every 7 days in Account settings. Your
+          barangay comes from your verified documents, so ask your barangay administrator to change it.
         </p>
       </aside>
 

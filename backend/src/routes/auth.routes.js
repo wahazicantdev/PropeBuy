@@ -8,6 +8,7 @@ import {
 } from "../controllers/auth.controller.js";
 import { sendOtp, verifyOtp } from "../controllers/otp.controller.js";
 import { forgotPassword, resetPassword } from "../controllers/password.controller.js";
+import { updateAvatar, updateName, updateEmail } from "../controllers/account.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import { upload } from "../config/cloudinary.js";
 import {
@@ -60,5 +61,9 @@ authRoutes.post("/password/reset", otpVerifyLimiter, validatePasswordReset, rese
 authRoutes.get("/me", protect, getMe);
 // Saved address, plus delivery settings for sellers
 authRoutes.put("/me", protect, updateMe);
+// Photo, name and email — once every 7 days each
+authRoutes.put("/me/avatar", protect, upload.single("avatar"), updateAvatar);
+authRoutes.put("/me/name", protect, updateName);
+authRoutes.put("/me/email", protect, validateOtpSend, updateEmail);
 
 export default authRoutes;

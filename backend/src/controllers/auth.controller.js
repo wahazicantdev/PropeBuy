@@ -249,6 +249,10 @@ export const getMe = async (req, res) => {
       accountStatus: true,
       barangayId: true,
       address: true,
+      avatarUrl: true,
+      avatarChangedAt: true,
+      nameChangedAt: true,
+      emailChangedAt: true,
       offersDelivery: true,
       deliveryFee: true,
       storeLat: true,
@@ -266,8 +270,9 @@ export const getMe = async (req, res) => {
 };
 
 // ── UPDATE MY PROFILE ──────────────────────────────────
-// Fields a user may change themselves. Name, email and barangay come
-// from the verified documents, so only an admin can change those.
+// Fields a user may change here. Name, email and photo have their own
+// endpoints with a 7-day wait (account.controller.js). Barangay stays
+// admin-only because it comes from the verified documents.
 const profileSelect = {
   id: true,
   name: true,
@@ -276,6 +281,10 @@ const profileSelect = {
   accountStatus: true,
   barangayId: true,
   address: true,
+  avatarUrl: true,
+  avatarChangedAt: true,
+  nameChangedAt: true,
+  emailChangedAt: true,
   offersDelivery: true,
   deliveryFee: true,
   storeLat: true,

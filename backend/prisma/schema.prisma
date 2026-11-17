@@ -23,6 +23,11 @@ model User {
   storeLat        Float?        // store pin, set by hand on the map
   storeLng        Float?
   termsAcceptedAt DateTime?     // when the user agreed to the Terms and Privacy Policy
+  // Account settings — each can change once every 7 days
+  avatarUrl       String?       // profile photo on Cloudinary
+  avatarChangedAt DateTime?
+  nameChangedAt   DateTime?
+  emailChangedAt  DateTime?
   // Seller payout account — where PropeBuy sends online sales
   payoutGcashName   String?
   payoutGcashNumber String?

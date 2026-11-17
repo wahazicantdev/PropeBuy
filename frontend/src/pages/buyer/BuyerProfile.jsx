@@ -7,6 +7,7 @@ import { fetchBarangays } from "../../api/product.api.js";
 import Icon from "../../components/Icon.jsx";
 import ProfileView from "../../components/ProfileView.jsx";
 import AddressBook from "../../components/AddressBook.jsx";
+import AccountSettings from "../../components/AccountSettings.jsx";
 
 // Buyer profile — identity card plus the saved delivery address
 const BuyerProfile = () => {
@@ -61,7 +62,11 @@ const BuyerProfile = () => {
       >
         {/* Saved delivery addresses — waits for the fresh profile */}
         {loaded ? (
-          <AddressBook />
+          <>
+            {/* key remounts the forms with fresh values after a change */}
+            <AccountSettings key={`${user?.name}-${user?.email}`} />
+            <AddressBook />
+          </>
         ) : (
           <div className="h-48 rounded-xl bg-surface animate-pulse" />
         )}
