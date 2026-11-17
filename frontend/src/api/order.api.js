@@ -45,6 +45,13 @@ export const checkPayment = async (id) => {
   return res.data;
 };
 
+// New PayMongo page for an unpaid order — closed or failed payment
+export const payOrderAgain = async (id) => {
+  // Returns { data: { paid, paymentUrl } }
+  const res = await api.post(`/orders/${id}/pay`);
+  return res.data;
+};
+
 // Orders touching this seller — only own items inside each
 export const fetchSellerOrders = async () => {
   // GET /orders/seller/received, SELLER role only

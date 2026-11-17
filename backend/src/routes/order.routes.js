@@ -9,6 +9,7 @@ import {
   handlePaymongoWebhook,
   checkPaymentStatus,
   cancelMyOrder,
+  payAgain,
 } from "../controllers/order.controller.js";
 import { validateCartItem } from "../controllers/cart.controller.js";
 import {
@@ -67,6 +68,9 @@ orderRoutes.get(
 );
 
 orderRoutes.get("/:id", protect, validateIdParam, getOrder);
+
+// Buyer gets a new payment page after closing or failing the old one
+orderRoutes.post("/:id/pay", protect, authorize("BUYER"), validateIdParam, payAgain);
 
 // Buyer cancels their own order before the seller starts it
 orderRoutes.put("/:id/cancel", protect, authorize("BUYER"), validateIdParam, cancelMyOrder);

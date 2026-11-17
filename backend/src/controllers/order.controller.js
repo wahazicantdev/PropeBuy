@@ -9,6 +9,7 @@ import {
   confirmPaymentStatus,
   setPaymentStatus,
   processWebhookEvent,
+  retryOnlinePayment,
 } from "../services/order.service.js";
 // Webhook HMAC — proves a callback really came from PayMongo
 import { verifyWebhookSignature } from "../utils/paymongo.helper.js";
@@ -305,5 +306,17 @@ export const checkPaymentStatus = async (req, res) => {
       paymentStatus: result.paymentStatus,
       deliveryFeeStatus: result.deliveryFeeStatus,
     },
+  });
+};
+
+// ── BUYER PAYS AGAIN ───────────────────────────────────
+// POST /api/orders/:id/pay — a new PayMongo page for an unpaid order
+// (E2E #421). Errors from the service reach the house error handler.
+export const payAgain = async (req, res) => {
+  const result = await retryOnlinePayment(req.params.id, req.user.id);
+  res.status(200).json({
+    success: true,
+    message: result.paid ? "Payment confirmed" : "Payment page ready",
+    data: result,
   });
 };

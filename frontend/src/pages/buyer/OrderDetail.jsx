@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
-import { fetchOrder, checkPayment, cancelMyOrder } from "../../api/order.api.js";
+import { fetchOrder, checkPayment, cancelMyOrder, payOrderAgain } from "../../api/order.api.js";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
@@ -23,6 +23,29 @@ const OrderDetail = () => {
   // Cancel confirmation modal and its busy flag
   const [askCancel, setAskCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  // Busy flag while a new payment page is prepared
+  const [paying, setPaying] = useState(false);
+
+  // New PayMongo page for an unpaid order (E2E #421)
+  const payAgain = async () => {
+    setPaying(true);
+    try {
+      const res = await payOrderAgain(order.id);
+      if (res.data?.paymentUrl) {
+        // Same-tab trip, PayMongo brings the buyer back here
+        localStorage.setItem("propebuy_last_order", String(order.id));
+        window.location.href = res.data.paymentUrl;
+        return;
+      }
+      // The old page went through after all
+      toast.success(res.message || "Payment confirmed");
+      const fresh = await fetchOrder(order.id);
+      setOrder(fresh.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not open the payment page");
+    }
+    setPaying(false);
+  };
 
   // Buyer cancels while the order is still reserved
   const cancelOrder = async () => {
@@ -101,7 +124,12 @@ const OrderDetail = () => {
 
   // Recheck shows only for GCash money still waiting
   const showRecheck =
-    order.paymentMethod === "GCASH" && order.paymentStatus === "PENDING";
+    order.paymentMethod === "GCASH" && order.paymentStatus === "PENDING" && order.status !== "CANCELLED";
+  // Pay now — open order with an online part still unpaid
+  const showPayAgain =
+    order.status !== "CANCELLED" &&
+    ((order.paymentMethod === "GCASH" && order.paymentStatus === "PENDING") ||
+      (order.paymentMethod === "CASH" && order.deliveryFeeStatus === "PENDING"));
 
   return (
     <div className="page-enter">
@@ -287,6 +315,24 @@ const OrderDetail = () => {
             </div>
           </dl>
           {/* Recheck button for waiting GCash money */}
+          {/* Unfinished payment — plain words plus a way to finish it */}
+          {showPayAgain && (
+            <>
+              <p className="mt-6 font-body text-sm text-danger bg-danger/10 rounded-xl p-3">
+                {order.paymentMethod === "GCASH"
+                  ? "Your GCash payment is not done yet. The seller starts once it goes through."
+                  : "The delivery fee is not paid yet. The seller starts once it goes through."}
+              </p>
+              <button
+                onClick={payAgain}
+                disabled={paying}
+                className="btn-primary btn-active w-full mt-3 py-3.5 font-body font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {paying ? <span className="spinner" /> : <Icon name="payments" />}
+                {paying ? "Opening payment page..." : "Pay now"}
+              </button>
+            </>
+          )}
           {showRecheck && (
             <button
               onClick={recheck}

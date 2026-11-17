@@ -3,6 +3,7 @@ import { cleanInt, cleanPrice } from "../utils/format.helper.js";
 import {
   createCheckoutSession,
   verifyPaymentStatus,
+  expireCheckoutSession,
 } from "../utils/paymongo.helper.js";
 import {
   notifyOrderStatus,
@@ -565,6 +566,50 @@ export const setPaymentStatus = async (orderId) => {
   notifyPaymentConfirmed(updated.buyerId, updated.id);
 
   return updated;
+};
+
+// ── PAY AGAIN ──────────────────────────────────────────
+// The buyer closed or failed the PayMongo page (E2E #421). Gives a new
+// payment page for the same order instead of forcing a cancel and re-order.
+// GCash orders pay items + fee, cash delivery orders pay the fee only.
+export const retryOnlinePayment = async (orderId, buyerId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: cleanInt(orderId) },
+    include: { orderItems: { select: { id: true } } },
+  });
+  if (!order || order.buyerId !== buyerId) throw userError("Order not found");
+  if (order.status === "CANCELLED") throw userError("This order was cancelled");
+
+  // Nothing left to pay online — cash pickup, or already paid
+  const needsOnline =
+    (order.paymentMethod === "GCASH" && order.paymentStatus === "PENDING") ||
+    (order.paymentMethod === "CASH" && order.deliveryFeeStatus === "PENDING");
+  if (!needsOnline) throw userError("This order has nothing left to pay online");
+
+  if (order.paymongoLinkId) {
+    // The old page may have gone through after all — settle it instead
+    const check = await confirmPaymentStatus(order.id);
+    if (check.updated) return { paid: true, paymentUrl: null };
+    // Close the old page so only the new one can take money
+    await expireCheckoutSession(order.paymongoLinkId).catch(() => false);
+    // Paid in the moment between the check and the expire
+    const recheck = await confirmPaymentStatus(order.id);
+    if (recheck.updated) return { paid: true, paymentUrl: null };
+  }
+
+  const gcash = order.paymentMethod === "GCASH";
+  const amount = gcash
+    ? cleanPrice(order.totalAmount) + cleanPrice(order.deliveryFee)
+    : order.deliveryFee;
+  const description = gcash
+    ? `PropeBuy Order #${order.id} — ${order.orderItems.length} item(s)${cleanPrice(order.deliveryFee) > 0 ? " + delivery fee" : ""}`
+    : `PropeBuy delivery fee — Order #${order.id}`;
+  const payment = await createCheckoutSession(amount, order.id, description);
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { paymongoLinkId: payment.sessionId },
+  });
+  return { paid: false, paymentUrl: payment.checkoutUrl };
 };
 
 // ── PROCESS WEBHOOK EVENT SERVICE ─────────────────────
