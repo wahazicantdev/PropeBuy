@@ -29,7 +29,8 @@ const PublicNav = () => {
   // Role flags — one place, read everywhere below
   const isSeller = user?.role === "SELLER";
   const isAdmin = user?.role === "ADMIN";
-  const showCart = !isAuthenticated || user?.role === "BUYER";
+  // Cart only for logged-in buyers — guests log in first (Yoy, 11-17)
+  const showCart = isAuthenticated && user?.role === "BUYER";
 
   // Logout clears session and lands on landing
   const handleLogout = () => {
@@ -70,7 +71,6 @@ const PublicNav = () => {
     ? [
         { to: "/browse", label: "Shop" },
         { to: "/register", label: "Sell on PropeBuy" },
-        { to: "/login/seller", label: "Seller Login" },
       ]
     : isSeller
       ? [
@@ -173,7 +173,7 @@ const PublicNav = () => {
             >
               <Icon name="search" size={24} />
             </button>
-            {/* Cart with live count — guests and buyers only */}
+            {/* Cart with live count — logged-in buyers only */}
             {showCart && (
               <Link to="/cart" className="relative p-1" aria-label="Cart">
                 <Icon name="shopping_cart" size={24} />
@@ -186,10 +186,22 @@ const PublicNav = () => {
             )}
             {/* Saved notifications — members only */}
             {isAuthenticated && <NotificationBell />}
-            {/* Account — login for guests, own area for members */}
-            <Link to={accountPath} className="p-1" aria-label="Account">
-              <Icon name="person" size={24} />
-            </Link>
+            {/* Guests: buyer login and seller login side by side */}
+            {!isAuthenticated ? (
+              <>
+                <Link to="/login/buyer" className="p-1" aria-label="Buyer login" title="Buyer login">
+                  <Icon name="person" size={24} />
+                </Link>
+                <Link to="/login/seller" className="p-1" aria-label="Seller login" title="Seller login">
+                  <Icon name="storefront" size={24} />
+                </Link>
+              </>
+            ) : (
+              // Members: their own account area
+              <Link to={accountPath} className="p-1" aria-label="Account">
+                <Icon name="person" size={24} />
+              </Link>
+            )}
             {/* Desktop logout — members only */}
             {isAuthenticated && (
               <button
@@ -230,18 +242,26 @@ const PublicNav = () => {
             ))}
             {/* Doors in for guests, door out for members */}
             {!isAuthenticated ? (
-              <div className="flex gap-3 pt-2">
+              // Two logins on one row, sign up full width below — fits a 390px phone
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <Link
                   to="/login/buyer"
                   onClick={() => setOpen(false)}
-                  className="btn-outline flex-1 py-3 text-center font-body font-medium"
+                  className="btn-outline py-3 text-center font-body font-medium"
                 >
-                  Log in
+                  Buyer login
+                </Link>
+                <Link
+                  to="/login/seller"
+                  onClick={() => setOpen(false)}
+                  className="btn-outline py-3 text-center font-body font-medium"
+                >
+                  Seller login
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setOpen(false)}
-                  className="btn-primary flex-1 py-3 text-center font-body font-medium"
+                  className="btn-primary col-span-2 py-3 text-center font-body font-medium"
                 >
                   Sign up
                 </Link>
