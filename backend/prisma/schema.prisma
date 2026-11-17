@@ -39,6 +39,7 @@ model User {
   orders          Order[]
   products        Product[]
   notifications   Notification[]
+  addresses       Address[]
   reviewsWritten  Review[]      @relation("ReviewBuyer")
   reviewsReceived Review[]      @relation("ReviewSeller")
   earnings        SellerEarning[]
@@ -47,6 +48,21 @@ model User {
   barangay        Barangay?     @relation(fields: [barangayId], references: [id])
 
   @@map("users")
+}
+
+// A buyer's saved delivery address. The default one is mirrored into
+// users.address so checkout and older pages keep one place to read.
+model Address {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  label     String   // "Home", "Work", "Lola's house"
+  address   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
 }
 
 // One active email code per address. Deleted once it is confirmed.

@@ -27,6 +27,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
+import addressRoutes from "./routes/address.routes.js";
 
 const app = express();
 
@@ -141,6 +142,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payouts", payoutRoutes);
+app.use("/api/addresses", addressRoutes);
 
 // Health check route
 app.get("/", (req, res) => {

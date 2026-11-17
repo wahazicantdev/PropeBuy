@@ -17,7 +17,7 @@ import { verifyWebhookSignature } from "../utils/paymongo.helper.js";
 // ── CHECKOUT ───────────────────────────────────────────
 // Validates request then delegates to service
 export const checkout = async (req, res) => {
-  const { items, paymentMethod, deliveryType } = req.body;
+  const { items, paymentMethod, deliveryType, addressId } = req.body;
 
   // Validate required fields
   if (!items || !Array.isArray(items) || items.length === 0) {
@@ -57,6 +57,7 @@ export const checkout = async (req, res) => {
     items,
     paymentMethod,
     deliveryType,
+    addressId,
   );
 
   if (paymentUrl) {

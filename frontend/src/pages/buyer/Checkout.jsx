@@ -1,4 +1,6 @@
 import { fetchPendingReviews } from "../../api/review.api.js";
+// Saved delivery addresses for the picker
+import { fetchAddresses } from "../../api/address.api.js";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -50,8 +52,20 @@ const Checkout = () => {
     removeDeadCartItems();
   }, []);
 
-  // Saved address, refreshed by fetchMe above
-  const address = useAuthStore((s) => s.user?.address);
+  // Saved addresses — the default is picked first, the buyer can switch
+  const [addresses, setAddresses] = useState([]);
+  const [addressId, setAddressId] = useState(null);
+  useEffect(() => {
+    fetchAddresses()
+      .then((res) => {
+        const list = res.data?.addresses || [];
+        setAddresses(list);
+        setAddressId((list.find((a) => a.isDefault) || list[0])?.id ?? null);
+      })
+      .catch(() => {});
+  }, []);
+  // Text of the chosen address, shown and checked before placing the order
+  const address = addresses.find((a) => a.id === addressId)?.address || null;
 
   // Delivery rules for this cart: one seller who delivers, and their fee
   const [delivery, setDelivery] = useState({ checked: false });
@@ -133,7 +147,7 @@ const Checkout = () => {
         quantity: i.quantity,
       }));
       // TPS call, throws on short stock
-      const res = await checkoutOrder(payload, paymentMethod, deliveryType);
+      const res = await checkoutOrder(payload, paymentMethod, deliveryType, isDelivery ? addressId : null);
       // GCash path - cart clears on the return page, never before leaving
       // Clearing here caused the empty-cart guard to hijack the handoff
       if (res.paymentUrl) {
@@ -211,10 +225,29 @@ const Checkout = () => {
                   <p className={delivery.checked ? "text-danger" : "text-black/60"}>{deliveryProblem}</p>
                 ) : (
                   <>
-                    <p className="text-black">
-                      <span className="text-black/60">Deliver to: </span>
-                      {address}
-                    </p>
+                    {/* One saved address shows as text, several as a picker */}
+                    {addresses.length > 1 ? (
+                      <div>
+                        <span className="text-black/60">Deliver to:</span>
+                        <div className="mt-2 space-y-2" role="radiogroup" aria-label="Delivery address">
+                          {addresses.map((a) => (
+                            <label key={a.id} className={`flex gap-3 rounded-xl border p-3 cursor-pointer ${a.id === addressId ? "border-black bg-surface" : "border-black/10"}`}>
+                              <input type="radio" name="address" checked={a.id === addressId} onChange={() => setAddressId(a.id)} className="mt-1 accent-black" />
+                              <span className="min-w-0">
+                                <span className="block font-bold text-black">{a.label}{a.isDefault ? " (default)" : ""}</span>
+                                <span className="block text-black/70 wrap-break-word">{a.address}</span>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                        <Link to="/profile" className="inline-block mt-2 text-xs font-bold underline">Manage addresses</Link>
+                      </div>
+                    ) : (
+                      <p className="text-black">
+                        <span className="text-black/60">Deliver to: </span>
+                        {address}
+                      </p>
+                    )}
                     <p className="text-black">
                       <span className="text-black/60">Delivery fee: </span>
                       <span className="font-bold">{formatPeso(fee)}</span>

@@ -27,6 +27,7 @@ export const processCheckout = async (
   items,
   paymentMethod,
   deliveryType,
+  addressId = null,
 ) => {
   // ── ATOMIC TRANSACTION ─────────────────────────────
   // All database operations here are ONE unit
@@ -109,16 +110,28 @@ export const processCheckout = async (
       if (!seller?.offersDelivery) {
         throw userError("This seller does not offer delivery. Please choose pickup.");
       }
-      const buyer = await tx.user.findUnique({
-        where: { id: buyerId },
-        select: { address: true },
-      });
-      if (!buyer?.address) {
+      // A saved address the buyer picked, else their default (E2E #423)
+      let chosen = null;
+      if (addressId) {
+        const saved = await tx.address.findFirst({
+          where: { id: cleanInt(addressId), userId: buyerId },
+          select: { address: true },
+        });
+        if (!saved) throw userError("That address is no longer saved. Pick another one.");
+        chosen = saved.address;
+      } else {
+        const buyer = await tx.user.findUnique({
+          where: { id: buyerId },
+          select: { address: true },
+        });
+        chosen = buyer?.address || null;
+      }
+      if (!chosen) {
         throw userError(
           "Add your delivery address in your profile before choosing delivery.",
         );
       }
-      deliveryAddress = buyer.address;
+      deliveryAddress = chosen;
       deliveryFee = cleanPrice(seller.deliveryFee);
     }
 

@@ -9,12 +9,13 @@ export const validateCartItem = async (productId, quantity) => {
 };
 
 // Checkout — the TPS call, atomic on the backend
-export const checkoutOrder = async (items, paymentMethod, deliveryType) => {
-  // Items shape: [{ productId, quantity }]
+export const checkoutOrder = async (items, paymentMethod, deliveryType, addressId = null) => {
+  // Items shape: [{ productId, quantity }]. addressId picks a saved address.
   const res = await api.post("/orders/checkout", {
     items,
     paymentMethod,
     deliveryType,
+    ...(addressId ? { addressId } : {}),
   });
   // Cash returns { data: order }, GCash adds paymentUrl
   return res.data;
