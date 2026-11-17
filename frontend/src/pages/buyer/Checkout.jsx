@@ -290,6 +290,23 @@ const Checkout = () => {
         <aside className="min-w-0 border border-black/10 rounded-xl p-5 md:p-6 lg:sticky lg:top-28">
           <h2 className="heading-body text-xl md:text-2xl text-black">Order Summary</h2>
           <dl className="mt-5 space-y-4 font-body text-base">
+            {/* Each item: price × quantity = line total, then the items subtotal */}
+            <div className="space-y-2">
+              {items.map((i) => (
+                <div key={i.productId} className="flex justify-between gap-3 text-sm">
+                  <dt className="min-w-0 text-black/60">
+                    <span className="block truncate text-black">{i.name}</span>
+                    <span className="block text-xs">{formatPeso(i.price)} × {i.quantity}</span>
+                  </dt>
+                  <dd className="font-bold text-black shrink-0">{formatPeso(Number(i.price) * i.quantity)}</dd>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-black/60">Items subtotal</dt>
+              <dd className="font-bold text-black">{formatPeso(itemsTotal)}</dd>
+            </div>
+            <hr className="border-black/10" />
             <div className="flex justify-between gap-2">
               <dt className="text-black/60">Payment</dt>
               <dd className="font-bold text-black">{paymentMethod === "GCASH" ? "GCash" : "Cash"}</dd>
