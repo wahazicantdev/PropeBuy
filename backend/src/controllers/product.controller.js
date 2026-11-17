@@ -493,6 +493,8 @@ export const getCategories = async (req, res) => {
     where: { isActive: true },
     orderBy: { name: "asc" },
   });
+  // A to Z, but the catch-all Others always comes last
+  categories.sort((a, b) => (a.name === "Others") - (b.name === "Others"));
 
   res.status(200).json({
     success: true,

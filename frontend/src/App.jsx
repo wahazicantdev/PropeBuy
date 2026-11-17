@@ -106,7 +106,7 @@ const App = () => {
           <Route path="/admin/products" element={<ProductModeration />} />
           {/* Oversight - read-only, no admin status override exists */}
           <Route path="/admin/orders" element={<OrdersOverview />} />
-          {/* Taxonomy - barangay coverage and the 7 categories */}
+          {/* Taxonomy - barangay coverage and the 8 categories */}
           <Route path="/admin/barangays" element={<BarangayManagement />} />
           <Route path="/admin/categories" element={<CategoryManagement />} />
           <Route path="/admin/payouts" element={<Payouts />} />
