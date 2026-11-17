@@ -66,6 +66,8 @@ const ProductCard = ({ product }) => {
       )}
       {/* Price — biggest thing on the card, like the reference */}
       <p className="mt-1 font-body font-bold text-lg md:text-xl text-black">
+        {/* Lowest option price when the product has options */}
+        {product.variants?.length > 0 ? "From " : ""}
         {formatPeso(product.price)}
       </p>
     </Link>

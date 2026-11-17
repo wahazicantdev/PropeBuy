@@ -3,14 +3,17 @@ import { cleanInt, cleanPrice } from "../utils/format.helper.js";
 import {
   createCheckoutSession,
   verifyPaymentStatus,
+  expireCheckoutSession,
 } from "../utils/paymongo.helper.js";
 import {
   notifyOrderStatus,
   notifyPaymentConfirmed,
   notifyNewOrder,
   notifyBuyerCancelled,
+  notifySellerPaymentReceived,
 } from "../utils/notification.helper.js";
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
+import { toPublicSeller } from "../utils/seller.helper.js";
 import { createEarnings, releaseEarnings, cancelEarnings } from "../utils/payout.helper.js";
 
 // Error the buyer or seller should read — 400 keeps the message visible
@@ -25,6 +28,7 @@ export const processCheckout = async (
   items,
   paymentMethod,
   deliveryType,
+  addressId = null,
 ) => {
   // ── ATOMIC TRANSACTION ─────────────────────────────
   // All database operations here are ONE unit
@@ -38,6 +42,7 @@ export const processCheckout = async (
     // Process each item in the order
     for (const item of items) {
       const { productId, quantity } = item;
+      const variantId = item.variantId ? cleanInt(item.variantId) : null;
 
       if (!productId || !quantity || quantity < 1) {
         throw userError("Invalid item — productId and quantity are required");
@@ -62,6 +67,37 @@ export const processCheckout = async (
       const product = lockedProduct[0];
       sellerIds.add(product.sellerId);
 
+      // ── VARIANT — LOCKED THE SAME WAY ─────────────
+      // A product with options needs one picked. Its row is locked too,
+      // and its own price and stock apply.
+      const activeVariantCount = await tx.productVariant.count({
+        where: { productId: product.id, isActive: true },
+      });
+      let variant = null;
+      if (activeVariantCount > 0 || variantId) {
+        if (!variantId) throw userError(`Choose an option for "${product.name}"`);
+        const lockedVariant = await tx.$queryRaw`
+          SELECT id, name, stock, price
+          FROM product_variants
+          WHERE id = ${variantId}
+          AND "productId" = ${product.id}
+          AND "isActive" = true
+          FOR UPDATE
+        `;
+        if (!lockedVariant?.length) throw userError(`That option of "${product.name}" is no longer available`);
+        variant = lockedVariant[0];
+        if (variant.stock < quantity) {
+          throw userError(
+            `Insufficient stock for "${product.name} (${variant.name})". ` +
+              `Available: ${variant.stock}, Requested: ${quantity}`,
+          );
+        }
+        await tx.productVariant.update({
+          where: { id: variant.id },
+          data: { stock: { decrement: quantity } },
+        });
+      }
+
       // ── STOCK CHECK ───────────────────────────────
       // If insufficient — throw triggers automatic ROLLBACK
       if (product.stock < quantity) {
@@ -78,13 +114,17 @@ export const processCheckout = async (
         data: { stock: { decrement: quantity } },
       });
 
-      const itemTotal = cleanPrice(product.price) * quantity;
+      // The option's price when one was picked
+      const unitPrice = cleanPrice(variant ? variant.price : product.price);
+      const itemTotal = unitPrice * quantity;
       totalAmount += itemTotal;
 
       validatedItems.push({
         productId: cleanInt(productId),
+        variantId: variant ? variant.id : null,
+        variantName: variant ? variant.name : null,
         quantity,
-        price: cleanPrice(product.price),
+        price: unitPrice,
       });
     }
 
@@ -107,16 +147,28 @@ export const processCheckout = async (
       if (!seller?.offersDelivery) {
         throw userError("This seller does not offer delivery. Please choose pickup.");
       }
-      const buyer = await tx.user.findUnique({
-        where: { id: buyerId },
-        select: { address: true },
-      });
-      if (!buyer?.address) {
+      // A saved address the buyer picked, else their default (E2E #423)
+      let chosen = null;
+      if (addressId) {
+        const saved = await tx.address.findFirst({
+          where: { id: cleanInt(addressId), userId: buyerId },
+          select: { address: true },
+        });
+        if (!saved) throw userError("That address is no longer saved. Pick another one.");
+        chosen = saved.address;
+      } else {
+        const buyer = await tx.user.findUnique({
+          where: { id: buyerId },
+          select: { address: true },
+        });
+        chosen = buyer?.address || null;
+      }
+      if (!chosen) {
         throw userError(
           "Add your delivery address in your profile before choosing delivery.",
         );
       }
-      deliveryAddress = buyer.address;
+      deliveryAddress = chosen;
       deliveryFee = cleanPrice(seller.deliveryFee);
     }
 
@@ -142,6 +194,8 @@ export const processCheckout = async (
       data: validatedItems.map((item) => ({
         orderId: newOrder.id,
         productId: item.productId,
+        variantId: item.variantId,
+        variantName: item.variantName,
         quantity: item.quantity,
         price: item.price,
       })),
@@ -236,7 +290,7 @@ export const processCheckout = async (
 // ── GET BUYER ORDERS SERVICE ───────────────────────────
 // Fetches all orders for a specific buyer
 export const getBuyerOrders = async (buyerId) => {
-  return await prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: { buyerId },
     include: {
       orderItems: {
@@ -247,7 +301,7 @@ export const getBuyerOrders = async (buyerId) => {
               name: true,
               imageUrl: true,
               seller: {
-                select: { id: true, name: true },
+                select: { id: true, storeName: true },
               },
             },
           },
@@ -256,12 +310,23 @@ export const getBuyerOrders = async (buyerId) => {
     },
     orderBy: { createdAt: "desc" },
   });
+  // Store names only — the real seller name stays hidden from buyers
+  return orders.map(publicOrderSellers);
 };
+
+// Swaps each item's seller for the public store name
+const publicOrderSellers = (order) =>
+  order && {
+    ...order,
+    orderItems: order.orderItems.map((i) =>
+      i.product?.seller ? { ...i, product: { ...i.product, seller: toPublicSeller(i.product.seller) } } : i,
+    ),
+  };
 
 // ── GET SINGLE ORDER SERVICE ───────────────────────────
 // Fetches one order by ID with full relations
 export const getOrderById = async (orderId) => {
-  return await prisma.order.findUnique({
+  const order = await prisma.order.findUnique({
     where: { id: cleanInt(orderId) },
     include: {
       orderItems: {
@@ -276,11 +341,16 @@ export const getOrderById = async (orderId) => {
               imageUrl: true,
               sellerId: true,
               // Vendor plus barangay, per item
-              seller: { select: { id: true, name: true } },
+              seller: { select: { id: true, storeName: true } },
               barangay: { select: { name: true } },
             },
           },
         },
+      },
+      // Refund state of a cancelled paid order — no seller money details
+      earnings: {
+        where: { status: { in: ["REFUND_DUE", "REFUNDED"] } },
+        select: { status: true, itemsAmount: true, deliveryFee: true, refundReference: true, refundedAt: true },
       },
       // Buyer's barangay, shown on the seller's order page
       buyer: {
@@ -293,6 +363,8 @@ export const getOrderById = async (orderId) => {
       },
     },
   });
+  // Buyers, sellers and admins all get the store name here
+  return publicOrderSellers(order);
 };
 
 // ── GET SELLER ORDERS SERVICE ──────────────────────────
@@ -369,6 +441,12 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
           where: { id: item.productId },
           data: { stock: { increment: item.quantity } },
         });
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
       }
       await tx.order.update({
         where: { id: cleanInt(orderId) },
@@ -441,6 +519,12 @@ export const cancelOrderByBuyer = async (orderId, buyerId) => {
         where: { id: item.productId },
         data: { stock: { increment: item.quantity } },
       });
+      if (item.variantId) {
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
     }
   });
   await cancelEarnings(order.id);
@@ -485,6 +569,13 @@ const settleOnlinePayment = async (order) => {
   }
   // Real-time notification to the buyer
   notifyPaymentConfirmed(order.buyerId, order.id);
+  // And to every seller in the order, so their page updates too (E2E #420)
+  const items = await prisma.orderItem.findMany({
+    where: { orderId: order.id },
+    select: { product: { select: { sellerId: true } } },
+  });
+  const sellerIds = [...new Set(items.map((i) => i.product.sellerId))];
+  sellerIds.forEach((id) => notifySellerPaymentReceived(id, order.id, order.paymentMethod === "CASH"));
 };
 
 // True once the online part of this order is paid
@@ -552,6 +643,50 @@ export const setPaymentStatus = async (orderId) => {
   notifyPaymentConfirmed(updated.buyerId, updated.id);
 
   return updated;
+};
+
+// ── PAY AGAIN ──────────────────────────────────────────
+// The buyer closed or failed the PayMongo page (E2E #421). Gives a new
+// payment page for the same order instead of forcing a cancel and re-order.
+// GCash orders pay items + fee, cash delivery orders pay the fee only.
+export const retryOnlinePayment = async (orderId, buyerId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: cleanInt(orderId) },
+    include: { orderItems: { select: { id: true } } },
+  });
+  if (!order || order.buyerId !== buyerId) throw userError("Order not found");
+  if (order.status === "CANCELLED") throw userError("This order was cancelled");
+
+  // Nothing left to pay online — cash pickup, or already paid
+  const needsOnline =
+    (order.paymentMethod === "GCASH" && order.paymentStatus === "PENDING") ||
+    (order.paymentMethod === "CASH" && order.deliveryFeeStatus === "PENDING");
+  if (!needsOnline) throw userError("This order has nothing left to pay online");
+
+  if (order.paymongoLinkId) {
+    // The old page may have gone through after all — settle it instead
+    const check = await confirmPaymentStatus(order.id);
+    if (check.updated) return { paid: true, paymentUrl: null };
+    // Close the old page so only the new one can take money
+    await expireCheckoutSession(order.paymongoLinkId).catch(() => false);
+    // Paid in the moment between the check and the expire
+    const recheck = await confirmPaymentStatus(order.id);
+    if (recheck.updated) return { paid: true, paymentUrl: null };
+  }
+
+  const gcash = order.paymentMethod === "GCASH";
+  const amount = gcash
+    ? cleanPrice(order.totalAmount) + cleanPrice(order.deliveryFee)
+    : order.deliveryFee;
+  const description = gcash
+    ? `PropeBuy Order #${order.id} — ${order.orderItems.length} item(s)${cleanPrice(order.deliveryFee) > 0 ? " + delivery fee" : ""}`
+    : `PropeBuy delivery fee — Order #${order.id}`;
+  const payment = await createCheckoutSession(amount, order.id, description);
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { paymongoLinkId: payment.sessionId },
+  });
+  return { paid: false, paymentUrl: payment.checkoutUrl };
 };
 
 // ── PROCESS WEBHOOK EVENT SERVICE ─────────────────────

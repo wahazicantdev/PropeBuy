@@ -14,7 +14,7 @@ const STATUS = {
   ON_HOLD: { label: "On hold", cls: "bg-surface text-black/70" },
   AVAILABLE: { label: "Available", cls: "bg-black text-white" },
   PAID_OUT: { label: "Paid out", cls: "bg-success/10 text-success" },
-  REFUND_DUE: { label: "Refunded to buyer", cls: "bg-danger/10 text-danger" },
+  REFUND_DUE: { label: "Refund pending", cls: "bg-danger/10 text-danger" },
   REFUNDED: { label: "Refunded to buyer", cls: "bg-danger/10 text-danger" },
 };
 

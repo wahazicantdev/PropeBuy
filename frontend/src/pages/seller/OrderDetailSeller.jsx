@@ -13,6 +13,8 @@ import {
   markCashPaid,
 } from "../../api/order.api.js";
 import { cld } from "../../utils/photos.js";
+// Realtime tick — refetch when a socket event arrives
+import { useLiveTick } from "../../hooks/useSocket.js";
 
 // ── ACTION MAP ──
 // Frontend guides transitions — buttons only offer sensible next moves.
@@ -49,9 +51,13 @@ const OrderDetailSeller = () => {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmPaid, setConfirmPaid] = useState(false);
 
-  // Load order — reusable so actions refresh after success
-  const load = () => {
-    setLoading(true);
+  // Socket tick — a payment, cancel or status change refetches this page
+  const live = useLiveTick();
+
+  // Load order — reusable so actions refresh after success.
+  // quiet = live refresh, keeps the page on screen instead of a spinner
+  const load = (quiet = false) => {
+    if (!quiet) setLoading(true);
     fetchOrder(id)
       .then((res) => setOrder(res.data))
       .catch((err) => {
@@ -63,11 +69,12 @@ const OrderDetailSeller = () => {
       .finally(() => setLoading(false));
   };
 
-  // First load on mount + on id change
+  // First load on mount + on id change. A socket tick (the buyer paid or
+  // cancelled while this page is open) reloads quietly, no spinner.
   useEffect(() => {
-    load();
+    load(live > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, live]);
 
   // Run a status action — direct for safe moves, modal path for cancel
   const handleAction = async (status) => {
@@ -128,9 +135,12 @@ const OrderDetailSeller = () => {
   );
   // Multi-seller warning for the cancel modal
   const hasOtherSellers = otherItems.length > 0;
-  // Cash-paid button — ONLY for cash orders awaiting money
+  // Cash-paid button — ONLY for open cash orders awaiting money.
+  // A cancelled order has nothing to collect (E2E #417).
   const showCashPaid =
-    order.paymentMethod === "CASH" && order.paymentStatus === "PENDING";
+    order.paymentMethod === "CASH" &&
+    order.paymentStatus === "PENDING" &&
+    order.status !== "CANCELLED";
 
   return (
     <div className="page-enter">
@@ -200,6 +210,8 @@ const OrderDetailSeller = () => {
               <div className="min-w-0 flex-1">
                 <p className="font-body font-bold text-sm text-black line-clamp-2">
                   {i.product.name}
+                  {/* Picked option, copied at checkout */}
+                  {i.variantName ? ` (${i.variantName})` : ""}
                 </p>
                 <p className="font-body text-xs text-passive mt-0.5">
                   {i.quantity} × ₱{parseFloat(i.price).toFixed(2)}
@@ -243,6 +255,7 @@ const OrderDetailSeller = () => {
                 <div className="min-w-0 flex-1">
                   <p className="font-body text-sm text-black/70 truncate">
                     {i.product.name}
+                    {i.variantName ? ` (${i.variantName})` : ""}
                   </p>
                   <p className="font-body text-xs text-passive mt-0.5">
                     {i.quantity} × ₱{parseFloat(i.price).toFixed(2)}
@@ -325,8 +338,7 @@ const OrderDetailSeller = () => {
                 Buyer has not completed GCash payment yet
               </p>
             )}
-          {order.paymentMethod === "CASH" &&
-            order.paymentStatus === "PENDING" && (
+          {showCashPaid && (
               <p className="font-body text-xs text-passive mt-0.5">
                 Collect on{" "}
                 {order.deliveryType === "PICKUP" ? "pickup" : "delivery"}
@@ -388,7 +400,7 @@ const OrderDetailSeller = () => {
         message={
           hasOtherSellers
             ? `This cancels the WHOLE order #${order.id} — including other sellers' items — and restores all reserved stock. This cannot be undone.`
-            : `Reserved stock for order #${order.id} goes back automatically. This cannot be undone.`
+            : `Reserved stock for order #${order.id} goes back automatically.${order.paymentStatus === "PAID" && order.paymentMethod === "GCASH" ? " The buyer already paid online, so PropeBuy refunds them and this sale leaves your earnings." : ""} This cannot be undone.`
         }
         confirmLabel="Cancel order"
         cancelLabel="Keep order"

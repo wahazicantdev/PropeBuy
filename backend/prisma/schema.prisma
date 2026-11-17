@@ -23,6 +23,13 @@ model User {
   storeLat        Float?        // store pin, set by hand on the map
   storeLng        Float?
   termsAcceptedAt DateTime?     // when the user agreed to the Terms and Privacy Policy
+  // Account settings — each can change once every 7 days
+  avatarUrl       String?       // profile photo on Cloudinary
+  avatarChangedAt DateTime?
+  emailChangedAt  DateTime?
+  // Seller's public name. Buyers never see the real name (Yoy, 11-17)
+  storeName          String?   @unique
+  storeNameChangedAt DateTime?
   // Seller payout account — where PropeBuy sends online sales
   payoutGcashName   String?
   payoutGcashNumber String?
@@ -39,6 +46,7 @@ model User {
   orders          Order[]
   products        Product[]
   notifications   Notification[]
+  addresses       Address[]
   reviewsWritten  Review[]      @relation("ReviewBuyer")
   reviewsReceived Review[]      @relation("ReviewSeller")
   earnings        SellerEarning[]
@@ -47,6 +55,21 @@ model User {
   barangay        Barangay?     @relation(fields: [barangayId], references: [id])
 
   @@map("users")
+}
+
+// A buyer's saved delivery address. The default one is mirrored into
+// users.address so checkout and older pages keep one place to read.
+model Address {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  label     String   // "Home", "Work", "Lola's house"
+  address   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
 }
 
 // One active email code per address. Deleted once it is confirmed.
@@ -115,11 +138,29 @@ model Product {
   updatedAt   DateTime    @updatedAt
   orderItems  OrderItem[]
   reviews     Review[]
+  variants    ProductVariant[]
   barangay    Barangay    @relation(fields: [barangayId], references: [id])
   category    Category    @relation(fields: [categoryId], references: [id])
   seller      User        @relation(fields: [sellerId], references: [id])
 
   @@map("products")
+}
+
+// One option of a product (size, color, pack size) with its own price
+// and stock. Switched off instead of deleted, so old orders keep it.
+model ProductVariant {
+  id         Int         @id @default(autoincrement())
+  productId  Int
+  name       String      // "Small", "Red / M", "500 ml"
+  price      Decimal     @db.Decimal(10, 2)
+  stock      Int         @default(0)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
 }
 
 model Order {
@@ -152,11 +193,14 @@ model OrderItem {
   id        Int      @id @default(autoincrement())
   orderId   Int
   productId Int
+  variantId   Int?            // the option bought, when the product has variants
+  variantName String?         // copied at checkout, later renames never change the order
   quantity  Int
   price     Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
   order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
   review    Review?
 
   @@map("order_items")
@@ -171,6 +215,8 @@ model Review {
   sellerId    Int       // copied so store averages need no join
   rating      Int       // 1 to 5 stars
   comment     String?
+  sellerReply String?   // the seller's public answer, one per review
+  repliedAt   DateTime? // when the seller last saved the reply
   createdAt   DateTime  @default(now())
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -197,6 +243,8 @@ model SellerEarning {
   status         EarningStatus @default(ON_HOLD)
   payoutId       Int?
   releasedAt     DateTime?     // order fulfilled, money can be paid out
+  refundReference String?      // GCash or PayMongo reference of the refund to the buyer
+  refundedAt     DateTime?     // when the admin recorded the refund
   createdAt      DateTime      @default(now())
   order          Order         @relation(fields: [orderId], references: [id])
   seller         User          @relation(fields: [sellerId], references: [id])

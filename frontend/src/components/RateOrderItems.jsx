@@ -46,7 +46,7 @@ const RateRow = ({ item, onRated }) => {
 
   return (
     <li className="py-4 min-w-0">
-      <p className="font-body font-bold text-sm text-black truncate">{item.product?.name || "Item"}</p>
+      <p className="font-body font-bold text-sm text-black truncate">{item.product?.name || "Item"}{item.variantName ? ` (${item.variantName})` : ""}</p>
       {item.review ? (
         // Already rated — read only
         <div className="mt-1">

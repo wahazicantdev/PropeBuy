@@ -6,7 +6,8 @@ import { fetchMe } from "../../api/auth.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
 import Icon from "../../components/Icon.jsx";
 import ProfileView from "../../components/ProfileView.jsx";
-import ProfileAddress from "../../components/ProfileAddress.jsx";
+import AddressBook from "../../components/AddressBook.jsx";
+import AccountSettings from "../../components/AccountSettings.jsx";
 
 // Buyer profile — identity card plus the saved delivery address
 const BuyerProfile = () => {
@@ -59,9 +60,13 @@ const BuyerProfile = () => {
         links={[{ to: "/orders", label: "My orders", icon: "receipt_long" }]}
         onLogout={handleLogout}
       >
-        {/* Saved delivery address — key remounts it with fresh values */}
+        {/* Saved delivery addresses — waits for the fresh profile */}
         {loaded ? (
-          <ProfileAddress key={`${user?.id}-${user?.address ?? ""}`} />
+          <>
+            {/* key remounts the forms with fresh values after a change */}
+            <AccountSettings key={`${user?.email}-${user?.storeName ?? ""}`} />
+            <AddressBook />
+          </>
         ) : (
           <div className="h-48 rounded-xl bg-surface animate-pulse" />
         )}

@@ -36,6 +36,8 @@ async function main() {
     { name: "Health and Beauty" },
     { name: "Electronics and Gadgets" },
     { name: "Automotive Supplies" },
+    // Added 11-17 after E2E testing — notebooks, pens, bags, art materials
+    { name: "School Supplies" },
     { name: "Others" },
   ];
 

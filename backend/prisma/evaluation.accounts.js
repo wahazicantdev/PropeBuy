@@ -89,6 +89,8 @@ async function main() {
   for (let n = 1; n <= VENDORS; n++) {
     const vendor = await upsertUser(`vendor${pad(n)}.eval@propebuy.test`, {
       name: `Eval Store ${pad(n)}`,
+      // Public store name — buyers never see the real name
+      storeName: `Eval Store ${pad(n)}`,
       role: "SELLER",
       address: `Stall ${pad(n)}, Poblacion, Muntinlupa City`,
       offersDelivery: true,

@@ -1,6 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import { COMMISSION_RATE, GATEWAY_FEE_RATE, WHT_RATE, WHT_THRESHOLD, round2 } from "../config/fees.js";
-import { notifyPayoutSent } from "../utils/notification.helper.js";
+import { notifyPayoutSent, notifyRefundSent } from "../utils/notification.helper.js";
 
 // Rates the pages show next to the numbers, so the UI never hardcodes them
 const RATES = {
@@ -113,7 +113,7 @@ export const getPayoutOverview = async (req, res) => {
       orderBy: { createdAt: "asc" },
       include: {
         order: { select: { id: true, paymentMethod: true, buyer: { select: { name: true, email: true } } } },
-        seller: { select: { name: true } },
+        seller: { select: { name: true, storeName: true } },
       },
     }),
     prisma.payout.findMany({
@@ -230,14 +230,29 @@ export const recordPayout = async (req, res) => {
 };
 
 // ── ADMIN: MARK A REFUND DONE ──────────────────────────
-// PATCH /api/admin/payouts/refunds/:id — after refunding in PayMongo
+// PATCH /api/admin/payouts/refunds/:id { referenceNo }
+// The admin sends the money back first (GCash transfer, or a PayMongo
+// dashboard refund for live payments), then saves the reference.
+// The buyer gets a bell notice with that reference (E2E #441).
 export const markRefunded = async (req, res) => {
+  const referenceNo = String(req.body?.referenceNo || "").trim();
+  if (referenceNo.length < 4 || referenceNo.length > 50) {
+    return res.status(400).json({ success: false, message: "Enter the reference number of the refund" });
+  }
+  const id = Number(req.params.id);
+  // Only a row still REFUND_DUE flips, so a refund is never recorded twice
   const result = await prisma.sellerEarning.updateMany({
-    where: { id: Number(req.params.id), status: "REFUND_DUE" },
-    data: { status: "REFUNDED" },
+    where: { id, status: "REFUND_DUE" },
+    data: { status: "REFUNDED", refundReference: referenceNo, refundedAt: new Date() },
   });
   if (!result.count) {
     return res.status(404).json({ success: false, message: "Refund not found or already done" });
   }
-  res.status(200).json({ success: true, message: "Refund marked as done", data: { id: Number(req.params.id) } });
+  const earning = await prisma.sellerEarning.findUnique({
+    where: { id },
+    select: { orderId: true, itemsAmount: true, deliveryFee: true, order: { select: { buyerId: true } } },
+  });
+  const amount = round2(Number(earning.itemsAmount) + Number(earning.deliveryFee));
+  notifyRefundSent(earning.order.buyerId, earning.orderId, amount, referenceNo);
+  res.status(200).json({ success: true, message: "Refund recorded. The buyer was notified.", data: { id } });
 };

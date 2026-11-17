@@ -78,6 +78,8 @@ async function main() {
   barangays.forEach((b, i) => {
     userRows.push({
       name: `Seller ${i + 1}`,
+      // Public store name — buyers never see the real name
+      storeName: `Seller ${i + 1}`,
       email: `seller${i + 1}.${b.name.toLowerCase()}@demo.com`,
       password: hash,
       role: "SELLER",

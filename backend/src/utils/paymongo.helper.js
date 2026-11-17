@@ -159,3 +159,15 @@ export const verifyWebhookSignature = (rawBody, header) => {
   const b = Buffer.from(provided, "utf8");
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
+
+// ── EXPIRE CHECKOUT SESSION ──────────────────────────
+// Closes an unpaid session before the buyer gets a new one, so an old
+// payment page can never take money the order no longer tracks.
+// Returns false when PayMongo refuses (already paid or already expired).
+export const expireCheckoutSession = async (sessionId) => {
+  const response = await fetch(
+    `${PAYMONGO_BASE_URL}/checkout_sessions/${sessionId}/expire`,
+    { method: "POST", headers: { Authorization: getPayMongoAuthHeader() } },
+  );
+  return response.ok;
+};

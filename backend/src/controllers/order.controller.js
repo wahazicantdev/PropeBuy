@@ -9,6 +9,7 @@ import {
   confirmPaymentStatus,
   setPaymentStatus,
   processWebhookEvent,
+  retryOnlinePayment,
 } from "../services/order.service.js";
 // Webhook HMAC — proves a callback really came from PayMongo
 import { verifyWebhookSignature } from "../utils/paymongo.helper.js";
@@ -16,7 +17,7 @@ import { verifyWebhookSignature } from "../utils/paymongo.helper.js";
 // ── CHECKOUT ───────────────────────────────────────────
 // Validates request then delegates to service
 export const checkout = async (req, res) => {
-  const { items, paymentMethod, deliveryType } = req.body;
+  const { items, paymentMethod, deliveryType, addressId } = req.body;
 
   // Validate required fields
   if (!items || !Array.isArray(items) || items.length === 0) {
@@ -56,6 +57,7 @@ export const checkout = async (req, res) => {
     items,
     paymentMethod,
     deliveryType,
+    addressId,
   );
 
   if (paymentUrl) {
@@ -251,6 +253,14 @@ export const updatePaymentStatus = async (req, res) => {
     });
   }
 
+  // A cancelled order has no money to collect (E2E #417)
+  if (order.status === "CANCELLED") {
+    return res.status(400).json({
+      success: false,
+      message: "This order was cancelled, so there is no payment to collect",
+    });
+  }
+
   // Already confirmed — nothing to do
   if (order.paymentStatus === "PAID") {
     return res.status(400).json({
@@ -297,5 +307,17 @@ export const checkPaymentStatus = async (req, res) => {
       paymentStatus: result.paymentStatus,
       deliveryFeeStatus: result.deliveryFeeStatus,
     },
+  });
+};
+
+// ── BUYER PAYS AGAIN ───────────────────────────────────
+// POST /api/orders/:id/pay — a new PayMongo page for an unpaid order
+// (E2E #421). Errors from the service reach the house error handler.
+export const payAgain = async (req, res) => {
+  const result = await retryOnlinePayment(req.params.id, req.user.id);
+  res.status(200).json({
+    success: true,
+    message: result.paid ? "Payment confirmed" : "Payment page ready",
+    data: result,
   });
 };

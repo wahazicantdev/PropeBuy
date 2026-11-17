@@ -38,8 +38,17 @@ export const sendOtpEmail = async (email, code, purpose = "verify") => {
     }),
   });
 
-  // Surface failures so the controller can tell the user to retry
+  // Surface failures so the controller can tell the user to retry.
+  // Brevo's own reason (blocked IP, unverified sender, inactive account)
+  // goes into the server log. It never contains the API key.
   if (!response.ok) {
-    throw new Error(`Email API responded with ${response.status}`);
+    let reason = "";
+    try {
+      const body = await response.json();
+      reason = [body.code, body.message].filter(Boolean).join(": ");
+    } catch {
+      // Body was not JSON — the status code alone is still logged
+    }
+    throw new Error(`Email API responded with ${response.status}${reason ? ` (${reason})` : ""}`);
   }
 };

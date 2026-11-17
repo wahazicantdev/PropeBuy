@@ -7,6 +7,7 @@ import { fetchBarangays } from "../../api/product.api.js";
 import PageHeader from "../../components/PageHeader.jsx";
 import ProfileView from "../../components/ProfileView.jsx";
 import ProfileAddress from "../../components/ProfileAddress.jsx";
+import AccountSettings from "../../components/AccountSettings.jsx";
 import Icon from "../../components/Icon.jsx";
 
 // Shop profile — same layout as the buyer profile, plus store settings
@@ -74,6 +75,7 @@ const SellerProfile = () => {
         onLogout={handleLogout}
       >
         {/* Store address, pin and delivery — key remounts it with fresh values */}
+        {loaded && <AccountSettings key={`${user?.email}-${user?.storeName ?? ""}`} />}
         {loaded ? (
           <ProfileAddress
             isSeller

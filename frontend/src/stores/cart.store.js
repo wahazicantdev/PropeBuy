@@ -1,12 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// One cart line per product and option, e.g. "12:base" or "12:40".
+// Older saved carts have no key yet, so it is rebuilt from the ids.
+export const lineKey = (i) => i.key || `${i.productId}:${i.variantId ?? "base"}`;
+
 // Cart store — buyer cart, persists on refresh
 export const useCartStore = create(
   persist(
     (set, get) => ({
       // ── STATE ──
-      items: [], // [{ productId, name, price, imageUrl, quantity, stock }]
+      items: [], // [{ key, productId, variantId, variantName, name, price, imageUrl, quantity, stock }]
       ownerId: null, // account that owns this cart, null for a guest
 
       // ── CLAIM FOR AN ACCOUNT ──
@@ -23,20 +27,21 @@ export const useCartStore = create(
       reset: () => set({ items: [], ownerId: null }),
 
       // ── ADD TO CART ──
-      // Merges if same product, caps at stock
-      addItem: (product, qty = 1) =>
+      // Merges if same product and option, caps at stock.
+      // variant — the picked option { id, name, price, stock }, or null
+      addItem: (product, qty = 1, variant = null) =>
         set((state) => {
+          const key = `${product.id}:${variant?.id ?? "base"}`;
+          // The option's own price and stock when one was picked
+          const stock = variant ? variant.stock : product.stock;
           // Check if already in cart
-          const existing = state.items.find((i) => i.productId === product.id);
+          const existing = state.items.find((i) => lineKey(i) === key);
           // Merge quantity if exists
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.productId === product.id
-                  ? {
-                      ...i,
-                      quantity: Math.min(i.quantity + qty, product.stock),
-                    }
+                lineKey(i) === key
+                  ? { ...i, key, quantity: Math.min(i.quantity + qty, stock) }
                   : i,
               ),
             };
@@ -46,22 +51,25 @@ export const useCartStore = create(
             items: [
               ...state.items,
               {
+                key,
                 productId: product.id,
+                variantId: variant?.id ?? null,
+                variantName: variant?.name ?? null,
                 name: product.name,
-                price: Number(product.price),
+                price: Number(variant ? variant.price : product.price),
                 imageUrl: product.imageUrl,
                 quantity: qty,
-                stock: product.stock,
+                stock,
               },
             ],
           };
         }),
 
       // ── UPDATE QTY ──
-      updateQty: (productId, qty) =>
+      updateQty: (key, qty) =>
         set((state) => ({
           items: state.items.map((i) =>
-            i.productId === productId
+            lineKey(i) === key
               ? { ...i, quantity: Math.max(1, Math.min(qty, i.stock)) }
               : i,
           ),
@@ -69,19 +77,19 @@ export const useCartStore = create(
 
       // ── SYNC WITH LIVE PRODUCT ──
       // Refreshes stock and price, then caps quantity to what is left
-      syncLine: (productId, { stock, price }) =>
+      syncLine: (key, { stock, price }) =>
         set((state) => ({
           items: state.items.map((i) =>
-            i.productId === productId
+            lineKey(i) === key
               ? { ...i, stock, price, quantity: Math.min(i.quantity, stock) }
               : i,
           ),
         })),
 
       // ── REMOVE ONE ──
-      removeItem: (productId) =>
+      removeItem: (key) =>
         set((state) => ({
-          items: state.items.filter((i) => i.productId !== productId),
+          items: state.items.filter((i) => lineKey(i) !== key),
         })),
 
       // ── CLEAR ALL ──

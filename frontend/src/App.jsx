@@ -37,6 +37,7 @@ import Dashboard from "./pages/seller/Dashboard.jsx";
 import InventoryMonitor from "./pages/seller/InventoryMonitor.jsx";
 import SellerProfile from "./pages/seller/SellerProfile.jsx";
 import Earnings from "./pages/seller/Earnings.jsx";
+import Reviews from "./pages/seller/Reviews.jsx";
 // Admin pages - Phase E, all 7 portal pages live
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import PendingVerifications from "./pages/admin/PendingVerifications.jsx";
@@ -93,6 +94,8 @@ const App = () => {
           <Route path="/seller/inventory" element={<InventoryMonitor />} />
           <Route path="/seller/profile" element={<SellerProfile />} />
           <Route path="/seller/earnings" element={<Earnings />} />
+          {/* Ratings of the seller's products, with replies */}
+          <Route path="/seller/reviews" element={<Reviews />} />
         </Route>
       </Route>
       {/* Admin - top nav shell, all 7 pages guarded by role ADMIN */}
@@ -106,7 +109,7 @@ const App = () => {
           <Route path="/admin/products" element={<ProductModeration />} />
           {/* Oversight - read-only, no admin status override exists */}
           <Route path="/admin/orders" element={<OrdersOverview />} />
-          {/* Taxonomy - barangay coverage and the 7 categories */}
+          {/* Taxonomy - barangay coverage and the 8 categories */}
           <Route path="/admin/barangays" element={<BarangayManagement />} />
           <Route path="/admin/categories" element={<CategoryManagement />} />
           <Route path="/admin/payouts" element={<Payouts />} />

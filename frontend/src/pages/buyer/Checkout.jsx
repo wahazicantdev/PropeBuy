@@ -1,4 +1,6 @@
 import { fetchPendingReviews } from "../../api/review.api.js";
+// Saved delivery addresses for the picker
+import { fetchAddresses } from "../../api/address.api.js";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -6,7 +8,7 @@ import Spinner from "../../components/Spinner.jsx";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 import Select from "../../components/Select.jsx";
-import { useCartStore } from "../../stores/cart.store.js";
+import { useCartStore, lineKey } from "../../stores/cart.store.js";
 import { checkoutOrder } from "../../api/order.api.js";
 // Fresh account status — the stored copy goes stale after admin review
 import { fetchMe } from "../../api/auth.api.js";
@@ -50,8 +52,20 @@ const Checkout = () => {
     removeDeadCartItems();
   }, []);
 
-  // Saved address, refreshed by fetchMe above
-  const address = useAuthStore((s) => s.user?.address);
+  // Saved addresses — the default is picked first, the buyer can switch
+  const [addresses, setAddresses] = useState([]);
+  const [addressId, setAddressId] = useState(null);
+  useEffect(() => {
+    fetchAddresses()
+      .then((res) => {
+        const list = res.data?.addresses || [];
+        setAddresses(list);
+        setAddressId((list.find((a) => a.isDefault) || list[0])?.id ?? null);
+      })
+      .catch(() => {});
+  }, []);
+  // Text of the chosen address, shown and checked before placing the order
+  const address = addresses.find((a) => a.id === addressId)?.address || null;
 
   // Delivery rules for this cart: one seller who delivers, and their fee
   const [delivery, setDelivery] = useState({ checked: false });
@@ -130,10 +144,12 @@ const Checkout = () => {
       // Shape backend validateCheckout expects
       const payload = items.map((i) => ({
         productId: i.productId,
+        // The picked option, when the product has options
+        ...(i.variantId ? { variantId: i.variantId } : {}),
         quantity: i.quantity,
       }));
       // TPS call, throws on short stock
-      const res = await checkoutOrder(payload, paymentMethod, deliveryType);
+      const res = await checkoutOrder(payload, paymentMethod, deliveryType, isDelivery ? addressId : null);
       // GCash path - cart clears on the return page, never before leaving
       // Clearing here caused the empty-cart guard to hijack the handoff
       if (res.paymentUrl) {
@@ -211,10 +227,29 @@ const Checkout = () => {
                   <p className={delivery.checked ? "text-danger" : "text-black/60"}>{deliveryProblem}</p>
                 ) : (
                   <>
-                    <p className="text-black">
-                      <span className="text-black/60">Deliver to: </span>
-                      {address}
-                    </p>
+                    {/* One saved address shows as text, several as a picker */}
+                    {addresses.length > 1 ? (
+                      <div>
+                        <span className="text-black/60">Deliver to:</span>
+                        <div className="mt-2 space-y-2" role="radiogroup" aria-label="Delivery address">
+                          {addresses.map((a) => (
+                            <label key={a.id} className={`flex gap-3 rounded-xl border p-3 cursor-pointer ${a.id === addressId ? "border-black bg-surface" : "border-black/10"}`}>
+                              <input type="radio" name="address" checked={a.id === addressId} onChange={() => setAddressId(a.id)} className="mt-1 accent-black" />
+                              <span className="min-w-0">
+                                <span className="block font-bold text-black">{a.label}{a.isDefault ? " (default)" : ""}</span>
+                                <span className="block text-black/70 wrap-break-word">{a.address}</span>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                        <Link to="/profile" className="inline-block mt-2 text-xs font-bold underline">Manage addresses</Link>
+                      </div>
+                    ) : (
+                      <p className="text-black">
+                        <span className="text-black/60">Deliver to: </span>
+                        {address}
+                      </p>
+                    )}
                     <p className="text-black">
                       <span className="text-black/60">Delivery fee: </span>
                       <span className="font-bold">{formatPeso(fee)}</span>
@@ -269,12 +304,12 @@ const Checkout = () => {
             <ul className="mt-2 divide-y divide-black/10">
               {items.map((i) => (
                 // Row clips long names, total never squeezes out
-                <li key={i.productId} className="py-4 flex items-center gap-3 min-w-0">
+                <li key={lineKey(i)} className="py-4 flex items-center gap-3 min-w-0">
                   <span className="relative w-14 h-14 rounded-lg bg-card overflow-hidden shrink-0">
                     {i.imageUrl && <img src={cld(i.imageUrl, 200)} alt={i.name} className="absolute inset-0 w-full h-full object-cover" />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block font-body font-bold text-sm text-black truncate">{i.name}</span>
+                    <span className="block font-body font-bold text-sm text-black truncate">{i.name}{i.variantName ? ` (${i.variantName})` : ""}</span>
                     <span className="block font-body text-xs text-black/60">Qty {i.quantity} × {formatPeso(i.price)}</span>
                   </span>
                   <span className="font-body font-bold text-base text-black shrink-0">
@@ -290,6 +325,23 @@ const Checkout = () => {
         <aside className="min-w-0 border border-black/10 rounded-xl p-5 md:p-6 lg:sticky lg:top-28">
           <h2 className="heading-body text-xl md:text-2xl text-black">Order Summary</h2>
           <dl className="mt-5 space-y-4 font-body text-base">
+            {/* Each item: price × quantity = line total, then the items subtotal */}
+            <div className="space-y-2">
+              {items.map((i) => (
+                <div key={lineKey(i)} className="flex justify-between gap-3 text-sm">
+                  <dt className="min-w-0 text-black/60">
+                    <span className="block truncate text-black">{i.name}{i.variantName ? ` (${i.variantName})` : ""}</span>
+                    <span className="block text-xs">{formatPeso(i.price)} × {i.quantity}</span>
+                  </dt>
+                  <dd className="font-bold text-black shrink-0">{formatPeso(Number(i.price) * i.quantity)}</dd>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-black/60">Items subtotal</dt>
+              <dd className="font-bold text-black">{formatPeso(itemsTotal)}</dd>
+            </div>
+            <hr className="border-black/10" />
             <div className="flex justify-between gap-2">
               <dt className="text-black/60">Payment</dt>
               <dd className="font-bold text-black">{paymentMethod === "GCASH" ? "GCash" : "Cash"}</dd>

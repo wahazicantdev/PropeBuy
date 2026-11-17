@@ -233,6 +233,9 @@ export const login = async (req, res) => {
       email: user.email,
       role: user.role,
       accountStatus: user.accountStatus,
+      // Sellers: public store name, so the store-name prompt knows
+      storeName: user.storeName,
+      avatarUrl: user.avatarUrl,
     },
   });
 };
@@ -249,6 +252,11 @@ export const getMe = async (req, res) => {
       accountStatus: true,
       barangayId: true,
       address: true,
+      avatarUrl: true,
+      avatarChangedAt: true,
+      storeName: true,
+      storeNameChangedAt: true,
+      emailChangedAt: true,
       offersDelivery: true,
       deliveryFee: true,
       storeLat: true,
@@ -266,8 +274,9 @@ export const getMe = async (req, res) => {
 };
 
 // ── UPDATE MY PROFILE ──────────────────────────────────
-// Fields a user may change themselves. Name, email and barangay come
-// from the verified documents, so only an admin can change those.
+// Fields a user may change here. Photo, email and store name have their
+// own endpoints with a 7-day wait (account.controller.js). The real name
+// and barangay come from the verified documents and never change here.
 const profileSelect = {
   id: true,
   name: true,
@@ -276,6 +285,11 @@ const profileSelect = {
   accountStatus: true,
   barangayId: true,
   address: true,
+  avatarUrl: true,
+  avatarChangedAt: true,
+  storeName: true,
+  storeNameChangedAt: true,
+  emailChangedAt: true,
   offersDelivery: true,
   deliveryFee: true,
   storeLat: true,

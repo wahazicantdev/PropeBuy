@@ -9,12 +9,13 @@ export const validateCartItem = async (productId, quantity) => {
 };
 
 // Checkout — the TPS call, atomic on the backend
-export const checkoutOrder = async (items, paymentMethod, deliveryType) => {
-  // Items shape: [{ productId, quantity }]
+export const checkoutOrder = async (items, paymentMethod, deliveryType, addressId = null) => {
+  // Items shape: [{ productId, quantity }]. addressId picks a saved address.
   const res = await api.post("/orders/checkout", {
     items,
     paymentMethod,
     deliveryType,
+    ...(addressId ? { addressId } : {}),
   });
   // Cash returns { data: order }, GCash adds paymentUrl
   return res.data;
@@ -42,6 +43,13 @@ export const checkPayment = async (id) => {
   // Asks PayMongo directly through the backend
   const res = await api.get(`/orders/${id}/payment-status`);
   // Returns { success, message, data: { paymentStatus } }
+  return res.data;
+};
+
+// New PayMongo page for an unpaid order — closed or failed payment
+export const payOrderAgain = async (id) => {
+  // Returns { data: { paid, paymentUrl } }
+  const res = await api.post(`/orders/${id}/pay`);
   return res.data;
 };
 

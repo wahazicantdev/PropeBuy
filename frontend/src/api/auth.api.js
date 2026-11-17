@@ -54,3 +54,26 @@ export const fetchMe = async () => {
   const res = await api.get("/auth/me");
   return res.data;
 };
+
+// Profile photo — multipart "avatar", once every 7 days
+export const updateAvatar = async (file) => {
+  const form = new FormData();
+  form.append("avatar", file);
+  // Multipart override — the shared client defaults to JSON
+  const res = await api.put("/auth/me/avatar", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
+// Store name (sellers) — first one any time, then once every 7 days
+export const updateStoreName = async (storeName) => {
+  const res = await api.put("/auth/me/store-name", { storeName });
+  return res.data;
+};
+
+// Email — needs the otpToken from verifyEmailOtp for the NEW address
+export const updateEmail = async (email, otpToken) => {
+  const res = await api.put("/auth/me/email", { email, otpToken });
+  return res.data;
+};

@@ -17,3 +17,15 @@ export const fetchProductReviews = async (productId) => {
   const res = await api.get(`/reviews/product/${productId}`);
   return res.data;
 };
+
+// Seller: ratings of my products — filter all | unreplied | comments
+export const fetchSellerReviews = async (filter = "all") => {
+  const res = await api.get("/reviews/seller", { params: { filter } });
+  return res.data;
+};
+
+// Seller: save, edit or remove (empty text) a public reply
+export const replyToReview = async (reviewId, reply) => {
+  const res = await api.put(`/reviews/${reviewId}/reply`, { reply });
+  return res.data;
+};

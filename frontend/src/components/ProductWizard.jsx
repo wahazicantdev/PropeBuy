@@ -44,6 +44,15 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
   const [categories, setCategories] = useState([]);
   // Physical-goods confirmation, asked when a listing enters Others
   const [deliverable, setDeliverable] = useState(false);
+  // Variations — rows of { id?, name, price, stock } as input strings.
+  // A product with variations takes its price and stock from them.
+  const [variants, setVariants] = useState(() =>
+    (product?.variants || []).map((x) => ({ id: x.id, name: x.name, price: String(Number(x.price)), stock: String(x.stock) })),
+  );
+  const [useVariants, setUseVariants] = useState(() => (product?.variants || []).length > 0);
+  // Edit one cell of one row
+  const setVariant = (i, key, value) =>
+    setVariants((rows) => rows.map((r, j) => (j === i ? { ...r, [key]: value } : r)));
   // Photos, cover first — saved ones as { url }, new ones as { file }
   const [photos, setPhotos] = useState(() => productPhotos(product).map((url) => ({ url })));
 
@@ -78,7 +87,16 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
 
   // Checks one step; returns true when it is complete
   const checkStep = async (i) => {
-    if (!(await trigger(STEP_FIELDS[i]))) return false;
+    // With variations on, the rows are checked instead of price and stock
+    const fields = i === 1 && useVariants ? [] : STEP_FIELDS[i];
+    if (!(await trigger(fields))) return false;
+    if (i === 1 && useVariants) {
+      const problem = variantProblem();
+      if (problem) {
+        toast.error(problem);
+        return false;
+      }
+    }
     if (i === 0 && !categoryId) {
       toast.error("Please select a category");
       return false;
@@ -93,6 +111,25 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
     }
     return true;
   };
+
+  // First problem in the variation rows, or null when they are fine
+  const variantProblem = () => {
+    if (variants.length < 2) return "Add at least 2 variations, or turn variations off";
+    const names = new Set();
+    for (const r of variants) {
+      const name = r.name.trim().toLowerCase();
+      if (!name) return "Every variation needs a name";
+      if (names.has(name)) return `"${r.name.trim()}" is listed twice`;
+      names.add(name);
+      if (!(parseFloat(r.price) >= 1)) return `Price of "${r.name.trim()}" must be at least ₱1`;
+      if (!Number.isInteger(Number(r.stock)) || r.stock === "" || Number(r.stock) < 0) return `Stock of "${r.name.trim()}" must be 0 or more`;
+    }
+    if (!isEdit && variants.every((r) => Number(r.stock) === 0)) return "At least one variation needs stock";
+    return null;
+  };
+  // Lowest price and total stock — what buyers see on the product card
+  const variantPrice = variants.length ? Math.min(...variants.map((r) => parseFloat(r.price) || 0)) : 0;
+  const variantStock = variants.reduce((sum, r) => sum + (Number(r.stock) || 0), 0);
 
   // Next — validate the current step first
   const next = async () => {
@@ -110,11 +147,17 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
       if (!(await checkStep(i))) return setStep(i);
     }
     const v = getValues();
+    const rows = useVariants
+      ? variants.map((r) => ({ ...(r.id ? { id: r.id } : {}), name: r.name.trim(), price: parseFloat(r.price), stock: Number(r.stock) }))
+      : [];
     onSave({
       data: {
         name: v.name,
-        price: v.price,
-        stock: v.stock,
+        // Lowest variation price and total stock when variations are on
+        price: useVariants ? String(variantPrice) : v.price,
+        stock: useVariants ? String(variantStock) : v.stock,
+        // Empty list on edit removes old variations
+        variants: rows,
         categoryId,
         description: v.description || "",
         deliverableConfirmed: needsConfirm && deliverable,
@@ -201,6 +244,87 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
         {step === 1 && (
           <>
             <h2 className="heading-body text-lg font-bold">Price and stock</h2>
+            {/* Variations switch — sizes, colors, pack sizes */}
+            <label className="flex items-start gap-3 bg-surface rounded-xl p-4 font-body text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useVariants}
+                onChange={(e) => {
+                  setUseVariants(e.target.checked);
+                  // Two empty rows to start, the plain price prefilled
+                  if (e.target.checked && variants.length === 0) {
+                    const base = getValues("price") || "";
+                    setVariants([
+                      { name: "", price: base, stock: "" },
+                      { name: "", price: base, stock: "" },
+                    ]);
+                  }
+                }}
+                className="mt-0.5 w-4 h-4 shrink-0 accent-black"
+              />
+              <span>
+                <span className="font-bold block">This product has variations</span>
+                <span className="text-black/60">Different sizes, colors or pack sizes, each with its own price and stock.</span>
+              </span>
+            </label>
+            {useVariants ? (
+              <div className="space-y-3">
+                {variants.map((r, i) => (
+                  // One row per option — stacks on phones
+                  <div key={r.id ?? `new-${i}`} className="grid grid-cols-2 sm:grid-cols-[1fr_8rem_7rem_auto] gap-2 items-center">
+                    <input
+                      value={r.name}
+                      onChange={(e) => setVariant(i, "name", e.target.value)}
+                      maxLength={50}
+                      placeholder="Name, e.g. Small or Red"
+                      aria-label={`Variation ${i + 1} name`}
+                      className="col-span-2 sm:col-span-1 px-5 py-3 font-body text-sm"
+                    />
+                    <input
+                      value={r.price}
+                      onChange={(e) => setVariant(i, "price", e.target.value)}
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      inputMode="decimal"
+                      placeholder="Price ₱"
+                      aria-label={`Variation ${i + 1} price`}
+                      className="px-5 py-3 font-body text-sm"
+                    />
+                    <input
+                      value={r.stock}
+                      onChange={(e) => setVariant(i, "stock", e.target.value)}
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      placeholder="Stock"
+                      aria-label={`Variation ${i + 1} stock`}
+                      className="px-5 py-3 font-body text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setVariants((rows) => rows.filter((_, j) => j !== i))}
+                      className="col-span-2 sm:col-span-1 justify-self-end p-2 text-black/50 hover:text-danger"
+                      aria-label={`Remove variation ${i + 1}`}
+                    >
+                      <Icon name="delete" size={20} />
+                    </button>
+                  </div>
+                ))}
+                {variants.length < 20 && (
+                  <button
+                    type="button"
+                    onClick={() => setVariants((rows) => [...rows, { name: "", price: rows[rows.length - 1]?.price || "", stock: "" }])}
+                    className="font-body text-sm font-bold underline flex items-center gap-1"
+                  >
+                    <Icon name="add" size={18} /> Add variation
+                  </button>
+                )}
+                <p className="font-body text-xs text-black/60">
+                  Buyers pick one before adding to cart. The card shows the lowest price ({formatPeso(variantPrice)}) and a total stock of {variantStock}.
+                </p>
+              </div>
+            ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <FieldLabel htmlFor="price">Price (₱)</FieldLabel>
@@ -239,6 +363,7 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
                 {errors.stock && <p className="text-danger text-xs mt-1 pl-5">{errors.stock.message}</p>}
               </div>
             </div>
+            )}
             <p className="font-body text-xs text-black/60 flex items-start gap-2">
               <Icon name="info" size={16} className="mt-px" />
               Stock goes down by itself after every order, and you get a notice when it runs low.
@@ -280,17 +405,34 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
                 <div className="flex flex-wrap gap-x-8 gap-y-2">
                   <div>
                     <dt className="text-black/50 text-xs">Price</dt>
-                    <dd className="font-bold">{v.price ? formatPeso(v.price) : "—"}</dd>
+                    <dd className="font-bold">
+                      {useVariants ? `From ${formatPeso(variantPrice)}` : v.price ? formatPeso(v.price) : "—"}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-black/50 text-xs">Stock</dt>
-                    <dd>{v.stock}</dd>
+                    <dd>{useVariants ? variantStock : v.stock}</dd>
                   </div>
                   <div>
                     <dt className="text-black/50 text-xs">Photos</dt>
                     <dd>{photos.length}/4</dd>
                   </div>
                 </div>
+                {useVariants && (
+                  <div>
+                    <dt className="text-black/50 text-xs">Variations</dt>
+                    <dd>
+                      <ul className="mt-1 space-y-0.5">
+                        {variants.map((r, i) => (
+                          <li key={i} className="flex justify-between gap-3">
+                            <span className="truncate">{r.name || "—"}</span>
+                            <span className="shrink-0 text-black/70">{formatPeso(parseFloat(r.price) || 0)} · {Number(r.stock) || 0} left</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </dd>
+                  </div>
+                )}
                 {v.description && (
                   <div>
                     <dt className="text-black/50 text-xs">Description</dt>

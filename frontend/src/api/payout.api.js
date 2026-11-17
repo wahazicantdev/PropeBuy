@@ -26,8 +26,8 @@ export const recordPayout = async (sellerId, referenceNo) => {
   return res.data;
 };
 
-// Mark a buyer refund as done after refunding in PayMongo
-export const markRefundDone = async (earningId) => {
-  const res = await api.patch(`/admin/payouts/refunds/${earningId}`);
+// Record a buyer refund already sent, with its reference number
+export const markRefundDone = async (earningId, referenceNo) => {
+  const res = await api.patch(`/admin/payouts/refunds/${earningId}`, { referenceNo });
   return res.data;
 };

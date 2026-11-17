@@ -24,8 +24,9 @@ const PaymentFailed = () => {
         </h1>
         {/* Honest plain words, no blame */}
         <p className="font-body text-sm text-black/60 mt-3">
-          No money was taken by us. Your order is still reserved while stock
-          lasts. Try again or pay cash instead.
+          Your payment was not completed, so no money was taken. Your order
+          is still reserved. Open it and press Pay now to try again, or
+          cancel it.
         </p>
         {/* Recovery paths */}
         <div className="mt-6 flex flex-col gap-3">
@@ -34,7 +35,7 @@ const PaymentFailed = () => {
               to={`/orders/${orderId}`}
               className="btn-primary btn-active font-body font-medium py-3.5"
             >
-              View My Order
+              Open order to pay again
             </Link>
           )}
           <Link
