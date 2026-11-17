@@ -245,6 +245,10 @@ model SellerEarning {
   releasedAt     DateTime?     // order fulfilled, money can be paid out
   refundReference String?      // GCash or PayMongo reference of the refund to the buyer
   refundedAt     DateTime?     // when the admin recorded the refund
+  // Where the refund goes, typed by the buyer only when a refund is due.
+  // Admin-only, cleared once the refund is recorded (RA 10173).
+  refundGcashName   String?
+  refundGcashNumber String?
   createdAt      DateTime      @default(now())
   order          Order         @relation(fields: [orderId], references: [id])
   seller         User          @relation(fields: [sellerId], references: [id])

@@ -135,6 +135,14 @@ const Payouts = () => {
               <div className="min-w-0 flex-1">
                 <p className="font-bold">Order #{r.orderId} · {r.order.buyer.name}</p>
                 <p className="text-xs text-passive truncate">{r.order.buyer.email} · seller {r.seller.storeName || r.seller.name}{r.seller.storeName ? ` (${r.seller.name})` : ""}</p>
+                {/* Buyer's refund GCash, or a note that they have not added it yet */}
+                {r.refundGcashNumber ? (
+                  <p className="text-xs mt-1">
+                    GCash <span className="font-bold tabular-nums">{r.refundGcashNumber}</span> · {r.refundGcashName}
+                  </p>
+                ) : (
+                  <p className="text-xs mt-1 text-danger">Waiting for the buyer's GCash number</p>
+                )}
               </div>
               <p className="font-bold tabular-nums">{formatPeso(Number(r.itemsAmount) + Number(r.deliveryFee))}</p>
               <button onClick={() => setRefund(r)} className="btn-outline btn-active px-5 py-2.5 font-body text-sm font-medium">
@@ -206,7 +214,9 @@ const Payouts = () => {
         title="Record refund"
         message={
           refund
-            ? `Send ${formatPeso(Number(refund.itemsAmount) + Number(refund.deliveryFee))} back to ${refund.order.buyer.name} (${refund.order.buyer.email}) through GCash first. Ask the buyer for their GCash number by email if needed. Then type the reference number.`
+            ? refund.refundGcashNumber
+              ? `Send ${formatPeso(Number(refund.itemsAmount) + Number(refund.deliveryFee))} to GCash ${refund.refundGcashNumber} (${refund.refundGcashName}) first, then type the reference number. The number is deleted once you save.`
+              : `${refund.order.buyer.name} has not added a GCash number yet. They were asked on their order page and you get a notice when they do. If you already sent ${formatPeso(Number(refund.itemsAmount) + Number(refund.deliveryFee))} another way, type the reference number.`
             : ""
         }
         confirmLabel="Save refund"

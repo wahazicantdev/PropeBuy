@@ -223,7 +223,7 @@ export const notifyRefundDue = (buyerId, orderId, amount) => {
   saveNotification(buyerId, {
     type: "REFUND",
     title: `Refund coming for Order #${orderId}`,
-    message: `Order #${orderId} was cancelled. PropeBuy will send your ${peso} back to your GCash. You get a notice with the reference number once it is sent.`,
+    message: `Order #${orderId} was cancelled. Open the order and add the GCash number where PropeBuy should send your ${peso}. You get a notice with the reference number once it is sent.`,
     link: `/orders/${orderId}`,
   });
   prisma.user
@@ -250,4 +250,22 @@ export const notifyRefundSent = (buyerId, orderId, amount, referenceNo) => {
     message: `₱${Number(amount).toFixed(2)} was sent back to you. Reference ${referenceNo}.`,
     link: `/orders/${orderId}`,
   });
+};
+
+// ── REFUND GCASH ADDED ─────────────────────────────────
+// The buyer typed where the refund goes, so every admin can send it now
+export const notifyRefundGcashAdded = (orderId) => {
+  prisma.user
+    .findMany({ where: { role: "ADMIN" }, select: { id: true } })
+    .then((admins) =>
+      admins.forEach((admin) =>
+        saveNotification(admin.id, {
+          type: "REFUND",
+          title: "Refund ready to send",
+          message: `The buyer of Order #${orderId} added their GCash number. You can send the refund now.`,
+          link: "/admin/payouts",
+        }),
+      ),
+    )
+    .catch((err) => console.error("Refund GCash alert failed:", err.message));
 };

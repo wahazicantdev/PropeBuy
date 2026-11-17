@@ -1,4 +1,5 @@
 import RateOrderItems from "../../components/RateOrderItems.jsx";
+import RefundGcashForm from "../../components/RefundGcashForm.jsx";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -198,6 +199,19 @@ const OrderDetail = () => {
               : "";
           })()}
         </p>
+      )}
+
+      {/* Where the refund goes — asked only while a refund is waiting */}
+      {order.status === "CANCELLED" && (
+        <RefundGcashForm
+          order={order}
+          onSaved={(masked) =>
+            setOrder({
+              ...order,
+              earnings: order.earnings.map((e) => (e.status === "REFUND_DUE" ? { ...e, refundGcash: masked } : e)),
+            })
+          }
+        />
       )}
 
       {/* Cancel — only before the seller starts processing */}
