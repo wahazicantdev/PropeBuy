@@ -16,7 +16,7 @@ import { LEVEL_LABEL } from "../../utils/adminAccess.js";
 const LEVEL_HINT = {
   SUPER_ADMIN: "PropeBuy founders. Everything, including money, staff and the activity log.",
   MODERATOR: "Hired PropeBuy staff. Verifications, users, products and orders. No money or staff.",
-  BARANGAY_VERIFIER: "Barangay staff. Approves or rejects applicants of one barangay, and sees that barangay's totals.",
+  BARANGAY_VERIFIER: "Barangay staff. Approves or rejects applicants of one barangay, and sees that barangay's totals. Each barangay has one verifier account.",
 };
 const LEVEL_OPTIONS = Object.keys(LEVEL_LABEL).map((value) => ({ value, label: LEVEL_LABEL[value] }));
 // Empty add form

@@ -27,6 +27,25 @@ const staffSelect = {
   barangay: { select: { id: true, name: true } },
 };
 
+// ── ONE VERIFIER PER BARANGAY ──────────────────────────
+// A barangay office needs one verifier account (Yoy, 11-18). To replace
+// them, the super admin turns the old account off first.
+// exceptId skips the account being turned back on.
+const activeVerifierOf = (barangayId, exceptId = null) =>
+  prisma.user.findFirst({
+    where: {
+      role: "ADMIN",
+      adminLevel: "BARANGAY_VERIFIER",
+      barangayId,
+      accountStatus: "VERIFIED",
+      ...(exceptId ? { id: { not: exceptId } } : {}),
+    },
+    select: { id: true, name: true },
+  });
+// Same wording for adding and for turning an account back on
+const verifierTakenMessage = (barangayName, staffName) =>
+  `Barangay ${barangayName} already has a verifier (${staffName}). Turn that account off first, then try again.`;
+
 // ── SUPER ADMIN: LIST STAFF ────────────────────────────
 // GET /api/admin/staff — every admin account, founders first
 export const listStaff = async (req, res) => {
@@ -71,6 +90,10 @@ export const createStaff = async (req, res) => {
     if (!barangay) {
       return res.status(400).json({ success: false, message: "Choose the barangay this verifier works for" });
     }
+    const current = await activeVerifierOf(barangay.id);
+    if (current) {
+      return res.status(400).json({ success: false, message: verifierTakenMessage(barangay.name, current.name) });
+    }
   }
 
   const exists = await prisma.user.findUnique({ where: { email }, select: { id: true } });
@@ -110,10 +133,17 @@ export const setStaffActive = async (req, res) => {
   }
   const staff = await prisma.user.findFirst({
     where: { id, role: "ADMIN" },
-    select: { id: true, name: true, adminLevel: true, accountStatus: true },
+    select: { id: true, name: true, adminLevel: true, accountStatus: true, barangayId: true, barangay: { select: { name: true } } },
   });
   if (!staff) {
     return res.status(404).json({ success: false, message: "Staff account not found" });
+  }
+  // Turning a verifier back on must not give the barangay two
+  if (active && staff.adminLevel === "BARANGAY_VERIFIER" && staff.barangayId) {
+    const current = await activeVerifierOf(staff.barangayId, staff.id);
+    if (current) {
+      return res.status(400).json({ success: false, message: verifierTakenMessage(staff.barangay?.name || "", current.name) });
+    }
   }
   // PropeBuy must always keep one working super admin
   if (!active && staff.adminLevel === "SUPER_ADMIN") {
