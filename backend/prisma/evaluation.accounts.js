@@ -16,10 +16,11 @@ import prisma from "../src/config/prismaClient.js";
 // 01-20: Actual Users (15 plus spares). 21-50: IT Experts, one pair each.
 const BUYERS = 50;
 const VENDORS = 50;
-// Staff accounts (Yoy, 11-18). Verifiers are barangay staff respondents
-// and use the respondent password. Moderators are for IT experts and
-// use the admin password, like the super admin.
-const VERIFIERS = 10;
+// Staff accounts (Yoy, 11-18). The verifier is shared by the barangay
+// staff respondents, one barangay desk like a real office, and uses the
+// respondent password. Moderators are for IT experts and use the admin
+// password, like the super admin.
+const VERIFIER_EMAIL = "verifier.eval@propebuy.test";
 const MODERATORS = 5;
 const PRODUCTS_PER_VENDOR = 3;
 const password = process.argv[2];
@@ -142,14 +143,31 @@ async function main() {
       adminHashed,
     );
   }
-  // Barangay verifiers: Poblacion applicants and Poblacion insights only
-  for (let n = 1; n <= VERIFIERS; n++) {
-    await upsertUser(`verifier${pad(n)}.eval@propebuy.test`, {
-      name: `Eval Poblacion Verifier ${pad(n)}`,
+  // Barangay verifier: one per barangay, like a real barangay office
+  // (Yoy, 11-18). The 10 numbered verifiers from the first version are
+  // turned off, not deleted, so their past actions stay in the audit log.
+  const oldVerifiers = Array.from({ length: 10 }, (_, i) => `verifier${pad(i + 1)}.eval@propebuy.test`);
+  const turnedOff = await prisma.user.updateMany({
+    where: { email: { in: oldVerifiers }, accountStatus: "VERIFIED" },
+    data: { accountStatus: "REJECTED" },
+  });
+  await upsertUser(VERIFIER_EMAIL, {
+    name: "Eval Poblacion Verifier",
+    role: "ADMIN",
+    adminLevel: "BARANGAY_VERIFIER",
+  });
+  // The app allows one active verifier per barangay. Warn, never change,
+  // if someone else is also active for Poblacion.
+  const others = await prisma.user.findMany({
+    where: {
       role: "ADMIN",
       adminLevel: "BARANGAY_VERIFIER",
-    });
-  }
+      barangayId: poblacion.id,
+      accountStatus: "VERIFIED",
+      email: { not: VERIFIER_EMAIL },
+    },
+    select: { email: true },
+  });
 
   // ── SUMMARY ────────────────────────────────────────────
   console.log("\nEvaluation accounts ready (all VERIFIED, Barangay Poblacion):");
@@ -157,8 +175,13 @@ async function main() {
   console.log(`  Vendors  vendor01.eval@propebuy.test to vendor${pad(VENDORS)}.eval@propebuy.test`);
   console.log("  Super admin  admin.eval@propebuy.test");
   console.log(`  Moderators   moderator01.eval@propebuy.test to moderator${pad(MODERATORS)}.eval@propebuy.test`);
-  console.log(`  Verifiers    verifier01.eval@propebuy.test to verifier${pad(VERIFIERS)}.eval@propebuy.test (Poblacion)`);
-  console.log("  Buyers, vendors and verifiers use the respondent password.");
+  console.log(`  Verifier     ${VERIFIER_EMAIL} (Poblacion, the only one)`);
+  if (turnedOff.count) console.log(`  Turned off ${turnedOff.count} old numbered verifier account(s)`);
+  if (others.length) {
+    console.log(`  WARNING: other active Poblacion verifier(s): ${others.map((o) => o.email).join(", ")}`);
+    console.log("  Turn them off on the Staff page so Poblacion has one verifier.");
+  }
+  console.log("  Buyers, vendors and the verifier use the respondent password.");
   console.log("  The super admin and moderators use the admin password.");
   console.log(`  New starter products: ${newProducts}`);
 }
