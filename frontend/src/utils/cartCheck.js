@@ -44,6 +44,10 @@ export const removeDeadCartItems = async () => {
     syncLine(lineKey(item), {
       stock: product.stock,
       price: Number(product.price),
+      // Store info for the cart's store groups (older lines lack it)
+      sellerId: live.seller?.id ?? live.sellerId,
+      storeName: live.seller?.name || null,
+      barangayName: live.barangay?.name || null,
     });
   });
 

@@ -8,7 +8,7 @@ import Spinner from "../../components/Spinner.jsx";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 import Select from "../../components/Select.jsx";
-import { useCartStore, lineKey } from "../../stores/cart.store.js";
+import { useCartStore, lineKey, checkoutLines } from "../../stores/cart.store.js";
 import { checkoutOrder } from "../../api/order.api.js";
 // Fresh account status — the stored copy goes stale after admin review
 import { fetchMe } from "../../api/auth.api.js";
@@ -19,10 +19,13 @@ import { cld } from "../../utils/photos.js";
 
 // Checkout - phone-first picks, guarded by BuyerRoute outside
 const Checkout = () => {
-  // Cart lines and derived total plus clearer
-  const items = useCartStore((s) => s.items);
-  const getTotalAmount = useCartStore((s) => s.getTotalAmount);
-  const clearCart = useCartStore((s) => s.clearCart);
+  // Only the lines ticked in the cart, all from one store (Yoy, 11-18).
+  // The rest of the cart waits for its own checkout.
+  const cartItems = useCartStore((s) => s.items);
+  const checkoutKeys = useCartStore((s) => s.checkoutKeys);
+  const items = checkoutLines(cartItems, checkoutKeys);
+  const removeLines = useCartStore((s) => s.removeLines);
+  const setPaymentKeys = useCartStore((s) => s.setPaymentKeys);
   // Form state with documentation defaults
   const [deliveryType, setDeliveryType] = useState("PICKUP");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -87,7 +90,7 @@ const Checkout = () => {
         setDelivery({
           checked: true,
           ok: false,
-          reason: "Delivery works for one seller per order. Choose pickup, or check out each seller separately.",
+          reason: "You can check out one store at a time. Go back to your cart and tick items from one store.",
         });
         return;
       }
@@ -118,14 +121,14 @@ const Checkout = () => {
     { value: "DELIVERY", label: "Delivery" },
   ];
 
-  // Empty cart means nothing to pay for, back to browse
-  // Loading exempts the just-placed order so clearCart cannot hijack the handoff
-  if (items.length === 0 && !loading) return <Navigate to="/browse" replace />;
+  // Nothing picked: back to the cart to tick a store, or to browse when
+  // the cart is empty. Loading exempts the just-placed order.
+  if (items.length === 0 && !loading) return <Navigate to={cartItems.length ? "/cart" : "/browse"} replace />;
 
   // Money split shown in the summary
   const isDelivery = deliveryType === "DELIVERY";
   const fee = isDelivery && delivery.ok ? delivery.fee : 0;
-  const itemsTotal = getTotalAmount();
+  const itemsTotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
   // Delivery needs a seller who delivers and a saved address
   const deliveryProblem = !isDelivery
     ? null
@@ -154,12 +157,14 @@ const Checkout = () => {
       // Clearing here caused the empty-cart guard to hijack the handoff
       if (res.paymentUrl) {
         localStorage.setItem("propebuy_last_order", String(res.data.id));
+        // These lines leave the cart once the buyer comes back paid
+        setPaymentKeys(items.map(lineKey));
         // Same-tab handoff, no popup to block and no second tab to lose
-        window.location.href = res.paymentUrl;
+        window.location.assign(res.paymentUrl);
         return;
       }
-      // Cart is spent on cash path, clear before opening the order
-      clearCart();
+      // Cash path: the bought lines leave, other stores stay in the cart
+      removeLines(items.map(lineKey));
       // Cash path - straight to the new order
       toast.success("Order placed. Prepare your cash payment.");
       navigate(`/orders/${res.data.id}`);
