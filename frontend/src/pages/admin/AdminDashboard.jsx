@@ -5,11 +5,15 @@ import toast from "react-hot-toast";
 import { OrderPill } from "../../components/OrderStatus.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchPlatformAnalytics } from "../../api/analytics.api.js";
+import { useAuthStore } from "../../stores/auth.store.js";
+import { adminCan } from "../../utils/adminAccess.js";
 
 // AdminDashboard — platform landing page, one analytics call powers
 // everything. Bars are plain divs on purpose: recharts is installed but
 // belongs to Phase F, same discipline as the seller Dashboard.
 const AdminDashboard = () => {
+  // Staff level decides where the barangay link goes
+  const user = useAuthStore((s) => s.user);
   // Whole platform bundle: users, products, orders, revenue, barangays
   const [stats, setStats] = useState(null);
   // Loading flag until the first fetch settles
@@ -216,11 +220,13 @@ const AdminDashboard = () => {
           <p className="font-body font-bold text-sm text-black">
             Top barangays by listings
           </p>
+          {/* Barangay settings are super admin only; moderators get the
+              read-only Barangay Insights instead (Yoy, 11-18) */}
           <Link
-            to="/admin/barangays"
+            to={adminCan(user, "settings") ? "/admin/barangays" : "/admin/insights"}
             className="font-body text-xs text-primary font-bold shrink-0"
           >
-            Manage
+            {adminCan(user, "settings") ? "Manage" : "Insights"}
           </Link>
         </div>
         {topBarangays.length === 0 ? (
