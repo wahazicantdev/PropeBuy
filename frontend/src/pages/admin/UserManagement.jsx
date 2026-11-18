@@ -145,7 +145,7 @@ const UserManagement = () => {
             options={[
               { value: "", label: "All roles" },
               { value: "BUYER", label: "Buyers" },
-              { value: "SELLER", label: "Vendors" },
+              { value: "SELLER", label: "Sellers" },
               { value: "ADMIN", label: "Admins" },
             ]}
           />

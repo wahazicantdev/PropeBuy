@@ -5,7 +5,6 @@ import StatCard from "../../components/StatCard.jsx";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
 import FieldLabel from "../../components/FieldLabel.jsx";
 import Spinner from "../../components/Spinner.jsx";
-import Icon from "../../components/Icon.jsx";
 import { fetchPayoutOverview, recordPayout, markRefundDone } from "../../api/payout.api.js";
 import { formatPeso } from "../../utils/format.js";
 
@@ -91,67 +90,98 @@ const Payouts = () => {
         <StatCard icon="savings" label="PropeBuy net this month" value={formatPeso(month.platformNet)} hint={`After about ${formatPeso(month.gatewayFees)} PayMongo fees`} />
       </div>
 
-      {/* ── Sellers to pay ── */}
-      <h2 className="heading-body text-lg font-bold mt-8 mb-3">Sellers to pay</h2>
-      {toPay.length === 0 ? (
-        <div className="rounded-xl bg-surface p-8 text-center font-body text-sm text-passive">Nothing to pay right now.</div>
-      ) : (
-        <ul className="rounded-xl border border-black/10 divide-y divide-black/5">
-          {toPay.map((s) => (
-            <li key={s.sellerId} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 font-body text-sm">
-              <div className="min-w-0 flex-1">
-                <p className="font-bold truncate">{s.name}</p>
-                <p className="text-xs text-passive truncate">
-                  {s.gcashNumber ? `GCash ${s.gcashNumber} · ${s.gcashName}` : "No GCash account yet. Ask the seller to add one in Earnings."}
-                </p>
-                <p className="text-xs text-passive">
-                  {s.orders} order(s){s.withholdingTax ? ` · tax withheld ${formatPeso(s.withholdingTax)}` : ""}
-                </p>
-              </div>
-              <p className="font-bold text-lg tabular-nums">{formatPeso(s.amount)}</p>
-              <button
-                disabled={!s.gcashNumber}
-                onClick={() => setPaying(s)}
-                className="btn-primary btn-active px-5 py-2.5 font-body text-sm font-medium disabled:opacity-40"
-              >
-                Record payout
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* ── Sellers to pay and refunds due, side by side on wide screens ── */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2 items-start">
+        {/* ── Sellers to pay ── */}
+        <section className="min-w-0">
+          <h2 className="heading-body text-lg font-bold mb-1">Sellers to pay</h2>
+          <p className="font-body text-xs text-passive mb-3">
+            Fulfilled online orders. Send the seller's share to their GCash, then record the reference number.
+          </p>
+          {toPay.length === 0 ? (
+            <div className="rounded-xl bg-surface p-8 text-center font-body text-sm text-passive">Nothing to pay right now.</div>
+          ) : (
+            <ul className="rounded-xl border border-black/10 divide-y divide-black/5">
+              {toPay.map((s) => (
+                <li key={s.sellerId} className="p-4 flex items-center gap-3 font-body text-sm">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold truncate">{s.name}</p>
+                    <p className="text-xs text-passive">
+                      {s.gcashNumber ? `GCash ${s.gcashNumber} · ${s.gcashName}` : "No GCash account yet. Ask the seller to add one in Earnings."}
+                    </p>
+                    <p className="text-xs text-passive">
+                      {s.orders} order(s){s.withholdingTax ? ` · tax withheld ${formatPeso(s.withholdingTax)}` : ""}
+                    </p>
+                  </div>
+                  {/* Amount above its button, so the row fits half a screen */}
+                  <div className="shrink-0 flex flex-col items-end gap-2">
+                    <p className="font-bold text-lg tabular-nums">{formatPeso(s.amount)}</p>
+                    <button
+                      disabled={!s.gcashNumber}
+                      onClick={() => setPaying(s)}
+                      className="btn-primary btn-active px-4 py-2 font-body text-sm font-medium disabled:opacity-40"
+                    >
+                      Record payout
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      {/* ── Refunds due ── */}
-      <h2 className="heading-body text-lg font-bold mt-8 mb-1">Refunds due</h2>
-      <p className="font-body text-xs text-passive mb-3">
-        Orders cancelled after the buyer paid online. Send the amount back to the buyer's GCash, then record the reference number. The buyer gets a notice with it.
-      </p>
-      {refunds.length === 0 ? (
-        <div className="rounded-xl bg-surface p-6 text-center font-body text-sm text-passive">No refunds due.</div>
-      ) : (
-        <ul className="rounded-xl border border-black/10 divide-y divide-black/5">
-          {refunds.map((r) => (
-            <li key={r.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 font-body text-sm">
-              <div className="min-w-0 flex-1">
-                <p className="font-bold">Order #{r.orderId} · {r.order.buyer.name}</p>
-                <p className="text-xs text-passive truncate">{r.order.buyer.email} · seller {r.seller.storeName || r.seller.name}{r.seller.storeName ? ` (${r.seller.name})` : ""}</p>
-                {/* Buyer's refund GCash, or a note that they have not added it yet */}
-                {r.refundGcashNumber ? (
-                  <p className="text-xs mt-1">
-                    GCash <span className="font-bold tabular-nums">{r.refundGcashNumber}</span> · {r.refundGcashName}
-                  </p>
-                ) : (
-                  <p className="text-xs mt-1 text-danger">Waiting for the buyer's GCash number</p>
-                )}
-              </div>
-              <p className="font-bold tabular-nums">{formatPeso(Number(r.itemsAmount) + Number(r.deliveryFee))}</p>
-              <button onClick={() => setRefund(r)} className="btn-outline btn-active px-5 py-2.5 font-body text-sm font-medium">
-                Record refund
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+        {/* ── Refunds due ── */}
+        <section className="min-w-0">
+          <h2 className="heading-body text-lg font-bold mb-1">Refunds due</h2>
+          <p className="font-body text-xs text-passive mb-3">
+            Orders cancelled after the buyer paid online. Send the amount back to the buyer's GCash, then record the reference number. The buyer gets a notice with it.
+          </p>
+          {refunds.length === 0 ? (
+            <div className="rounded-xl bg-surface p-6 text-center font-body text-sm text-passive">No refunds due.</div>
+          ) : (
+            <div className="space-y-4">
+              {/* Ready first: the buyer already gave a GCash number. Newest on top in each group. */}
+              {[
+                { key: "ready", title: "Ready to refund", hint: "The buyer added their GCash", rows: refunds.filter((r) => r.refundGcashNumber) },
+                { key: "waiting", title: "Waiting for the buyer's GCash", hint: "The buyer was asked on their order page", rows: refunds.filter((r) => !r.refundGcashNumber) },
+              ]
+                .filter((g) => g.rows.length > 0)
+                .map((g) => (
+                  <div key={g.key}>
+                    <p className="font-body text-xs font-bold uppercase tracking-wide text-passive mb-2">
+                      {g.title} ({g.rows.length}) <span className="normal-case font-normal tracking-normal">· {g.hint}</span>
+                    </p>
+                    <ul className="rounded-xl border border-black/10 divide-y divide-black/5">
+                      {g.rows.map((r) => (
+                        <li key={r.id} className="p-4 flex items-center gap-3 font-body text-sm">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold">Order #{r.orderId} · {r.order.buyer.name}</p>
+                            <p className="text-xs text-passive truncate">{r.order.buyer.email}</p>
+                            <p className="text-xs text-passive truncate">seller {r.seller.storeName || r.seller.name}{r.seller.storeName ? ` (${r.seller.name})` : ""}</p>
+                            {/* Buyer's refund GCash, or a note that they have not added it yet */}
+                            {r.refundGcashNumber ? (
+                              <p className="text-xs mt-1">
+                                GCash <span className="font-bold tabular-nums">{r.refundGcashNumber}</span> · {r.refundGcashName}
+                              </p>
+                            ) : (
+                              <p className="text-xs mt-1 text-danger">Waiting for the buyer's GCash number</p>
+                            )}
+                          </div>
+                          <div className="shrink-0 flex flex-col items-end gap-2">
+                            <p className="font-bold tabular-nums">{formatPeso(Number(r.itemsAmount) + Number(r.deliveryFee))}</p>
+                            <button onClick={() => setRefund(r)} className="btn-outline btn-active px-4 py-2 font-body text-sm font-medium">
+                              Record refund
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* ── Recent payouts ── */}
       <h2 className="heading-body text-lg font-bold mt-8 mb-3">Recent payouts</h2>

@@ -9,7 +9,7 @@ const UPDATED = "November 15, 2026";
 // Plain-language rules. Each section is [heading, paragraphs[]].
 const TERMS = [
   ["About PropeBuy", [
-    "PropeBuy is an online marketplace for verified residents and vendors of Muntinlupa City barangays, piloted in Barangay Poblacion. It was built as a capstone project by BSIT students of Pamantasan ng Lungsod ng Muntinlupa.",
+    "PropeBuy is an online marketplace for verified residents and sellers of Muntinlupa City barangays, piloted in Barangay Poblacion. It was built as a capstone project by BSIT students of Pamantasan ng Lungsod ng Muntinlupa.",
     "PropeBuy connects buyers and sellers. The seller sells the goods; PropeBuy runs the website, checks accounts and handles online payments.",
   ]],
   ["Accounts", [

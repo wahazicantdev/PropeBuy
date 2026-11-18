@@ -7,7 +7,7 @@ const PITCH = {
   buyer: {
     title: "Shop your barangay",
     points: [
-      { icon: "verified_user", text: "Every vendor is document-verified" },
+      { icon: "verified_user", text: "Every seller is document-verified" },
       { icon: "location_on", text: "Goods from your own barangay first" },
       { icon: "receipt_long", text: "Track every order, live" },
     ],

@@ -227,7 +227,7 @@ const CategoryManagement = () => {
         }
         message={
           toggleTarget?.isActive
-            ? `${toggleTarget?.name || ""} will disappear from the browse filter and the vendor's add-product dropdown. Its ${toggleTarget?._count?.products ?? 0} listing(s) stay in the database — they just stop being discoverable until you enable it again.`
+            ? `${toggleTarget?.name || ""} will disappear from the browse filter and the seller's add-product dropdown. Its ${toggleTarget?._count?.products ?? 0} listing(s) stay in the database — they just stop being discoverable until you enable it again.`
             : `${toggleTarget?.name || ""} goes back into the browse filter and the add-product dropdown right away.`
         }
         confirmLabel={toggleTarget?.isActive ? "Disable" : "Enable"}

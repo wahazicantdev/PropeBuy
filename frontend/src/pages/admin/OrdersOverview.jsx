@@ -239,7 +239,7 @@ const OrdersOverview = () => {
                           {i.variantName ? ` (${i.variantName})` : ""}
                         </p>
                         <p className="font-body text-xs text-passive truncate mt-0.5">
-                          vendor: {i.product?.seller?.name || "unknown"}{i.product?.seller?.storeName ? ` (${i.product.seller.storeName})` : ""} · {i.product?.barangay?.name || "no barangay"}
+                          seller: {i.product?.seller?.name || "unknown"}{i.product?.seller?.storeName ? ` (${i.product.seller.storeName})` : ""} · {i.product?.barangay?.name || "no barangay"}
                         </p>
                       </div>
                       {/* Price captured AT CHECKOUT, not current price —
@@ -258,7 +258,7 @@ const OrdersOverview = () => {
 
       {/* Scope note — read-only by design, said out loud */}
       <p className="mt-4 font-body text-xs text-passive border border-black/10 rounded-xl p-3">
-        Oversight view only. Fulfilment stays with the vendor who owns the
+        Oversight view only. Fulfilment stays with the seller who owns the
         goods and payment state stays with the gateway — no admin override
         exists, so the transaction audit trail cannot be edited after the
         fact.

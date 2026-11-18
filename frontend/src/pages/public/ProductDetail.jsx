@@ -233,7 +233,7 @@ const ProductDetail = () => {
               </span>
               <span className="min-w-0">
                 <span className="block font-body font-bold text-base text-black group-hover:underline truncate">
-                  {product.seller?.name || "Vendor"}
+                  {product.seller?.name || "Seller"}
                 </span>
                 <span className="flex items-center gap-1 font-body text-sm text-black/60">
                   <Icon name="location_on" size={16} />

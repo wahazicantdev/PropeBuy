@@ -62,7 +62,7 @@ const SellerStore = () => {
             <Icon name="storefront" size={48} className="text-black/20" />
             <p className="mt-3 font-header text-xl text-black">No goods listed right now</p>
             <p className="font-body text-sm text-passive mt-1">
-              This vendor has nothing in stock at the moment. Check back soon.
+              This seller has nothing in stock at the moment. Check back soon.
             </p>
             <Link to="/browse" className="btn-primary btn-active inline-block mt-6 px-10 py-3 font-body font-medium">
               Back to shop
@@ -77,7 +77,7 @@ const SellerStore = () => {
               </span>
               <div className="min-w-0 flex-1">
                 <h1 className="text-2xl md:text-4xl text-black break-words">
-                  {seller?.name || "Local vendor"}
+                  {seller?.name || "Local seller"}
                 </h1>
                 <div className="mt-2 flex items-center gap-3 flex-wrap">
                   {seller?.accountStatus === "VERIFIED" && <VerifiedBadge />}

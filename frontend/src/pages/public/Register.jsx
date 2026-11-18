@@ -21,7 +21,7 @@ const STEPS = ["Account", "Email", "Details", "Documents"];
 
 // Account type cards for step 1
 const ROLES = [
-  { value: "BUYER", icon: "shopping_bag", title: "Buyer", text: "Shop from verified vendors in your barangay." },
+  { value: "BUYER", icon: "shopping_bag", title: "Buyer", text: "Shop from verified sellers in your barangay." },
   { value: "SELLER", icon: "storefront", title: "Seller", text: "Open a free online store for your shop." },
 ];
 

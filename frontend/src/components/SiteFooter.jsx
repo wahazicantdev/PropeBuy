@@ -55,7 +55,7 @@ const SiteFooter = () => {
               className="btn-active bg-white text-black rounded-full py-3 text-center font-body font-medium flex items-center justify-center gap-2"
             >
               <Icon name="storefront" />
-              Become a vendor
+              Become a seller
             </Link>
             <Link
               to="/login/seller"
@@ -75,14 +75,14 @@ const SiteFooter = () => {
             <div className="col-span-2 md:col-span-1">
               <p className="font-logo text-3xl text-black">PropeBuy</p>
               <p className="mt-4 font-body text-sm text-passive max-w-xs">
-                Muntinlupa's barangay marketplace. Verified local vendors,
+                Muntinlupa's barangay marketplace. Verified local sellers,
                 stock-checked orders, cash or GCash. Now piloting in Barangay
                 Poblacion.
               </p>
               {/* Trust line with the brand's verified mark */}
               <p className="mt-4 font-body text-sm text-black flex items-center gap-2">
                 <Icon name="verified_user" className="text-success" />
-                Every vendor is document-verified
+                Every seller is document-verified
               </p>
             </div>
             {/* Link columns */}

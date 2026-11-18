@@ -35,7 +35,7 @@ const Landing = () => {
 
   // Pilot numbers — straight from Chapter 1, ties the build to the paper
   const stats = [
-    { n: "431+", l: "Local vendors in Poblacion" },
+    { n: "431+", l: "Local sellers in Poblacion" },
     { n: "927+", l: "Establishments in the pilot" },
     { n: "7", l: "Categories of local goods" },
   ];
@@ -45,12 +45,12 @@ const Landing = () => {
     {
       icon: "verified_user",
       t: "Verified sellers",
-      d: "Government ID plus Barangay Certificate checked. Look for the Verified Local Vendor badge.",
+      d: "Government ID plus Barangay Certificate checked. Look for the Verified Local Seller badge.",
     },
     {
       icon: "location_on",
       t: "Barangay discovery",
-      d: "Filter goods by barangay. Support vendors near you and keep spending in the community.",
+      d: "Filter goods by barangay. Support sellers near you and keep spending in the community.",
     },
     {
       icon: "receipt_long",
@@ -76,7 +76,7 @@ const Landing = () => {
             </h1>
             {/* Body benefit subtext, no jargon */}
             <p className="font-body text-black/60 mt-5 text-sm md:text-base max-w-lg">
-              Shop verified vendors across Muntinlupa City. Browse by
+              Shop verified sellers across Muntinlupa City. Browse by
               barangay, pay cash or GCash, and track every order until it is
               in your hands.
             </p>
@@ -162,7 +162,7 @@ const Landing = () => {
         </h2>
         {arrivals.length === 0 ? (
           <p className="mt-8 text-center font-body text-sm text-passive">
-            New goods show up here as vendors list them.
+            New goods show up here as sellers list them.
           </p>
         ) : (
           <div className="mt-8 md:mt-14 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8">

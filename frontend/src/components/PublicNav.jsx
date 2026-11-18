@@ -116,7 +116,7 @@ const PublicNav = () => {
       {!isAuthenticated && promo && (
         <div className="bg-primary text-white">
           <div className="relative max-w-7xl mx-auto px-10 py-2.5 text-center font-body text-xs md:text-sm">
-            Shop verified barangay vendors — pay cash or GCash.{" "}
+            Shop verified barangay sellers — pay cash or GCash.{" "}
             <Link to="/register" className="font-medium underline">
               Sign up now
             </Link>

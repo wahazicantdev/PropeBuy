@@ -5,7 +5,7 @@ import Icon from "./Icon.jsx";
 // this badge; the label stays in ink so small text keeps its contrast.
 const VerifiedBadge = (props) => {
   // Label defaults when caller passes nothing
-  const label = props.label || "Verified Local Vendor";
+  const label = props.label || "Verified Local Seller";
   return (
     <span className="inline-flex items-center gap-1">
       <Icon name="verified" size={16} className="text-success" />

@@ -117,6 +117,8 @@ export const register = async (req, res) => {
     idFields,
     certFields,
     barangay?.name || "",
+    // The name typed on the form must match both documents
+    name,
   );
 
   // Hash password

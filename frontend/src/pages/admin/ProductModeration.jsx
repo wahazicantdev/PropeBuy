@@ -189,7 +189,7 @@ const ProductModeration = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Product or vendor"
+            placeholder="Product or seller"
             className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary"
           />
         </div>
@@ -239,7 +239,7 @@ const ProductModeration = () => {
                 {/* Vendor line — status pill flags unverified sellers */}
                 <div className="flex items-center gap-2 flex-wrap mt-1">
                   <span className="font-body text-xs text-black/70 truncate">
-                    by {p.seller?.storeName || p.seller?.name || "Unknown vendor"}
+                    by {p.seller?.storeName || p.seller?.name || "Unknown seller"}
                     {p.seller?.storeName && ` (${p.seller.name})`}
                   </span>
                   <AccountPill status={p.seller?.accountStatus} />
@@ -291,7 +291,7 @@ const ProductModeration = () => {
       <ConfirmModal
         open={!!removeTarget}
         title="Remove listing"
-        message={`"${removeTarget?.name || ""}" by ${removeTarget?.seller?.name || "the vendor"} will disappear from the marketplace. Past orders keep their history.`}
+        message={`"${removeTarget?.name || ""}" by ${removeTarget?.seller?.name || "the seller"} will disappear from the marketplace. Past orders keep their history.`}
         confirmLabel="Remove listing"
         size="md"
         busy={busy}
@@ -313,7 +313,7 @@ const ProductModeration = () => {
           className="w-full border border-gray-200 rounded-full px-4 py-3 font-body text-sm focus:outline-none focus:border-primary resize-none"
         />
         <p className="font-body text-xs text-passive mt-2">
-          The reason is returned in the API response for the record. Vendor
+          The reason is returned in the API response for the record. Seller
           notification by email is not built yet.
         </p>
       </ConfirmModal>

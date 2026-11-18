@@ -176,8 +176,16 @@ export const extractIDFields = (text) => {
     name: extractedName,
     address: extractedAddress,
     barangay: extractedBarangay,
+    // A certificate in the ID slot means the uploads were swapped
+    looksLikeCertificate: looksLikeCertificate(text),
   };
 };
+
+// ── DOES THIS TEXT READ LIKE A BARANGAY CERTIFICATE? ───
+// Certificates carry fixed wording that IDs never have. Used to catch
+// an ID uploaded as the certificate and the other way around.
+const looksLikeCertificate = (text) =>
+  /CERTIF(?:Y|ICATE|ICATION)|TO WHOM IT MAY CONCERN|BARANGAY CLEARANCE/i.test(text || "");
 
 // ── EXTRACT KEY FIELDS FROM BARANGAY CERTIFICATE ──────
 export const extractCertificateFields = (text) => {
@@ -269,93 +277,103 @@ export const extractCertificateFields = (text) => {
     name: extractedName,
     barangay: extractedBarangay,
     dateIssued: extractedDate,
+    // An ID in the certificate slot has none of the certificate wording
+    looksLikeCertificate: looksLikeCertificate(text),
   };
 };
 
 // ── CROSS CHECK DOCUMENTS ──────────────────────────────
-// Your suggestion bossing — compare what was extracted
-// from both documents and check consistency
-export const crossCheckDocuments = (idFields, certFields, claimedBarangay) => {
+// Scores how well the two documents back up the registration (Yoy, 11-18).
+// Every check earns its points only when the OCR actually read the field,
+// so anything it could not read lowers the confidence. A hard mismatch
+// (wrong barangay, names that don't match, swapped uploads, an old
+// certificate) caps the score below the Safe line, so it lands in
+// Needs review. The score only sorts the queue; staff always decide.
+//
+// Points (100 total):
+//   20  barangay on the ID matches the one chosen at registration
+//   20  barangay on the certificate matches
+//   15  name on the ID matches the name on the certificate
+//   15  name typed at registration matches the ID
+//   10  name typed at registration matches the certificate
+//   10  certificate issue date read and within 6 months
+//   10  each upload is in the right slot (certificate wording only in the certificate)
+export const crossCheckDocuments = (idFields, certFields, claimedBarangay, registeredName = "") => {
   const issues = [];
   let score = 0;
-  let maxScore = 0;
+  // Set when a check finds a real contradiction, not just a blank
+  let hardMismatch = false;
 
-  // ── CHECK 1: BARANGAY ON ID ────────────────────────
-  maxScore += 35;
-  if (idFields.barangay) {
-    const idBarangay = idFields.barangay.toUpperCase();
-    const claimed = claimedBarangay.toUpperCase();
-    if (idBarangay.includes(claimed) || claimed.includes(idBarangay)) {
-      score += 35;
-    } else {
-      issues.push(
-        `ID barangay (${idFields.barangay}) does not match claimed barangay (${claimedBarangay})`,
-      );
+  // ── BARANGAY ON EACH DOCUMENT ──
+  const claimed = (claimedBarangay || "").toUpperCase();
+  const barangayCheck = (found, label) => {
+    if (!found) {
+      issues.push(`Could not read the barangay on the ${label}`);
+      return;
     }
-  } else {
-    // Nothing read means nothing earned — unrelated pictures must score low
-    issues.push("Could not extract barangay from government ID");
-  }
-
-  // ── CHECK 2: BARANGAY ON CERTIFICATE ──────────────
-  maxScore += 35;
-  if (certFields.barangay) {
-    const certBarangay = certFields.barangay.toUpperCase();
-    const claimed = claimedBarangay.toUpperCase();
-    if (certBarangay.includes(claimed) || claimed.includes(certBarangay)) {
-      score += 35;
+    const value = found.toUpperCase();
+    if (claimed && (value.includes(claimed) || claimed.includes(value))) {
+      score += 20;
     } else {
-      issues.push(
-        `Certificate barangay (${certFields.barangay}) does not match claimed barangay (${claimedBarangay})`,
-      );
+      hardMismatch = true;
+      issues.push(`${label} barangay (${found}) does not match the barangay chosen at registration (${claimedBarangay || "none"})`);
     }
-  } else {
-    issues.push("Could not extract barangay from Barangay Certificate");
-  }
+  };
+  barangayCheck(idFields.barangay, "Government ID");
+  barangayCheck(certFields.barangay, "Barangay Certificate");
 
-  // ── CHECK 3: NAME COMPARISON BETWEEN DOCUMENTS ────
-  // YOUR SUGGESTION bossing — compare name from ID vs certificate
-  maxScore += 30;
-  if (idFields.name && certFields.name) {
-    const idName = normalizeNameForComparison(idFields.name);
-    const certName = normalizeNameForComparison(certFields.name);
-
-    const similarity = calculateNameSimilarity(idName, certName);
-
+  // ── NAMES ──
+  // Compares two names word by word; blank names earn nothing
+  const nameCheck = (a, b, points, labelA, labelB) => {
+    if (!a || !b) {
+      issues.push(`Could not compare the name on the ${labelA} with the ${labelB}: ${!a ? labelA : labelB} name not read`);
+      return;
+    }
+    const similarity = calculateNameSimilarity(normalizeNameForComparison(a), normalizeNameForComparison(b));
     if (similarity >= 0.7) {
-      // 70%+ word match — names are consistent
-      score += 30;
+      score += points;
     } else if (similarity >= 0.4) {
-      // Partial match — give partial credit
-      // Could be OCR error on one document
-      score += 15;
-      issues.push(
-        `Name similarity between documents is low (${Math.round(similarity * 100)}%) — possible OCR error or name mismatch`,
-      );
+      // Close but not the same, often an OCR misread: half the points
+      score += Math.round(points / 2);
+      issues.push(`Name on the ${labelA} (${a}) only partly matches the ${labelB} (${b}), ${Math.round(similarity * 100)}% similar`);
     } else {
-      // Very low match — names are likely different people
-      issues.push(
-        `Name on ID (${idFields.name}) does not match name on Certificate (${certFields.name})`,
-      );
+      hardMismatch = true;
+      issues.push(`Name on the ${labelA} (${a}) does not match the ${labelB} (${b})`);
     }
-  } else if (certFields.name && !idFields.name) {
-    // Certificate has name but ID doesn't — give partial credit
-    // ID name extraction might have failed due to colored background.
-    // No points — a name that cannot be compared proves nothing.
-    issues.push("Could not extract name from government ID for comparison");
-  } else if (idFields.name && !certFields.name) {
-    // ID has name but certificate doesn't — no points, nothing to compare
-    issues.push(
-      "Could not extract name from Barangay Certificate for comparison",
-    );
+  };
+  nameCheck(idFields.name, certFields.name, 15, "Government ID", "Barangay Certificate");
+  nameCheck(registeredName, idFields.name, 15, "registration form", "Government ID");
+  nameCheck(registeredName, certFields.name, 10, "registration form", "Barangay Certificate");
+
+  // ── CERTIFICATE DATE ──
+  const recent = isCertificateRecent(certFields.dateIssued);
+  if (recent === true) {
+    score += 10;
+  } else if (recent === false) {
+    hardMismatch = true;
+    issues.push("Barangay Certificate may be outdated — issued more than 6 months ago");
   } else {
-    // Neither document has extractable name — no points
-    issues.push(
-      "Could not extract names from one or both documents for comparison",
-    );
+    issues.push("Could not read the issue date on the Barangay Certificate");
   }
 
-  const confidence = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  // ── RIGHT DOCUMENT IN THE RIGHT SLOT ──
+  if (idFields.looksLikeCertificate && !certFields.looksLikeCertificate) {
+    hardMismatch = true;
+    issues.push("The uploads look swapped: the Government ID slot holds a certificate and the certificate slot does not");
+  } else if (idFields.looksLikeCertificate) {
+    hardMismatch = true;
+    issues.push("The Government ID upload looks like a certificate, not an ID");
+  } else if (!certFields.looksLikeCertificate) {
+    // A missing certificate is a missing requirement, e.g. the ID uploaded twice
+    hardMismatch = true;
+    issues.push("The Barangay Certificate upload does not read like a barangay certificate");
+  } else {
+    score += 10;
+  }
+
+  // Never above the Safe line when something contradicts the registration
+  let confidence = Math.min(100, score);
+  if (hardMismatch) confidence = Math.min(confidence, CONFIDENCE_THRESHOLD - 1);
 
   // These codes only sort the admin's queue. Nothing here changes an
   // account's status, because the admin makes every decision.
@@ -368,22 +386,11 @@ export const crossCheckDocuments = (idFields, certFields, claimedBarangay) => {
     result = "AUTO_REJECTED";
   }
 
-  // An outdated certificate can never land in the safe group
-  if (
-    result === "AUTO_APPROVED" &&
-    isCertificateRecent(certFields.dateIssued) === false
-  ) {
-    result = "MANUAL_REVIEW";
-    issues.push(
-      "Barangay Certificate may be outdated — issued more than 6 months ago",
-    );
-  }
-
   return {
     result,
     confidence,
     issues,
-    extractedData: { fromID: idFields, fromCertificate: certFields },
+    extractedData: { registeredName: registeredName || null, fromID: idFields, fromCertificate: certFields },
   };
 };
 
