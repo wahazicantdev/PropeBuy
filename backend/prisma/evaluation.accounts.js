@@ -16,6 +16,11 @@ import prisma from "../src/config/prismaClient.js";
 // 01-20: Actual Users (15 plus spares). 21-50: IT Experts, one pair each.
 const BUYERS = 50;
 const VENDORS = 50;
+// Staff accounts (Yoy, 11-18). Verifiers are barangay staff respondents
+// and use the respondent password. Moderators are for IT experts and
+// use the admin password, like the super admin.
+const VERIFIERS = 10;
+const MODERATORS = 5;
 const PRODUCTS_PER_VENDOR = 3;
 const password = process.argv[2];
 const adminPassword = process.argv[3];
@@ -122,16 +127,39 @@ async function main() {
     }
   }
 
-  // ── EVALUATION ADMIN ───────────────────────────────────
-  // For IT experts who evaluate the admin portal
-  await upsertUser("admin.eval@propebuy.test", { name: "Eval Administrator", role: "ADMIN" }, adminHashed);
+  // ── EVALUATION STAFF ───────────────────────────────────
+  // Super admin for IT experts who evaluate the whole admin portal
+  await upsertUser(
+    "admin.eval@propebuy.test",
+    { name: "Eval Administrator", role: "ADMIN", adminLevel: "SUPER_ADMIN" },
+    adminHashed,
+  );
+  // Moderators: daily moderation, no money or staff pages
+  for (let n = 1; n <= MODERATORS; n++) {
+    await upsertUser(
+      `moderator${pad(n)}.eval@propebuy.test`,
+      { name: `Eval Moderator ${pad(n)}`, role: "ADMIN", adminLevel: "MODERATOR" },
+      adminHashed,
+    );
+  }
+  // Barangay verifiers: Poblacion applicants and Poblacion insights only
+  for (let n = 1; n <= VERIFIERS; n++) {
+    await upsertUser(`verifier${pad(n)}.eval@propebuy.test`, {
+      name: `Eval Poblacion Verifier ${pad(n)}`,
+      role: "ADMIN",
+      adminLevel: "BARANGAY_VERIFIER",
+    });
+  }
 
   // ── SUMMARY ────────────────────────────────────────────
   console.log("\nEvaluation accounts ready (all VERIFIED, Barangay Poblacion):");
   console.log(`  Buyers   buyer01.eval@propebuy.test  to buyer${pad(BUYERS)}.eval@propebuy.test`);
   console.log(`  Vendors  vendor01.eval@propebuy.test to vendor${pad(VENDORS)}.eval@propebuy.test`);
-  console.log("  Admin    admin.eval@propebuy.test");
-  console.log("  Buyers and vendors use the respondent password. The admin uses its own.");
+  console.log("  Super admin  admin.eval@propebuy.test");
+  console.log(`  Moderators   moderator01.eval@propebuy.test to moderator${pad(MODERATORS)}.eval@propebuy.test`);
+  console.log(`  Verifiers    verifier01.eval@propebuy.test to verifier${pad(VERIFIERS)}.eval@propebuy.test (Poblacion)`);
+  console.log("  Buyers, vendors and verifiers use the respondent password.");
+  console.log("  The super admin and moderators use the admin password.");
   console.log(`  New starter products: ${newProducts}`);
 }
 

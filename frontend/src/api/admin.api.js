@@ -147,3 +147,36 @@ export const toggleCategory = async (id) => {
   // Returns { success, message, data: updated }
   return res.data;
 };
+
+// ── STAFF ACCOUNTS — super admin (Yoy, 11-18) ──────────
+// Every admin account with level and barangay
+export const fetchStaff = async () => {
+  const res = await api.get("/admin/staff");
+  return res.data;
+};
+
+// New staff account — the super admin hands over the temporary password
+export const createStaff = async (data) => {
+  const res = await api.post("/admin/staff", data);
+  return res.data;
+};
+
+// Turn a staff account off (logs them out) or back on
+export const setStaffActive = async (id, active) => {
+  const res = await api.put(`/admin/staff/${id}/active`, { active });
+  return res.data;
+};
+
+// ── AUDIT LOG — super admin ────────────────────────────
+// Latest 200 admin actions; filter by action name
+export const fetchActivity = async (action) => {
+  const res = await api.get("/admin/activity", { params: action ? { action } : {} });
+  return res.data;
+};
+
+// ── BARANGAY INSIGHTS ──────────────────────────────────
+// Totals for one barangay. Verifiers always get their own.
+export const fetchInsights = async (barangayId) => {
+  const res = await api.get("/admin/insights", { params: barangayId ? { barangayId } : {} });
+  return res.data;
+};

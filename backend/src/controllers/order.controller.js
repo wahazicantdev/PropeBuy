@@ -294,6 +294,15 @@ export const updatePaymentStatus = async (req, res) => {
     });
   }
 
+  // Older orders can hold another store's items too. Marking them paid
+  // would confirm that store's cash as well (one store per order, 11-18).
+  if (order.orderItems.some((item) => item.product?.sellerId !== req.user.id)) {
+    return res.status(400).json({
+      success: false,
+      message: "This older order also has items from another store, so it cannot be updated here. Contact PropeBuy support.",
+    });
+  }
+
   // GCash confirms through PayMongo — manual marking is CASH only
   if (order.paymentMethod !== "CASH") {
     return res.status(400).json({

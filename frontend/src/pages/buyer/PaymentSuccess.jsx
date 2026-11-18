@@ -19,13 +19,13 @@ const PaymentSuccess = () => {
   // Attempt counter ref, no re-render needed
   const tries = useRef(0);
   const navigate = useNavigate();
-  // Cart clearer for the return trip, deferred past mount for lint
-  const clearCart = useCartStore((s) => s.clearCart);
+  // Bought lines leave the cart on the return trip. Lines from other
+  // stores stay for their own checkout. Deferred past mount for lint.
+  const removePaidLines = useCartStore((s) => s.removePaidLines);
   useEffect(() => {
-    // Paid order means the cart lines are spent, wipe once on return
-    const t = setTimeout(() => clearCart(), 0);
+    const t = setTimeout(() => removePaidLines(), 0);
     return () => clearTimeout(t);
-  }, [clearCart]);
+  }, [removePaidLines]);
 
   // Poll backend which asks PayMongo directly
   useEffect(() => {

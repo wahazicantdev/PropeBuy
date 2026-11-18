@@ -22,7 +22,15 @@ import {
   recordPayout,
   markRefunded,
 } from "../controllers/payout.controller.js";
+import {
+  listStaff,
+  createStaff,
+  setStaffActive,
+  getActivityLog,
+  getBarangayInsights,
+} from "../controllers/staff.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
+import { allowAdmin } from "../middleware/adminAccess.middleware.js";
 import {
   validateVerifyUser,
   validateAddBarangay,
@@ -32,142 +40,69 @@ import {
 
 const adminRoutes = Router();
 
-// ── ALL ADMIN ROUTES REQUIRE ───────────────────────────
-// protect    → must be logged in (valid JWT token)
-// authorize  → must have ADMIN role
-// Applied to every route in this file
+// ── ALL ADMIN ROUTES ───────────────────────────────────
+// protect    → logged in (valid JWT)
+// authorize  → role ADMIN
+// allowAdmin → the staff level may use this area (Yoy, 11-18):
+//   super admin everything, moderator no money/staff/settings,
+//   barangay verifier only verifications and insights of their barangay
+// See middleware/adminAccess.middleware.js for the full table.
+const staff = (area) => [protect, authorize("ADMIN"), allowAdmin(area)];
 
-// ── USER MANAGEMENT ────────────────────────────────────
-// Get all users — with optional role and status filters
-adminRoutes.get("/users", protect, authorize("ADMIN"), getAllUsers);
+// ── VERIFICATIONS — all three levels ───────────────────
+// Verifiers see and decide only on applicants of their own barangay;
+// the scoping is inside each controller.
+adminRoutes.get("/users/verifications/pending", ...staff("verifications"), getPendingVerifications);
 
-// Get single user details with their documents
-adminRoutes.get(
-  "/users/:id",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  getUser,
-);
-
-// Get all pending verification requests
-adminRoutes.get(
-  "/users/verifications/pending",
-  protect,
-  authorize("ADMIN"),
-  getPendingVerifications,
-);
-
-// Get OCR details for a specific user
-adminRoutes.get(
-  "/users/:id/ocr-details",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  getUserOCRDetails,
-);
-
-// ── APPROVE or REJECT a USER REGISTRATION ───────────────────────────────────
-// Admin manually triggers OCR re-run on a user's documents
-adminRoutes.post(
-  "/users/:id/ocr-rerun",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  rerunOCR,
-);
+// Single user with documents. The verifications area lets a verifier
+// open an applicant; the controller refuses anyone else for them.
+adminRoutes.get("/users/:id", ...staff("verifications"), validateIdParam, getUser);
+adminRoutes.get("/users/:id/ocr-details", ...staff("verifications"), validateIdParam, getUserOCRDetails);
+adminRoutes.post("/users/:id/ocr-rerun", ...staff("verifications"), validateIdParam, rerunOCR);
 
 // Body: { action: "approve" | "reject", barangayId: number }
 adminRoutes.put(
   "/users/:id/verify",
-  protect,
-  authorize("ADMIN"),
+  ...staff("verifications"),
   validateIdParam,
   validateVerifyUser,
   verifyUser,
 );
 
-// Suspend a user account
-adminRoutes.put(
-  "/users/:id/suspend",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  suspendUser,
-);
+// ── BARANGAY INSIGHTS — totals only ────────────────────
+adminRoutes.get("/insights", ...staff("insights"), getBarangayInsights);
+
+// ── USERS — super admin and moderators ─────────────────
+adminRoutes.get("/users", ...staff("users"), getAllUsers);
+adminRoutes.put("/users/:id/suspend", ...staff("users"), validateIdParam, suspendUser);
 
 // ── PRODUCT MODERATION ─────────────────────────────────
-// Get all products — including inactive ones
-adminRoutes.get("/products", protect, authorize("ADMIN"), getAllProducts);
+adminRoutes.get("/products", ...staff("products"), getAllProducts);
+// Body: { reason: string }
+adminRoutes.put("/products/:id/remove", ...staff("products"), validateIdParam, removeProduct);
 
-// Remove a product listing — body: { reason: string }
-adminRoutes.put(
-  "/products/:id/remove",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  removeProduct,
-);
+// ── ORDER OVERSIGHT ────────────────────────────────────
+adminRoutes.get("/orders", ...staff("orders"), getAllOrders);
 
-// ── ORDER MONITORING ───────────────────────────────────
-// Get all orders across the entire platform
-adminRoutes.get("/orders", protect, authorize("ADMIN"), getAllOrders);
+// ── SETTINGS — super admin only ────────────────────────
+// Every barangay and category, active and disabled, with counts
+adminRoutes.get("/barangays", ...staff("settings"), getAllBarangays);
+adminRoutes.post("/barangays", ...staff("settings"), validateAddBarangay, addBarangay);
+adminRoutes.put("/barangays/:id/toggle", ...staff("settings"), validateIdParam, toggleBarangay);
+adminRoutes.get("/categories", ...staff("settings"), getAllCategories);
+adminRoutes.post("/categories", ...staff("settings"), validateAddCategory, addCategory);
+adminRoutes.put("/categories/:id/toggle", ...staff("settings"), validateIdParam, toggleCategory);
 
-// ── BARANGAY MANAGEMENT ────────────────────────────────
-// Get every barangay — active AND disabled, with product/user counts
-// Public /products/barangays hides disabled rows, admin needs them all
-adminRoutes.get("/barangays", protect, authorize("ADMIN"), getAllBarangays);
-
-// Add new barangay — body: { name: string, city: string }
-adminRoutes.post(
-  "/barangays",
-  protect,
-  authorize("ADMIN"),
-  validateAddBarangay,
-  addBarangay,
-);
-
-// Toggle barangay active status
-adminRoutes.put(
-  "/barangays/:id/toggle",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  toggleBarangay,
-);
-
-// ── CATEGORY MANAGEMENT ────────────────────────────────
-// Get every category — active AND disabled, with product counts
-adminRoutes.get("/categories", protect, authorize("ADMIN"), getAllCategories);
-
-// Add new category — body: { name: string }
-adminRoutes.post(
-  "/categories",
-  protect,
-  authorize("ADMIN"),
-  validateAddCategory,
-  addCategory,
-);
-
-// Toggle category active status
-adminRoutes.put(
-  "/categories/:id/toggle",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  toggleCategory,
-);
-
-// ── SELLER PAYOUTS ─────────────────────────────────────
+// ── MONEY — super admin only ───────────────────────────
 // Who to pay, refunds due, PropeBuy income; record transfers
-adminRoutes.get("/payouts", protect, authorize("ADMIN"), getPayoutOverview);
-adminRoutes.post("/payouts", protect, authorize("ADMIN"), recordPayout);
-adminRoutes.patch(
-  "/payouts/refunds/:id",
-  protect,
-  authorize("ADMIN"),
-  validateIdParam,
-  markRefunded,
-);
+adminRoutes.get("/payouts", ...staff("payouts"), getPayoutOverview);
+adminRoutes.post("/payouts", ...staff("payouts"), recordPayout);
+adminRoutes.patch("/payouts/refunds/:id", ...staff("payouts"), validateIdParam, markRefunded);
+
+// ── STAFF ACCOUNTS AND AUDIT LOG — super admin only ────
+adminRoutes.get("/staff", ...staff("staff"), listStaff);
+adminRoutes.post("/staff", ...staff("staff"), createStaff);
+adminRoutes.put("/staff/:id/active", ...staff("staff"), validateIdParam, setStaffActive);
+adminRoutes.get("/activity", ...staff("activity"), getActivityLog);
 
 export default adminRoutes;

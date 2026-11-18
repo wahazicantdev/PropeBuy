@@ -4,6 +4,7 @@ import {
   getPlatformAnalytics,
 } from "../controllers/analytics.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
+import { allowAdmin } from "../middleware/adminAccess.middleware.js";
 
 const analyticsRoutes = Router();
 
@@ -22,6 +23,8 @@ analyticsRoutes.get(
   "/platform",
   protect,
   authorize("ADMIN"),
+  // Super admin and moderators; verifiers use Barangay Insights
+  allowAdmin("dashboard"),
   getPlatformAnalytics,
 );
 

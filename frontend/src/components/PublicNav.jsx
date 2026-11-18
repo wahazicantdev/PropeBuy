@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { adminHome } from "../utils/adminAccess.js";
 import NotificationBell from "./NotificationBell.jsx";
 import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store.js";
@@ -54,7 +55,7 @@ const PublicNav = () => {
     : isSeller
       ? "/seller/dashboard"
       : isAdmin
-        ? "/admin/dashboard"
+        ? adminHome(user)
         : "/browse";
 
   // Account icon target — login for guests, own area for members
@@ -63,7 +64,7 @@ const PublicNav = () => {
     : isSeller
       ? "/seller/profile"
       : isAdmin
-        ? "/admin/dashboard"
+        ? adminHome(user)
         : "/profile";
 
   // Text links per state — guests see doors in, members see their pages
@@ -80,7 +81,7 @@ const PublicNav = () => {
       : isAdmin
         ? [
             { to: "/browse", label: "Shop" },
-            { to: "/admin/dashboard", label: "Admin Portal" },
+            { to: adminHome(user), label: "Admin Portal" },
           ]
         : [
             { to: "/browse", label: "Shop" },

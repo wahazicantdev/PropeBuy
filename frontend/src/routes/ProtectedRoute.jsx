@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../stores/auth.store.js";
+import { adminCan, adminHome } from "../utils/adminAccess.js";
 
 // ── GENERIC GUARD ──
 // Checks auth + role in one place
@@ -30,3 +31,13 @@ const Guard = ({ allowedRoles }) => {
 export const BuyerRoute = () => <Guard allowedRoles={["BUYER", "ADMIN"]} />;
 export const SellerRoute = () => <Guard allowedRoles={["SELLER"]} />;
 export const AdminRoute = () => <Guard allowedRoles={["ADMIN"]} />;
+
+// ── ADMIN AREA GUARD (Yoy, 11-18) ──
+// Wraps one admin page. A staff level without access to the area goes
+// to its own home page instead of a page that would answer 403.
+// AdminLayout waits for the staff level before rendering pages.
+export const AdminArea = ({ area, children }) => {
+  const user = useAuthStore((s) => s.user);
+  if (!adminCan(user, area)) return <Navigate to={adminHome(user)} replace />;
+  return children;
+};

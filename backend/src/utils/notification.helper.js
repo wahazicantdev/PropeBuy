@@ -142,11 +142,26 @@ export const notifyReviewReply = (buyerId, product) => {
   });
 };
 
+// ── STAFF WHO GET MONEY ALERTS ─────────────────────────
+// Refunds and payouts belong to the super admin only (Yoy, 11-18)
+const moneyStaff = { role: "ADMIN", adminLevel: "SUPER_ADMIN", accountStatus: "VERIFIED" };
+
 // ── NEW REGISTRATION FOR ADMINS ────────────────────────
-// Every admin gets a bell item when someone waits for verification
+// The super admin, moderators, and the verifiers of the applicant's
+// barangay get a bell item when someone waits for verification
 export const notifyAdminsNewRegistration = (user) => {
   prisma.user
-    .findMany({ where: { role: "ADMIN" }, select: { id: true } })
+    .findMany({
+      where: {
+        role: "ADMIN",
+        accountStatus: "VERIFIED",
+        OR: [
+          { adminLevel: { in: ["SUPER_ADMIN", "MODERATOR"] } },
+          { adminLevel: "BARANGAY_VERIFIER", barangayId: user.barangayId ?? -1 },
+        ],
+      },
+      select: { id: true },
+    })
     .then((admins) =>
       admins.forEach((admin) =>
         saveNotification(admin.id, {
@@ -227,7 +242,7 @@ export const notifyRefundDue = (buyerId, orderId, amount) => {
     link: `/orders/${orderId}`,
   });
   prisma.user
-    .findMany({ where: { role: "ADMIN" }, select: { id: true } })
+    .findMany({ where: moneyStaff, select: { id: true } })
     .then((admins) =>
       admins.forEach((admin) =>
         saveNotification(admin.id, {
@@ -256,7 +271,7 @@ export const notifyRefundSent = (buyerId, orderId, amount, referenceNo) => {
 // The buyer typed where the refund goes, so every admin can send it now
 export const notifyRefundGcashAdded = (orderId) => {
   prisma.user
-    .findMany({ where: { role: "ADMIN" }, select: { id: true } })
+    .findMany({ where: moneyStaff, select: { id: true } })
     .then((admins) =>
       admins.forEach((admin) =>
         saveNotification(admin.id, {

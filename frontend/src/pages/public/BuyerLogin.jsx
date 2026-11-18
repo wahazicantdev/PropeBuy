@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { adminHome } from "../../utils/adminAccess.js";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -45,7 +46,8 @@ const BuyerLogin = () => {
       // Phase E: admins share this login door but belong in their portal.
       // Without this branch an admin landed on /browse and had to type
       // the admin URL by hand — bad on demo day.
-      navigate(res.data.role === "ADMIN" ? "/admin/dashboard" : "/browse");
+      // Admins land on their staff level's home page
+      navigate(res.data.role === "ADMIN" ? adminHome(res.data) : "/browse");
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {

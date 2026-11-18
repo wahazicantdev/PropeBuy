@@ -246,6 +246,9 @@ export const login = async (req, res) => {
       // Sellers: public store name, so the store-name prompt knows
       storeName: user.storeName,
       avatarUrl: user.avatarUrl,
+      // Admins: staff level decides the menu, verifiers see their barangay
+      adminLevel: user.adminLevel,
+      barangayId: user.barangayId,
     },
   });
 };
@@ -274,6 +277,9 @@ export const getMe = async (req, res) => {
       ocrResult: true,
       ocrConfidence: true,
       createdAt: true,
+      // Admins: staff level and the barangay a verifier works for
+      adminLevel: true,
+      barangay: { select: { id: true, name: true } },
     },
   });
 
