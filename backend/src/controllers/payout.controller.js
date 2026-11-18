@@ -111,7 +111,10 @@ export const getPayoutOverview = async (req, res) => {
     }),
     prisma.sellerEarning.findMany({
       where: { status: "REFUND_DUE" },
-      orderBy: { createdAt: "asc" },
+      // Newest cancellation on top (a cancelled order is never edited
+      // again, so its updatedAt is the cancel time). The page splits
+      // them by GCash added or not.
+      orderBy: [{ order: { updatedAt: "desc" } }, { id: "desc" }],
       include: {
         order: { select: { id: true, paymentMethod: true, buyer: { select: { name: true, email: true } } } },
         seller: { select: { name: true, storeName: true } },
