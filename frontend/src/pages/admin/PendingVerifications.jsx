@@ -12,6 +12,7 @@ import {
   verifyUser,
 } from "../../api/admin.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
+import { useAuthStore } from "../../stores/auth.store.js";
 
 // Three work queues — OCR only sorts accounts, the admin decides each one
 const OCR_GROUPS = [
@@ -44,6 +45,10 @@ const groupOf = (user) => {
 // page is OCR-assisted with a manual fallback: the engine recommends,
 // the human decides, and the decision is always the human's.
 const PendingVerifications = () => {
+  // A barangay verifier works for one barangay only (Yoy, 11-18): the
+  // queue already holds only their applicants, and approvals go there
+  const me = useAuthStore((s) => s.user);
+  const verifier = me?.adminLevel === "BARANGAY_VERIFIER";
   // Pending users — backend already parsed ocrIssues + ocrExtractedData
   const [users, setUsers] = useState([]);
   // Active barangays — the approve dropdown assigns one of these
@@ -102,7 +107,8 @@ const PendingVerifications = () => {
   // Seeds the dropdown with the barangay the user CLAIMED at register,
   // so the common case is one tap. Admin can still override it.
   const openApprove = (u) => {
-    setApproveBarangayId(u.barangay?.id ? String(u.barangay.id) : "");
+    // A verifier can only vouch for their own barangay
+    setApproveBarangayId(verifier ? String(me.barangayId) : u.barangay?.id ? String(u.barangay.id) : "");
     setApproveTarget(u);
   };
 
@@ -188,9 +194,12 @@ const PendingVerifications = () => {
   };
 
   // Barangay options for the custom Select — ids, never names
+  // A verifier sees only their own barangay in the picker
   const barangayOptions = [
-    { value: "", label: "Select barangay" },
-    ...barangays.map((b) => ({ value: String(b.id), label: b.name })),
+    ...(verifier ? [] : [{ value: "", label: "Select barangay" }]),
+    ...barangays
+      .filter((b) => !verifier || b.id === me.barangayId)
+      .map((b) => ({ value: String(b.id), label: b.name })),
   ];
 
   // Current tab's accounts, strongest OCR match first
@@ -220,6 +229,7 @@ const PendingVerifications = () => {
           <p className="font-body text-sm text-passive mt-1">
             {users.length} registration{users.length === 1 ? "" : "s"} waiting
             on a decision
+            {verifier ? " from your barangay" : ""}
           </p>
         </div>
         {/* Manual refresh — the queue is a snapshot, not a live feed */}

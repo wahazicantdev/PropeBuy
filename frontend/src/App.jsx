@@ -8,6 +8,7 @@ import {
   BuyerRoute,
   SellerRoute,
   AdminRoute,
+  AdminArea,
 } from "./routes/ProtectedRoute.jsx";
 // Public pages - guests allowed, login wall lives on actions
 import Landing from "./pages/public/Landing.jsx";
@@ -47,6 +48,10 @@ import OrdersOverview from "./pages/admin/OrdersOverview.jsx";
 import BarangayManagement from "./pages/admin/BarangayManagement.jsx";
 import CategoryManagement from "./pages/admin/CategoryManagement.jsx";
 import Payouts from "./pages/admin/Payouts.jsx";
+// Admin roles (Yoy, 11-18): staff accounts, audit log, barangay numbers
+import StaffManagement from "./pages/admin/StaffManagement.jsx";
+import ActivityLog from "./pages/admin/ActivityLog.jsx";
+import BarangayInsights from "./pages/admin/BarangayInsights.jsx";
 
 const App = () => {
   // Mount realtime once — before this, the hook existed but nothing
@@ -98,21 +103,27 @@ const App = () => {
           <Route path="/seller/reviews" element={<Reviews />} />
         </Route>
       </Route>
-      {/* Admin - top nav shell, all 7 pages guarded by role ADMIN */}
+      {/* Admin - role ADMIN, then each page checks the staff level's area
+          (super admin, moderator, barangay verifier — Yoy, 11-18) */}
       <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<AdminArea area="dashboard"><AdminDashboard /></AdminArea>} />
+          {/* Barangay numbers, totals only — the verifier's home page */}
+          <Route path="/admin/insights" element={<AdminArea area="insights"><BarangayInsights /></AdminArea>} />
           {/* Verification queue - the blocking gate for new vendors */}
-          <Route path="/admin/pending" element={<PendingVerifications />} />
-          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/pending" element={<AdminArea area="verifications"><PendingVerifications /></AdminArea>} />
+          <Route path="/admin/users" element={<AdminArea area="users"><UserManagement /></AdminArea>} />
           {/* Moderation - soft removal with a mandatory reason */}
-          <Route path="/admin/products" element={<ProductModeration />} />
+          <Route path="/admin/products" element={<AdminArea area="products"><ProductModeration /></AdminArea>} />
           {/* Oversight - read-only, no admin status override exists */}
-          <Route path="/admin/orders" element={<OrdersOverview />} />
-          {/* Taxonomy - barangay coverage and the 8 categories */}
-          <Route path="/admin/barangays" element={<BarangayManagement />} />
-          <Route path="/admin/categories" element={<CategoryManagement />} />
-          <Route path="/admin/payouts" element={<Payouts />} />
+          <Route path="/admin/orders" element={<AdminArea area="orders"><OrdersOverview /></AdminArea>} />
+          {/* Taxonomy - barangay coverage and the categories */}
+          <Route path="/admin/barangays" element={<AdminArea area="settings"><BarangayManagement /></AdminArea>} />
+          <Route path="/admin/categories" element={<AdminArea area="settings"><CategoryManagement /></AdminArea>} />
+          <Route path="/admin/payouts" element={<AdminArea area="payouts"><Payouts /></AdminArea>} />
+          {/* Super admin only */}
+          <Route path="/admin/staff" element={<AdminArea area="staff"><StaffManagement /></AdminArea>} />
+          <Route path="/admin/activity" element={<AdminArea area="activity"><ActivityLog /></AdminArea>} />
         </Route>
       </Route>
     </Routes>
