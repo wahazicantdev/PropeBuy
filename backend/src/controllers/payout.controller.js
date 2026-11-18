@@ -1,6 +1,7 @@
 import prisma from "../config/prismaClient.js";
 import { COMMISSION_RATE, GATEWAY_FEE_RATE, WHT_RATE, WHT_THRESHOLD, round2 } from "../config/fees.js";
 import { notifyPayoutSent, notifyRefundSent } from "../utils/notification.helper.js";
+import { logAdmin } from "../utils/adminLog.helper.js";
 
 // Rates the pages show next to the numbers, so the UI never hardcodes them
 const RATES = {
@@ -226,6 +227,7 @@ export const recordPayout = async (req, res) => {
   });
 
   notifyPayoutSent(sellerId, payout);
+  logAdmin(req, "PAYOUT_RECORDED", "PAYOUT", payout.id, `₱${Number(payout.amount).toFixed(2)} to seller #${sellerId}, ref ${referenceNo}`);
   res.status(201).json({ success: true, message: "Payout recorded", data: payout });
 };
 
@@ -261,5 +263,6 @@ export const markRefunded = async (req, res) => {
   });
   const amount = round2(Number(earning.itemsAmount) + Number(earning.deliveryFee));
   notifyRefundSent(earning.order.buyerId, earning.orderId, amount, referenceNo);
+  logAdmin(req, "REFUND_RECORDED", "ORDER", earning.orderId, `₱${amount.toFixed(2)}, ref ${referenceNo}`);
   res.status(200).json({ success: true, message: "Refund recorded. The buyer was notified.", data: { id } });
 };

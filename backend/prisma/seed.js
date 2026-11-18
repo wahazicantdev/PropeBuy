@@ -63,12 +63,14 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "admin@propebuy.com" },
-    update: {},
+    // Never touches the password; only makes sure it is a super admin
+    update: { adminLevel: "SUPER_ADMIN" },
     create: {
       name: "PropeBuy Admin",
       email: "admin@propebuy.com",
       password: hashedPassword,
       role: "ADMIN",
+      adminLevel: "SUPER_ADMIN",
       accountStatus: "VERIFIED",
     },
   });

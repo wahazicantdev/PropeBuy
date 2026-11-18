@@ -7,6 +7,12 @@ import {
   crossCheckDocuments,
 } from "../utils/ocr.helper.js";
 import axios from "axios";
+import { logAdmin } from "../utils/adminLog.helper.js";
+import { isVerifier, verifierMaySee } from "../middleware/adminAccess.middleware.js";
+
+// Same answer as a missing user, so a verifier learns nothing about
+// people outside their barangay's pending queue
+const notFound = (res) => res.status(404).json({ success: false, message: "User not found" });
 
 // ── RE-RUN OCR ON USER DOCUMENTS ──────────────────────
 // Admin can manually trigger OCR re-run
@@ -21,16 +27,14 @@ export const rerunOCR = async (req, res) => {
       id: true,
       idDocumentUrl: true,
       certDocumentUrl: true,
+      accountStatus: true,
+      barangayId: true,
       barangay: { select: { name: true } },
     },
   });
 
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
-  }
+  // Verifiers: own barangay's pending applicants only
+  if (!user || !verifierMaySee(req, user)) return notFound(res);
 
   if (!user.idDocumentUrl || !user.certDocumentUrl) {
     return res.status(400).json({
@@ -75,6 +79,7 @@ export const rerunOCR = async (req, res) => {
     },
   });
 
+  logAdmin(req, "OCR_RERUN", "USER", user.id, `Result ${verificationResult.result}, ${verificationResult.confidence}%`);
   res.status(200).json({
     success: true,
     message: "OCR re-run completed",
@@ -110,18 +115,15 @@ export const getUserOCRDetails = async (req, res) => {
       ocrIssues: true,
       ocrExtractedData: true,
       createdAt: true,
+      barangayId: true,
       barangay: {
         select: { id: true, name: true },
       },
     },
   });
 
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
-  }
+  // Verifiers: own barangay's pending applicants only
+  if (!user || !verifierMaySee(req, user)) return notFound(res);
 
   // Parse JSON strings to objects
   const ocrIssues = user.ocrIssues ? JSON.parse(user.ocrIssues) : [];
@@ -217,6 +219,10 @@ export const getPendingVerifications = async (req, res) => {
     where: {
       // Every new account lands here, grouped by OCR on the page
       accountStatus: "PENDING",
+      // Staff accounts never wait for verification
+      role: { not: "ADMIN" },
+      // A barangay verifier sees only applicants from their barangay
+      ...(isVerifier(req) ? { barangayId: req.user.barangayId } : {}),
     },
     select: {
       id: true,
@@ -279,13 +285,9 @@ export const verifyUser = async (req, res) => {
     where: { id: parseInt(id) },
   });
 
-  // User must exist
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
-  }
+  // User must exist. Verifiers may decide only on applicants who
+  // claimed their barangay.
+  if (!user || (isVerifier(req) && user.barangayId !== req.user.barangayId)) return notFound(res);
 
   // Can only verify users who are still PENDING
   // Prevents double-verifying already processed users
@@ -296,9 +298,12 @@ export const verifyUser = async (req, res) => {
     });
   }
 
+  // A verifier vouches for their own barangay only, whatever was sent
+  const approvedBarangayId = isVerifier(req) ? req.user.barangayId : barangayId;
+
   // When approving — barangayId is required
   // This assigns the user to their verified barangay
-  if (action === "approve" && !barangayId) {
+  if (action === "approve" && !approvedBarangayId) {
     return res.status(400).json({
       success: false,
       message: "barangayId is required when approving a user",
@@ -311,7 +316,7 @@ export const verifyUser = async (req, res) => {
       ? {
           // Approve — set status to VERIFIED and assign barangay
           accountStatus: "VERIFIED",
-          barangayId: parseInt(barangayId),
+          barangayId: parseInt(approvedBarangayId),
         }
       : {
           // Reject — set status to REJECTED only
@@ -334,6 +339,14 @@ export const verifyUser = async (req, res) => {
 
   // Live update for the user, if they are online right now
   notifyAccountStatus(updatedUser.id, updatedUser.accountStatus, updatedUser.role);
+
+  logAdmin(
+    req,
+    action === "approve" ? "USER_APPROVED" : "USER_REJECTED",
+    "USER",
+    updatedUser.id,
+    `${updatedUser.name} (${updatedUser.role.toLowerCase()})`,
+  );
 
   res.status(200).json({
     success: true,
@@ -406,6 +419,7 @@ export const getUser = async (req, res) => {
       ocrIssues: true,
       ocrExtractedData: true,
 
+      barangayId: true,
       barangay: {
         select: { id: true, name: true },
       },
@@ -423,12 +437,8 @@ export const getUser = async (req, res) => {
     },
   });
 
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
-  }
+  // Verifiers: own barangay's pending applicants only
+  if (!user || !verifierMaySee(req, user)) return notFound(res);
 
   // Parse OCR JSON strings back to objects
   const parsedUser = {
@@ -493,6 +503,8 @@ export const suspendUser = async (req, res) => {
 
   // Ends the suspended user's open pages right away
   notifyAccountStatus(suspendedUser.id, "REJECTED", suspendedUser.role);
+
+  logAdmin(req, "USER_SUSPENDED", "USER", suspendedUser.id, `${suspendedUser.name} (${suspendedUser.role.toLowerCase()})`);
 
   res.status(200).json({
     success: true,
@@ -592,6 +604,7 @@ export const removeProduct = async (req, res) => {
     data: { isActive: false },
   });
 
+  logAdmin(req, "PRODUCT_REMOVED", "PRODUCT", product.id, `${product.name}: ${reason}`);
   res.status(200).json({
     success: true,
     message: "Product removed from platform successfully",
@@ -694,6 +707,7 @@ export const addBarangay = async (req, res) => {
     },
   });
 
+  logAdmin(req, "BARANGAY_ADDED", "BARANGAY", barangay.id, barangay.name);
   res.status(201).json({
     success: true,
     message: "Barangay added successfully",
@@ -728,6 +742,7 @@ export const toggleBarangay = async (req, res) => {
     },
   });
 
+  logAdmin(req, updated.isActive ? "BARANGAY_ENABLED" : "BARANGAY_DISABLED", "BARANGAY", updated.id, updated.name);
   res.status(200).json({
     success: true,
     message: `Barangay ${updated.isActive ? "enabled" : "disabled"} successfully`,
@@ -766,6 +781,7 @@ export const addCategory = async (req, res) => {
     },
   });
 
+  logAdmin(req, "CATEGORY_ADDED", "CATEGORY", category.id, category.name);
   res.status(201).json({
     success: true,
     message: "Category added successfully",
@@ -795,6 +811,7 @@ export const toggleCategory = async (req, res) => {
     data: { isActive: !category.isActive },
   });
 
+  logAdmin(req, updated.isActive ? "CATEGORY_ENABLED" : "CATEGORY_DISABLED", "CATEGORY", updated.id, updated.name);
   res.status(200).json({
     success: true,
     message: `Category ${updated.isActive ? "enabled" : "disabled"} successfully`,

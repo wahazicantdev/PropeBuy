@@ -13,6 +13,9 @@ model User {
   email           String        @unique
   password        String
   role            Role
+  // Admins only: what this staff account may do (Yoy, 11-18).
+  // Null for buyers and sellers. A verifier works in barangayId only.
+  adminLevel      AdminLevel?
   accountStatus   AccountStatus @default(PENDING)
   barangayId      Int?
   idDocumentUrl   String?
@@ -52,6 +55,7 @@ model User {
   earnings        SellerEarning[]
   payoutsReceived Payout[]      @relation("PayoutSeller")
   payoutsSent     Payout[]      @relation("PayoutAdmin")
+  adminLogs       AdminLog[]
   barangay        Barangay?     @relation(fields: [barangayId], references: [id])
 
   @@map("users")
@@ -289,6 +293,32 @@ enum Role {
   BUYER
   SELLER
   ADMIN
+}
+
+// Staff levels inside the ADMIN role
+// SUPER_ADMIN       — PropeBuy founders: everything, money and staff
+// MODERATOR         — hired PropeBuy staff: daily moderation, no money
+// BARANGAY_VERIFIER — barangay staff: verify residents of their barangay
+enum AdminLevel {
+  SUPER_ADMIN
+  MODERATOR
+  BARANGAY_VERIFIER
+}
+
+// Audit log — who did what in the admin portal, and when
+model AdminLog {
+  id         Int      @id @default(autoincrement())
+  adminId    Int
+  action     String   // e.g. USER_APPROVED, PRODUCT_REMOVED, REFUND_RECORDED
+  targetType String   // USER, PRODUCT, ORDER, PAYOUT, BARANGAY, CATEGORY, STAFF
+  targetId   Int?
+  details    String?  // short readable note, never a password or document
+  createdAt  DateTime @default(now())
+  admin      User     @relation(fields: [adminId], references: [id])
+
+  @@index([createdAt])
+  @@index([adminId])
+  @@map("admin_logs")
 }
 
 enum AccountStatus {
