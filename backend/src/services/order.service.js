@@ -128,17 +128,23 @@ export const processCheckout = async (
       });
     }
 
+    // ── ONE STORE PER ORDER ───────────────────────
+    // Every order belongs to one store, for pickup and delivery alike.
+    // Mixed orders let one seller's status change move another seller's
+    // items, and each store charges its own delivery fee (Yoy, 11-18).
+    // Throwing here rolls back the stock already locked above.
+    if (sellerIds.size !== 1) {
+      throw userError(
+        "You can check out items from one store at a time. Check out this store first, then come back for the rest of your cart.",
+      );
+    }
+
     // ── DELIVERY RULES ────────────────────────────
-    // One seller per delivery order, a seller who delivers, and a saved
-    // buyer address. The address and fee are copied onto the order.
+    // A seller who delivers and a saved buyer address. The address and
+    // fee are copied onto the order.
     let deliveryAddress = null;
     let deliveryFee = 0;
     if (deliveryType === "DELIVERY") {
-      if (sellerIds.size !== 1) {
-        throw userError(
-          "Delivery orders can only have items from one seller. Choose pickup, or check out each seller separately.",
-        );
-      }
       const [sellerId] = sellerIds;
       const seller = await tx.user.findUnique({
         where: { id: sellerId },
@@ -416,6 +422,16 @@ export const changeOrderStatus = async (orderId, status, sellerId) => {
   );
 
   if (!isSellerOrder) throw userError("Not authorized to update this order");
+
+  // Orders made before the one-store rule can hold another store's
+  // items. Changing them would fulfil or cancel that store's goods too,
+  // so only the PropeBuy admin can settle these.
+  const otherStore = order.orderItems.some((item) => item.product.sellerId !== sellerId);
+  if (otherStore) {
+    throw userError(
+      "This older order also has items from another store, so it cannot be updated here. Contact PropeBuy support.",
+    );
+  }
 
   // Closed orders stay closed — cancelling a fulfilled order would
   // return stock that was already handed over
