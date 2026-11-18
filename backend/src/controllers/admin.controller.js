@@ -25,6 +25,8 @@ export const rerunOCR = async (req, res) => {
     where: { id: parseInt(id) },
     select: {
       id: true,
+      // Typed name at registration, compared with both documents
+      name: true,
       idDocumentUrl: true,
       certDocumentUrl: true,
       accountStatus: true,
@@ -66,6 +68,7 @@ export const rerunOCR = async (req, res) => {
     idFields,
     certFields,
     user.barangay?.name || "",
+    user.name,
   );
 
   // Update user with new OCR results
@@ -187,6 +190,10 @@ const buildOCRSummary = (result, confidence, issues, extractedData) => {
   summary += `Confidence Score: ${confidence}%\n\n`;
 
   if (extractedData) {
+    // Older results were scored before the typed name was compared
+    if (extractedData.registeredName) {
+      summary += `Name typed at registration: ${extractedData.registeredName.toUpperCase()}\n\n`;
+    }
     summary += "Extracted from Government ID:\n";
     summary += `  Name: ${extractedData.fromID?.name || "Not detected"}\n`;
     summary += `  Address: ${extractedData.fromID?.address || "Not detected"}\n`;
