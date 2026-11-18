@@ -427,7 +427,7 @@ const PendingVerifications = () => {
       <ConfirmModal
         open={!!approveTarget}
         title="Approve registration"
-        message={`${approveTarget?.name || ""} gets full access once approved. Confirm the barangay their documents actually prove — this is what the Verified Local Vendor badge rests on.`}
+        message={`${approveTarget?.name || ""} gets full access once approved. Confirm the barangay their documents actually prove — this is what the Verified Local Seller badge rests on.`}
         confirmLabel="Approve"
         tone="primary"
         size="md"

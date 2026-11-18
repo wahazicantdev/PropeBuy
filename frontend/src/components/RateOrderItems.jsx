@@ -96,7 +96,7 @@ const RateOrderItems = ({ order, onRated }) => {
       <p className="font-body text-sm text-black/60 mt-1">
         {left > 0
           ? `Please rate ${left === 1 ? "this item" : `these ${left} items`}. You can order again once every item has a rating.`
-          : "Thanks! Your ratings help other buyers find good local vendors."}
+          : "Thanks! Your ratings help other buyers find good local sellers."}
       </p>
       <ul className="mt-2 divide-y divide-black/10">
         {items.map((it) => (

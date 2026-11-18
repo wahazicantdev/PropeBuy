@@ -50,7 +50,7 @@ const Cart = () => {
         </span>
         <h1 className="mt-5 text-2xl md:text-3xl text-black">Your cart is empty</h1>
         <p className="font-body text-sm text-black/60 mt-2">
-          Find something good from nearby vendors.
+          Find something good from nearby sellers.
         </p>
         <Link to="/browse" className="btn-primary btn-active inline-block mt-6 px-12 py-3.5 font-body font-medium">
           Shop now
@@ -149,7 +149,7 @@ const Cart = () => {
                   ) : (
                     <Link to={`/store/${g.sellerId}`} className="min-w-0 font-body text-sm truncate hover:underline">
                       <span className="text-black/60">From </span>
-                      <span className="font-bold text-black">{g.storeName || "Local vendor"}</span>
+                      <span className="font-bold text-black">{g.storeName || "Local seller"}</span>
                       {g.barangayName && <span className="text-black/60"> · {g.barangayName}</span>}
                     </Link>
                   )}

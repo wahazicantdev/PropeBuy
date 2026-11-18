@@ -66,7 +66,7 @@ const SellerProfile = () => {
       <ProfileView
         user={user}
         barangayName={barangayName}
-        verifiedLabel="Verified Local Vendor"
+        verifiedLabel="Verified Local Seller"
         LinkComp={Link}
         links={[
           { to: "/seller/products", label: "My products", icon: "inventory_2" },

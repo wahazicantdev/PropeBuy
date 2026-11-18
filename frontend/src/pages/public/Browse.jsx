@@ -201,7 +201,7 @@ const Browse = () => {
                   {activeCategory ? activeCategory.name : "Browse goods"}
                 </h1>
                 <p className="font-body text-sm text-black/60 mt-1">
-                  {loading ? "Loading goods..." : `Showing ${products.length} product${products.length === 1 ? "" : "s"} from verified vendors`}
+                  {loading ? "Loading goods..." : `Showing ${products.length} product${products.length === 1 ? "" : "s"} from verified sellers`}
                 </p>
               </div>
               {/* Phone filters toggle */}

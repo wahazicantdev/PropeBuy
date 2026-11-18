@@ -3,7 +3,7 @@
 // ID and certificate) stays visible to the seller and the admin.
 
 // Shown when a verified seller has not picked a store name yet
-export const FALLBACK_STORE_NAME = "Local vendor";
+export const FALLBACK_STORE_NAME = "Local seller";
 
 // Swaps the real name for the store name before a seller object leaves
 // for a buyer or a guest. Keeps every other field as it is.

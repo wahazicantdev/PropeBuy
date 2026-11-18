@@ -93,7 +93,7 @@ const AdminDashboard = () => {
             {users.pendingVerifications === 1 ? "" : "s"} waiting for review
           </p>
           <p className="font-body text-xs text-passive mt-1">
-            Vendors cannot list goods until you approve them — tap to review.
+            Sellers cannot list goods until you approve them — tap to review.
           </p>
         </Link>
       )}
@@ -178,10 +178,10 @@ const AdminDashboard = () => {
             {users.buyers.toLocaleString()}
           </p>
         </div>
-        {/* Vendors */}
+        {/* Sellers */}
         <div className="border border-black/10 rounded-xl p-4">
           <p className="font-body text-xs font-bold text-passive uppercase tracking-wide">
-            Vendors
+            Sellers
           </p>
           <p className="font-body font-bold text-xl tabular-nums text-black mt-1">
             {users.sellers.toLocaleString()}
@@ -231,7 +231,7 @@ const AdminDashboard = () => {
         </div>
         {topBarangays.length === 0 ? (
           <p className="p-4 font-body text-sm text-passive">
-            No listings yet — barangay coverage shows up here once vendors
+            No listings yet — barangay coverage shows up here once sellers
             post goods.
           </p>
         ) : (
@@ -265,7 +265,7 @@ const AdminDashboard = () => {
       {/* Honest zero-state banner for a fresh database */}
       {orders.total === 0 && (
         <p className="mt-4 font-body text-sm text-passive border border-black/10 rounded-xl p-4">
-          Empty numbers right now — register a vendor, approve them, list a
+          Empty numbers right now — register a seller, approve them, list a
           product, then buy it as a buyer and watch this page fill up live.
         </p>
       )}
