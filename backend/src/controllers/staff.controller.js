@@ -218,11 +218,12 @@ export const getBarangayInsights = async (req, res) => {
     .sort((a, b) => b.count - a.count);
 
   // ── SALES ──
-  // Items sold by stores in this barangay, cancelled orders left out
+  // Completed sales only: fulfilled orders of stores in this barangay,
+  // the same rule as the seller dashboard's revenue chart
   const sold = await prisma.orderItem.findMany({
     where: {
       product: { barangayId: barangay.id },
-      order: { status: { not: "CANCELLED" }, createdAt: { gte: chartStart < lastMonthStart ? chartStart : lastMonthStart } },
+      order: { status: "FULFILLED", createdAt: { gte: chartStart < lastMonthStart ? chartStart : lastMonthStart } },
     },
     select: {
       orderId: true,
