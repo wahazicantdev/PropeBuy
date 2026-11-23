@@ -110,7 +110,7 @@ const Payouts = () => {
                       {s.gcashNumber ? `GCash ${s.gcashNumber} · ${s.gcashName}` : "No GCash account yet. Ask the seller to add one in Earnings."}
                     </p>
                     <p className="text-xs text-passive">
-                      {s.orders} order(s){s.withholdingTax ? ` · tax withheld ${formatPeso(s.withholdingTax)}` : ""}
+                      {s.orders} order(s){s.withholdingTax ? ` · BIR withholding ${formatPeso(s.withholdingTax)}` : ""}
                     </p>
                   </div>
                   {/* Amount above its button, so the row fits half a screen */}

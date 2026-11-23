@@ -60,7 +60,7 @@ const SellerProfile = () => {
       {user?.accountStatus === "PENDING" && (
         <div className="mb-5 rounded-xl bg-surface p-4 font-body text-sm flex items-start gap-3">
           <Icon name="pending" className="mt-px" />
-          <span>Your documents are being checked by the barangay administrator. You can set up your store address now; selling opens once you are verified.</span>
+          <span>Your documents are being checked by PropeBuy staff. You can set up your store address now; selling opens once you are verified.</span>
         </div>
       )}
       <ProfileView

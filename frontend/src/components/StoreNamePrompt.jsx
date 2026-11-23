@@ -65,7 +65,7 @@ const StoreNamePrompt = () => {
         </h2>
         <p className="font-body text-sm text-black/60">
           Buyers see your store name on every product. Your real name stays private, only you and
-          the barangay administrator can see it.
+          PropeBuy staff can see it.
         </p>
         <div>
           <FieldLabel htmlFor="store-name">Store name</FieldLabel>

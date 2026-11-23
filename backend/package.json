@@ -13,6 +13,7 @@
     "demoPurchases": "node prisma/purchases.demo.js",
     "evalAccounts": "node prisma/evaluation.accounts.js",
     "demoCatalog": "node prisma/catalog.apply.js",
+    "privatizeDocs": "node prisma/privatize.documents.js",
     "postinstall": "prisma generate"
   },
   "keywords": [],

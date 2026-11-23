@@ -88,7 +88,7 @@ const ProfileView = ({ user, barangayName, verifiedLabel, links = [], onLogout, 
         </div>
         <p className="px-5 pb-5 font-body text-xs text-black/45">
           Photo, email and store name can change once every 7 days in Account settings. Your
-          name and barangay come from your verified documents, so ask your barangay administrator to change them.
+          name and barangay come from your verified documents, so ask the PropeBuy team to change them.
         </p>
       </aside>
 

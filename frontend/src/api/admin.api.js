@@ -28,6 +28,15 @@ export const rerunUserOCR = async (id) => {
   return res.data;
 };
 
+// Signed link to a private verification document (11-24).
+// kind = "id" | "certificate". The link expires in a few minutes, and
+// the backend writes the opening to the activity log.
+export const fetchUserDocumentLink = async (id, kind) => {
+  const res = await api.get(`/admin/users/${id}/documents/${kind}`);
+  // Returns { success, data: { url, expiresInSeconds } }
+  return res.data;
+};
+
 // Approve or reject a registration.
 // barangayId is REQUIRED when approving — it assigns the verified
 // barangay, which is what the Verified Local Vendor badge rests on.

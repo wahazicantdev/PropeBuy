@@ -14,6 +14,7 @@ import {
   toggleCategory,
   rerunOCR,
   getUserOCRDetails,
+  getUserDocumentLink,
   getAllBarangays,
   getAllCategories,
 } from "../controllers/admin.controller.js";
@@ -59,6 +60,9 @@ adminRoutes.get("/users/verifications/pending", ...staff("verifications"), getPe
 adminRoutes.get("/users/:id", ...staff("verifications"), validateIdParam, getUser);
 adminRoutes.get("/users/:id/ocr-details", ...staff("verifications"), validateIdParam, getUserOCRDetails);
 adminRoutes.post("/users/:id/ocr-rerun", ...staff("verifications"), validateIdParam, rerunOCR);
+// Signed link to the private ID or certificate (kind = id | certificate).
+// Expires in minutes; every opening goes to the activity log.
+adminRoutes.get("/users/:id/documents/:kind", ...staff("verifications"), validateIdParam, getUserDocumentLink);
 
 // Body: { action: "approve" | "reject", barangayId: number }
 adminRoutes.put(

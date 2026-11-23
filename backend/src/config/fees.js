@@ -1,5 +1,6 @@
 // ── PLATFORM FEES AND TAX ──────────────────────────────
 // One place for every rate used in seller payouts. Change a rate here
+// (and its mirror in frontend/src/utils/fees.js, used for previews)
 // and the checkout breakdown, earnings and admin reports all follow.
 
 // PropeBuy commission on items paid ONLINE (GCash through PayMongo).
