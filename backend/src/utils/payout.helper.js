@@ -65,20 +65,18 @@ export const releaseEarnings = async (orderId) => {
   const held = await prisma.sellerEarning.findMany({ where: { orderId, status: "ON_HOLD" } });
   const yearStart = new Date(new Date().getFullYear(), 0, 1);
   for (const e of held) {
-    // Gross remittance excludes PropeBuy's own commission
-    const gross = round2(Number(e.itemsAmount) + Number(e.deliveryFee) - Number(e.commission));
+    // Gross remittance excludes PropeBuy's own commission and the delivery
+    // fee, which RR 16-2023 leaves out when it is billed separately
+    const gross = round2(Number(e.itemsAmount) - Number(e.commission));
     const before = await prisma.sellerEarning.aggregate({
       where: {
         sellerId: e.sellerId,
         status: { in: ["AVAILABLE", "PAID_OUT"] },
         releasedAt: { gte: yearStart },
       },
-      _sum: { itemsAmount: true, deliveryFee: true, commission: true },
+      _sum: { itemsAmount: true, commission: true },
     });
-    const yearGross =
-      Number(before._sum.itemsAmount || 0) +
-      Number(before._sum.deliveryFee || 0) -
-      Number(before._sum.commission || 0);
+    const yearGross = Number(before._sum.itemsAmount || 0) - Number(before._sum.commission || 0);
     const tax = yearGross + gross > WHT_THRESHOLD ? round2(gross * WHT_RATE) : 0;
     await prisma.sellerEarning.update({
       where: { id: e.id },
@@ -86,7 +84,8 @@ export const releaseEarnings = async (orderId) => {
         status: "AVAILABLE",
         releasedAt: new Date(),
         withholdingTax: tax,
-        netAmount: round2(gross - tax),
+        // The seller still receives the full delivery fee
+        netAmount: round2(gross + Number(e.deliveryFee) - tax),
       },
     });
   }
