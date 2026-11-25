@@ -3,7 +3,8 @@ import bcrypt from "bcryptjs";
 import { notifyAdminsNewRegistration } from "../utils/notification.helper.js";
 import jwt from "jsonwebtoken";
 import prisma from "../config/prismaClient.js";
-import { uploadToCloudinary } from "../config/cloudinary.js";
+// ID and certificate are stored privately, never as public links
+import { uploadPrivateDocument, deleteDocument } from "../utils/document.helper.js";
 import { JWT_SECRET, JWT_EXPIRES_IN } from "../config/env.js";
 import {
   extractTextFromImage,
@@ -73,11 +74,12 @@ export const register = async (req, res) => {
   const idBuffer = req.files.idDocument[0].buffer;
   const certBuffer = req.files.certDocument[0].buffer;
 
-  // ── UPLOAD DOCUMENTS TO CLOUDINARY ────────────────
-  // Upload first — we need URLs regardless of OCR result
-  const [idUpload, certUpload] = await Promise.all([
-    uploadToCloudinary(idBuffer, "documents"),
-    uploadToCloudinary(certBuffer, "documents"),
+  // ── UPLOAD DOCUMENTS TO CLOUDINARY (PRIVATE) ───────
+  // Uploaded as authenticated assets: no public link exists. We keep
+  // only a reference; staff open them through short-lived signed links.
+  const [idRef, certRef] = await Promise.all([
+    uploadPrivateDocument(idBuffer),
+    uploadPrivateDocument(certBuffer),
   ]);
 
   // ── RUN OCR ON BOTH DOCUMENTS ──────────────────────
@@ -136,8 +138,9 @@ export const register = async (req, res) => {
       password: hashedPassword,
       role,
       barangayId: barangayId ? parseInt(barangayId) : null,
-      idDocumentUrl: idUpload.secure_url,
-      certDocumentUrl: certUpload.secure_url,
+      // References to the private files, not links
+      idDocumentUrl: idRef,
+      certDocumentUrl: certRef,
       // Every new account waits for an admin, whatever OCR found
       accountStatus: "PENDING",
       // Consent date, checked above
@@ -160,6 +163,8 @@ export const register = async (req, res) => {
       throw err;
     });
   if (!user) {
+    // Duplicate sign-up: the documents just uploaded belong to no one
+    await Promise.all([deleteDocument(idRef), deleteDocument(certRef)]);
     return res.status(400).json({ success: false, message: "Email already registered. Try logging in." });
   }
 

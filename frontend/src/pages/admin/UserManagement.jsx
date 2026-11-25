@@ -11,6 +11,8 @@ import Spinner from "../../components/Spinner.jsx";
 import VerifiedBadge from "../../components/VerifiedBadge.jsx";
 import { fetchUsers, fetchUser, suspendUser } from "../../api/admin.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
+// Private documents open through a short-lived signed link
+import { openUserDocument } from "../../utils/openDocument.js";
 
 // UserManagement — the full account directory.
 // Role and status filters are SERVER-side (the backend accepts ?role and
@@ -293,32 +295,34 @@ const UserManagement = () => {
                             ))}
                           </ul>
                         )}
-                        {/* Documents — open in a new tab */}
+                        {/* Documents — private files, opened through a
+                            short-lived signed link (logged). Deleted once
+                            the account is approved or rejected. */}
                         <div className="mt-3 flex gap-2 flex-wrap">
-                          {detailData?.idDocumentUrl && (
-                            <a
-                              href={detailData.idDocumentUrl}
-                              target="_blank"
-                              rel="noreferrer"
+                          {detailData?.hasIdDocument && (
+                            <button
+                              type="button"
+                              onClick={() => openUserDocument(detailData.id, "id")}
                               className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                             >
                               Government ID
-                            </a>
+                            </button>
                           )}
-                          {detailData?.certDocumentUrl && (
-                            <a
-                              href={detailData.certDocumentUrl}
-                              target="_blank"
-                              rel="noreferrer"
+                          {detailData?.hasCertDocument && (
+                            <button
+                              type="button"
+                              onClick={() => openUserDocument(detailData.id, "certificate")}
                               className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                             >
                               Barangay certificate
-                            </a>
+                            </button>
                           )}
-                          {!detailData?.idDocumentUrl &&
-                            !detailData?.certDocumentUrl && (
+                          {!detailData?.hasIdDocument &&
+                            !detailData?.hasCertDocument && (
                               <span className="font-body text-xs text-passive">
-                                No documents on file.
+                                {detailData?.accountStatus === "PENDING"
+                                  ? "No documents on file."
+                                  : "Documents were deleted after the account was reviewed. The OCR result above is kept."}
                               </span>
                             )}
                         </div>

@@ -13,6 +13,8 @@ import {
 } from "../../api/admin.api.js";
 import { fetchBarangays } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
+// Private documents open through a short-lived signed link
+import { openUserDocument } from "../../utils/openDocument.js";
 
 // Three work queues — OCR only sorts accounts, the admin decides each one
 const OCR_GROUPS = [
@@ -328,32 +330,30 @@ const PendingVerifications = () => {
                 </ul>
               )}
 
-              {/* Document links — open in a new tab, admin eyeballs them.
-                  rel noreferrer because these are Cloudinary URLs. */}
+              {/* Documents — private files. Each click gets a signed link
+                  that expires in minutes and is written to the activity log. */}
               <div className="mt-3 flex gap-2 flex-wrap">
-                {u.idDocumentUrl ? (
-                  <a
-                    href={u.idDocumentUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                {u.hasIdDocument ? (
+                  <button
+                    type="button"
+                    onClick={() => openUserDocument(u.id, "id")}
                     className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                   >
                     Open government ID
-                  </a>
+                  </button>
                 ) : (
                   <span className="font-body text-xs text-danger self-center">
                     No ID uploaded
                   </span>
                 )}
-                {u.certDocumentUrl ? (
-                  <a
-                    href={u.certDocumentUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                {u.hasCertDocument ? (
+                  <button
+                    type="button"
+                    onClick={() => openUserDocument(u.id, "certificate")}
                     className="btn-outline rounded-full px-3 py-2 font-body text-xs font-bold"
                   >
                     Open barangay certificate
-                  </a>
+                  </button>
                 ) : (
                   <span className="font-body text-xs text-danger self-center">
                     No certificate uploaded

@@ -21,7 +21,8 @@ const STATUS = {
 // Percent label, e.g. 0.05 -> "5%"
 const pct = (r) => `${+(r * 100).toFixed(2)}%`;
 
-// Seller Earnings — where online payments go, fees, tax and payouts
+// Seller Earnings — where online payments go, the commission, BIR
+// withholding (RR 16-2023, not a PropeBuy charge) and payouts
 const Earnings = () => {
   const [data, setData] = useState(null);
   // GCash payout account form
@@ -88,7 +89,7 @@ const Earnings = () => {
         <StatCard tone="dark" icon="account_balance_wallet" label="Available" value={formatPeso(balances.available)} hint="Included in the next payout" />
         <StatCard icon="schedule" label="On hold" value={formatPeso(balances.onHold)} hint="Released when you fulfil the order" />
         <StatCard icon="savings" label="Paid out" value={formatPeso(balances.paidOut)} hint="Sent to your GCash" />
-        <StatCard icon="request_quote" label={`Fees this year`} value={formatPeso(year.commission)} hint={`Tax withheld: ${formatPeso(year.withholdingTax)}`} />
+        <StatCard icon="request_quote" label={`Fees this year`} value={formatPeso(year.commission)} hint={`BIR withholding: ${formatPeso(year.withholdingTax)}`} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_22rem]">
@@ -107,8 +108,8 @@ const Earnings = () => {
                   <tr>
                     <th className="px-4 py-3 font-medium">Order</th>
                     <th className="px-4 py-3 font-medium text-right">Paid online</th>
-                    <th className="px-4 py-3 font-medium text-right">Fee</th>
-                    <th className="px-4 py-3 font-medium text-right">Tax</th>
+                    <th className="px-4 py-3 font-medium text-right">Commission</th>
+                    <th className="px-4 py-3 font-medium text-right">BIR withholding</th>
                     <th className="px-4 py-3 font-medium text-right">You get</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                   </tr>
@@ -143,7 +144,7 @@ const Earnings = () => {
                       <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS[e.status].cls}`}>{STATUS[e.status].label}</span>
                     </div>
                     <div className="mt-2 flex justify-between text-passive text-xs">
-                      <span>Paid {formatPeso(Number(e.itemsAmount) + Number(e.deliveryFee))} · fee {formatPeso(e.commission)}{Number(e.withholdingTax) ? ` · tax ${formatPeso(e.withholdingTax)}` : ""}</span>
+                      <span>Paid {formatPeso(Number(e.itemsAmount) + Number(e.deliveryFee))} · commission {formatPeso(e.commission)}{Number(e.withholdingTax) ? ` · BIR withholding ${formatPeso(e.withholdingTax)}` : ""}</span>
                       <span className="font-bold text-black text-sm">{formatPeso(e.netAmount)}</span>
                     </div>
                   </li>
@@ -201,9 +202,9 @@ const Earnings = () => {
               <li>PropeBuy sends your available balance to your GCash and you get a notice with the reference number.</li>
             </ol>
             <ul className="space-y-1.5 text-black/70 text-xs border-t border-black/10 pt-3">
-              <li><b>{pct(rates.commissionRate)}</b> fee on items paid online. It covers the GCash processing fee and running PropeBuy.</li>
+              <li><b>{pct(rates.commissionRate)}</b> commission on items paid online. It covers the GCash processing fee and running PropeBuy.</li>
               <li><b>0%</b> on cash payments, and delivery fees are 100% yours.</li>
-              <li>Withholding tax of 1% on half your earnings ({pct(rates.withholdingRate)}) applies only after your yearly online earnings pass {formatPeso(rates.withholdingThreshold)}, as required by BIR RR 16-2023.</li>
+              <li><b>BIR withholding</b> of 1% on half your earnings ({pct(rates.withholdingRate)}) applies only after your yearly online earnings pass {formatPeso(rates.withholdingThreshold)}, as required by BIR RR 16-2023. It is not a PropeBuy charge: it goes to the BIR and counts as advance payment of your own income tax.</li>
               <li>Listing products is always free.</li>
             </ul>
           </div>

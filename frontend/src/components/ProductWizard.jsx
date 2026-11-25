@@ -10,6 +10,21 @@ import Icon from "./Icon.jsx";
 import { fetchCategories } from "../api/product.api.js";
 import { formatPeso } from "../utils/format.js";
 import { productPhotos } from "../utils/photos.js";
+// Commission preview: what the seller keeps from a sale
+import { COMMISSION_RATE, sellerNetOnline } from "../utils/fees.js";
+
+// "You receive" line under a price, so the seller sees their take
+// before saving: cash sales keep 100%, GCash sales keep 95%.
+const YouReceive = ({ price }) => {
+  if (!(parseFloat(price) > 0)) return null;
+  return (
+    <p className="font-body text-xs text-black/60 mt-1 pl-5">
+      You receive <b className="text-black">{formatPeso(price)}</b> for cash sales and{" "}
+      <b className="text-black">{formatPeso(sellerNetOnline(price))}</b> for GCash sales (after the{" "}
+      {Math.round(COMMISSION_RATE * 100)}% commission).
+    </p>
+  );
+};
 
 // The 4 steps of adding or editing a product
 const STEPS = ["Details", "Price & stock", "Photos", "Review"];
@@ -323,6 +338,13 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
                 <p className="font-body text-xs text-black/60">
                   Buyers pick one before adding to cart. The card shows the lowest price ({formatPeso(variantPrice)}) and a total stock of {variantStock}.
                 </p>
+                {/* Commission preview for the lowest-priced option */}
+                {variantPrice > 0 && (
+                  <p className="font-body text-xs text-black/60">
+                    Example: for a {formatPeso(variantPrice)} option you receive {formatPeso(variantPrice)} in cash, or{" "}
+                    {formatPeso(sellerNetOnline(variantPrice))} through GCash after the {Math.round(COMMISSION_RATE * 100)}% commission.
+                  </p>
+                )}
               </div>
             ) : (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -341,7 +363,12 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
                   placeholder="0.00"
                   className={inputCls}
                 />
-                {errors.price && <p className="text-danger text-xs mt-1 pl-5">{errors.price.message}</p>}
+                {errors.price ? (
+                  <p className="text-danger text-xs mt-1 pl-5">{errors.price.message}</p>
+                ) : (
+                  // Live preview of the seller's take at this price
+                  <YouReceive price={v.price} />
+                )}
               </div>
               <div>
                 <FieldLabel htmlFor="stock">Stock</FieldLabel>

@@ -6,9 +6,16 @@ import {
   extractCertificateFields,
   crossCheckDocuments,
 } from "../utils/ocr.helper.js";
-import axios from "axios";
 import { logAdmin } from "../utils/adminLog.helper.js";
 import { isVerifier, verifierMaySee } from "../middleware/adminAccess.middleware.js";
+// Private ID and certificate files: signed links, download, delete
+import {
+  signedDocumentLink,
+  fetchDocument,
+  deleteDocument,
+  hideDocuments,
+  LINK_SECONDS,
+} from "../utils/document.helper.js";
 
 // Same answer as a missing user, so a verifier learns nothing about
 // people outside their barangay's pending queue
@@ -38,22 +45,21 @@ export const rerunOCR = async (req, res) => {
   // Verifiers: own barangay's pending applicants only
   if (!user || !verifierMaySee(req, user)) return notFound(res);
 
+  // Documents are deleted after the decision, so only applicants
+  // still waiting for review can be re-read
   if (!user.idDocumentUrl || !user.certDocumentUrl) {
     return res.status(400).json({
       success: false,
-      message: "User has no uploaded documents to re-analyze",
+      message: "This account has no documents to re-read. They are deleted after approval or rejection.",
     });
   }
 
-  // Download images from Cloudinary for re-processing
-  // We fetch them as buffers for Tesseract
-  const [idResponse, certResponse] = await Promise.all([
-    axios.get(user.idDocumentUrl, { responseType: "arraybuffer" }),
-    axios.get(user.certDocumentUrl, { responseType: "arraybuffer" }),
+  // Download the private files through short-lived signed links,
+  // as buffers for Tesseract
+  const [idBuffer, certBuffer] = await Promise.all([
+    fetchDocument(user.idDocumentUrl),
+    fetchDocument(user.certDocumentUrl),
   ]);
-
-  const idBuffer = Buffer.from(idResponse.data);
-  const certBuffer = Buffer.from(certResponse.data);
 
   // Re-run OCR on both documents
   const [idOCR, certOCR] = await Promise.all([
@@ -147,10 +153,11 @@ export const getUserOCRDetails = async (req, res) => {
       registeredAt: user.createdAt,
       claimedBarangay: user.barangay,
 
-      // Document URLs — admin can open and view manually
+      // Only whether each document is still stored. Staff open them
+      // through GET /users/:id/documents/:kind, which signs a short link.
       documents: {
-        governmentId: user.idDocumentUrl,
-        barangayCertificate: user.certDocumentUrl,
+        governmentId: Boolean(user.idDocumentUrl),
+        barangayCertificate: Boolean(user.certDocumentUrl),
       },
 
       // Full OCR verification result
@@ -169,6 +176,56 @@ export const getUserOCRDetails = async (req, res) => {
         ),
       },
     },
+  });
+};
+
+// ── OPEN ONE VERIFICATION DOCUMENT ────────────────────
+// GET /users/:id/documents/:kind   kind = "id" | "certificate"
+// Returns a signed link that works for LINK_SECONDS, then expires.
+// Same access as the rest of the verification area: a barangay verifier
+// only for pending applicants of their own barangay. Every opening is
+// written to the activity log, so staff can see who viewed whose ID.
+export const getUserDocumentLink = async (req, res) => {
+  const { id, kind } = req.params;
+  if (!["id", "certificate"].includes(kind)) {
+    return res.status(400).json({ success: false, message: "Document must be id or certificate" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(id) },
+    select: {
+      id: true,
+      name: true,
+      accountStatus: true,
+      barangayId: true,
+      idDocumentUrl: true,
+      certDocumentUrl: true,
+    },
+  });
+
+  // Verifiers: own barangay's pending applicants only
+  if (!user || !verifierMaySee(req, user)) return notFound(res);
+
+  const stored = kind === "id" ? user.idDocumentUrl : user.certDocumentUrl;
+  if (!stored) {
+    return res.status(404).json({
+      success: false,
+      message: "This document is no longer stored. Documents are deleted after approval or rejection.",
+    });
+  }
+
+  // The log never holds the link itself, only which document was opened
+  logAdmin(
+    req,
+    "DOCUMENT_VIEWED",
+    "USER",
+    user.id,
+    `${kind === "id" ? "Government ID" : "Barangay Certificate"} of ${user.name}`,
+  );
+
+  res.status(200).json({
+    success: true,
+    data: { url: signedDocumentLink(stored), expiresInSeconds: LINK_SECONDS },
   });
 };
 
@@ -255,8 +312,9 @@ export const getPendingVerifications = async (req, res) => {
   });
 
   // Parse JSON strings back to objects for cleaner response
+  // hideDocuments swaps the stored references for true/false
   const parsedUsers = pendingUsers.map((user) => ({
-    ...user,
+    ...hideDocuments(user),
     ocrIssues: user.ocrIssues ? JSON.parse(user.ocrIssues) : [],
     ocrExtractedData: user.ocrExtractedData
       ? JSON.parse(user.ocrExtractedData)
@@ -330,10 +388,12 @@ export const verifyUser = async (req, res) => {
           accountStatus: "REJECTED",
         };
 
-  // Update the user's account status
+  // Update the user's account status. The decision is made, so the
+  // document references are cleared too (data minimization, RA 10173).
+  // The OCR fields and the activity log keep the record of the check.
   const updatedUser = await prisma.user.update({
     where: { id: parseInt(id) },
-    data: updateData,
+    data: { ...updateData, idDocumentUrl: null, certDocumentUrl: null },
     select: {
       id: true,
       name: true,
@@ -343,6 +403,10 @@ export const verifyUser = async (req, res) => {
       barangayId: true,
     },
   });
+
+  // Delete the ID and certificate files themselves. Never blocks the
+  // decision: a failed delete is only logged on the server.
+  await Promise.all([deleteDocument(user.idDocumentUrl), deleteDocument(user.certDocumentUrl)]);
 
   // Live update for the user, if they are online right now
   notifyAccountStatus(updatedUser.id, updatedUser.accountStatus, updatedUser.role);
@@ -447,9 +511,10 @@ export const getUser = async (req, res) => {
   // Verifiers: own barangay's pending applicants only
   if (!user || !verifierMaySee(req, user)) return notFound(res);
 
-  // Parse OCR JSON strings back to objects
+  // Parse OCR JSON strings back to objects. hideDocuments swaps the
+  // stored references for true/false.
   const parsedUser = {
-    ...user,
+    ...hideDocuments(user),
     ocrIssues: user.ocrIssues ? JSON.parse(user.ocrIssues) : [],
     ocrExtractedData: user.ocrExtractedData
       ? JSON.parse(user.ocrExtractedData)

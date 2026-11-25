@@ -398,7 +398,7 @@ const Checkout = () => {
             <p className="font-body text-xs text-danger mt-5 bg-danger/10 rounded-xl p-3 flex gap-2">
               <Icon name="warning" size={18} className="shrink-0" />
               {accountStatus === "REJECTED"
-                ? "Your account is not verified, so orders are blocked. Contact your barangay administrator."
+                ? "Your account is not verified, so orders are blocked. Contact the PropeBuy team."
                 : "Your documents are still under review. You can order once an admin verifies your account."}
             </p>
           )}
