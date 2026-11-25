@@ -204,7 +204,7 @@ const Earnings = () => {
             <ul className="space-y-1.5 text-black/70 text-xs border-t border-black/10 pt-3">
               <li><b>{pct(rates.commissionRate)}</b> commission on items paid online. It covers the GCash processing fee and running PropeBuy.</li>
               <li><b>0%</b> on cash payments, and delivery fees are 100% yours.</li>
-              <li><b>BIR withholding</b> of 1% on half your earnings ({pct(rates.withholdingRate)}) applies only after your yearly online earnings pass {formatPeso(rates.withholdingThreshold)}, as required by BIR RR 16-2023. It is not a PropeBuy charge: it goes to the BIR and counts as advance payment of your own income tax.</li>
+              <li><b>BIR withholding</b> of 1% on half your earnings ({pct(rates.withholdingRate)}) applies only after your yearly online item earnings pass {formatPeso(rates.withholdingThreshold)}, as required by BIR RR 16-2023. Delivery fees are not counted and never withheld. It is not a PropeBuy charge: it goes to the BIR and counts as advance payment of your own income tax.</li>
               <li>Listing products is always free.</li>
             </ul>
           </div>
