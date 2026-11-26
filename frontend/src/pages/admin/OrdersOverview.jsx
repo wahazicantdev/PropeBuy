@@ -5,6 +5,8 @@ import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
 import Select from "../../components/Select.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchAllOrders } from "../../api/admin.api.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // OrdersOverview — every order on the platform, read-only on purpose.
 // Admin oversight does NOT include changing order status: fulfilment
@@ -50,6 +52,9 @@ const OrdersOverview = () => {
   const paidTotal = orders
     .filter((o) => o.paymentStatus === "PAID")
     .reduce((sum, o) => sum + parseFloat(o.totalAmount), 0);
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(orders, `${status}|${paymentMethod}|${paymentStatus}`);
 
   return (
     <div className="page-enter">
@@ -177,7 +182,7 @@ const OrdersOverview = () => {
         </div>
       ) : (
         <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
-          {orders.map((o) => (
+          {paged.pageItems.map((o) => (
             <li
               key={o.id}
               className="p-4 hover:bg-surface/40"
@@ -255,6 +260,7 @@ const OrdersOverview = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="orders" />
 
       {/* Scope note — read-only by design, said out loud */}
       <p className="mt-4 font-body text-xs text-passive border border-black/10 rounded-xl p-3">

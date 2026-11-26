@@ -9,6 +9,8 @@ import Spinner from "../../components/Spinner.jsx";
 import Icon from "../../components/Icon.jsx";
 import { fetchSellerReviews, replyToReview } from "../../api/review.api.js";
 import { cld } from "../../utils/photos.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // Seller Reviews — every rating of the seller's products, with a public
 // reply box under each one (E2E #419)
@@ -55,6 +57,9 @@ const Reviews = () => {
   };
 
   // Loading state
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(data?.reviews || [], "");
+
   if (!data) {
     return (
       <div className="py-16 flex items-center justify-center gap-3 font-body text-sm text-passive">
@@ -99,7 +104,7 @@ const Reviews = () => {
         </div>
       ) : (
         <ul className="mt-5 grid gap-3">
-          {data.reviews.map((r) => (
+          {paged.pageItems.map((r) => (
             <li key={r.id} className="rounded-xl border border-black/10 p-4 min-w-0">
               {/* Product the rating belongs to */}
               <Link to={`/product/${r.product.id}`} className="flex items-center gap-3 min-w-0 group">
@@ -175,6 +180,7 @@ const Reviews = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="reviews" />
     </div>
   );
 };

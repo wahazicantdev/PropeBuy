@@ -13,6 +13,8 @@ import { fetchUsers, fetchUser, suspendUser } from "../../api/admin.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 // Private documents open through a short-lived signed link
 import { openUserDocument } from "../../utils/openDocument.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // UserManagement — the full account directory.
 // Role and status filters are SERVER-side (the backend accepts ?role and
@@ -114,6 +116,9 @@ const UserManagement = () => {
     );
   });
 
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(visible, `${role}|${status}|${search}`);
+
   return (
     <div className="page-enter">
       <PageHeader
@@ -187,7 +192,7 @@ const UserManagement = () => {
         </div>
       ) : (
         <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
-          {visible.map((u) => {
+          {paged.pageItems.map((u) => {
             // Your own row — the backend refuses self-suspend, so the
             // button never renders instead of failing after a tap
             const isMe = me?.id === u.id;
@@ -359,6 +364,7 @@ const UserManagement = () => {
           })}
         </ul>
       )}
+      <Pagination paged={paged} label="accounts" />
 
       {/* ── SUSPEND MODAL ── */}
       {/* Honest copy: suspend reuses REJECTED, there is no separate

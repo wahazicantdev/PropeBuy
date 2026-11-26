@@ -6,6 +6,8 @@ import EmptyState from "../../components/EmptyState.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchActivity } from "../../api/admin.api.js";
 import { LEVEL_LABEL } from "../../utils/adminAccess.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // "USER_APPROVED" -> "User approved"
 const actionLabel = (a) => a.charAt(0) + a.slice(1).toLowerCase().replace(/_/g, " ");
@@ -25,6 +27,9 @@ const ActivityLog = () => {
       .then((res) => setData(res.data))
       .catch(() => toast.error("Could not load the activity log"));
   }, [action]);
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(data?.logs || [], action);
 
   if (!data) {
     return (
@@ -53,7 +58,7 @@ const ActivityLog = () => {
         </div>
       ) : (
         <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5">
-          {data.logs.map((l) => (
+          {paged.pageItems.map((l) => (
             <li key={l.id} className="p-4 grid gap-1 sm:grid-cols-[170px_1fr] sm:gap-4 font-body text-sm min-w-0">
               {/* When */}
               <span className="text-xs text-passive tabular-nums">
@@ -73,6 +78,7 @@ const ActivityLog = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="entries" />
     </div>
   );
 };

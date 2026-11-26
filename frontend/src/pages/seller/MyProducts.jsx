@@ -12,6 +12,8 @@ import EmptyState from "../../components/EmptyState.jsx";
 import Icon from "../../components/Icon.jsx";
 import { fetchMyProducts, deleteProduct } from "../../api/product.api.js";
 import { formatPeso } from "../../utils/format.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // MyProducts — listings with status filters and soft-deleted rows
 const MyProducts = () => {
@@ -93,6 +95,9 @@ const MyProducts = () => {
   };
 
   // Loading state — spinner, no layout jump
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(filtered, "");
+
   if (loading) {
     return (
       <div className="py-16 flex items-center justify-center gap-3 font-body text-sm text-passive">
@@ -185,7 +190,7 @@ const MyProducts = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((p) => (
+                  {paged.pageItems.map((p) => (
                     <tr key={p.id} className={`border-t border-black/5 ${p.isActive ? "" : "opacity-55"}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3 min-w-0">
@@ -209,7 +214,7 @@ const MyProducts = () => {
             </div>
             {/* Phone cards */}
             <ul className="md:hidden flex flex-col gap-2.5">
-              {filtered.map((p) => (
+              {paged.pageItems.map((p) => (
                 <li key={p.id} className={`rounded-xl border border-black/10 p-3 flex items-center gap-3 ${p.isActive ? "" : "opacity-55"}`}>
                   <Thumb src={p.imageUrl} alt={p.name} />
                   <div className="min-w-0 flex-1">
@@ -225,6 +230,7 @@ const MyProducts = () => {
             </ul>
           </>
         )}
+        <Pagination paged={paged} label="products" />
       </div>
 
       {/* Confirm modal — portal + blur + pop, the new house standard */}

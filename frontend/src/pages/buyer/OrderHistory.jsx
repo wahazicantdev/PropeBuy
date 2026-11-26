@@ -8,6 +8,8 @@ import { formatPeso } from "../../utils/format.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
 import { cld } from "../../utils/photos.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // Order history - buyer past orders with status filter
 const OrderHistory = () => {
@@ -49,6 +51,9 @@ const OrderHistory = () => {
       day: "numeric",
       year: "numeric",
     });
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(shown, filter);
 
   return (
     <div className="page-enter">
@@ -97,7 +102,7 @@ const OrderHistory = () => {
       ) : (
         // One bordered card, divided rows — same language as the cart
         <ul className="mt-6 border border-black/10 rounded-xl px-4 md:px-6 divide-y divide-black/10">
-          {shown.map((o) => (
+          {paged.pageItems.map((o) => (
             <li key={o.id}>
               {/* Whole row opens the detail */}
               <Link to={`/orders/${o.id}`} className="py-4 md:py-5 flex gap-4 items-center min-w-0 group">
@@ -142,6 +147,7 @@ const OrderHistory = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="orders" />
     </div>
   );
 };

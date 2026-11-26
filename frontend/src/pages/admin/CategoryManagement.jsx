@@ -10,6 +10,8 @@ import {
   addCategory,
   toggleCategory,
 } from "../../api/admin.api.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // CategoryManagement — the 7 documented categories live here.
 // Same shape as BarangayManagement on purpose: one mental model for
@@ -86,6 +88,9 @@ const CategoryManagement = () => {
 
   // Counts for the header line
   const activeCount = categories.filter((c) => c.isActive).length;
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(categories, "");
 
   return (
     <div className="page-enter">
@@ -175,7 +180,7 @@ const CategoryManagement = () => {
         </div>
       ) : (
         <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
-          {categories.map((c) => (
+          {paged.pageItems.map((c) => (
             // Disabled rows gray out — same language as barangays
             <li
               key={c.id}
@@ -218,6 +223,7 @@ const CategoryManagement = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="categories" />
 
       {/* ── TOGGLE MODAL ── */}
       <ConfirmModal

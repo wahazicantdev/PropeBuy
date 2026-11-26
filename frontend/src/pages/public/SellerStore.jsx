@@ -8,6 +8,8 @@ import ProductCard from "../../components/ProductCard.jsx";
 import VerifiedBadge from "../../components/VerifiedBadge.jsx";
 import Icon from "../../components/Icon.jsx";
 import { fetchProducts } from "../../api/product.api.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // Map code loads only on stores that have a pin
 const StoreMap = lazy(() => import("../../components/StoreMap.jsx"));
@@ -38,6 +40,8 @@ const SellerStore = () => {
   const barangay = products[0]?.barangay;
   // Distinct categories this vendor sells — small chips under the name
   const categoryNames = [...new Set(products.map((p) => p.category?.name).filter(Boolean))];
+  // At most 50 listings per page (11-26)
+  const paged = usePaged(products, sellerId);
 
   return (
     <div className="min-h-screen bg-white page-enter">
@@ -138,10 +142,11 @@ const SellerStore = () => {
             <section className="pt-12">
               <h2 className="text-2xl md:text-3xl text-black">All goods</h2>
               <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-                {products.map((p) => (
+                {paged.pageItems.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
               </div>
+              <Pagination paged={paged} label="products" />
             </section>
           </>
         )}

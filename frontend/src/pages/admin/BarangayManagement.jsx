@@ -10,6 +10,8 @@ import {
   addBarangay,
   toggleBarangay,
 } from "../../api/admin.api.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // BarangayManagement — coverage control for the whole platform.
 // Reads /admin/barangays (Phase E route) instead of the public one,
@@ -89,6 +91,9 @@ const BarangayManagement = () => {
 
   // Counts for the header line
   const activeCount = barangays.filter((b) => b.isActive).length;
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(barangays, "");
 
   return (
     <div className="page-enter">
@@ -187,7 +192,7 @@ const BarangayManagement = () => {
         </div>
       ) : (
         <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
-          {barangays.map((b) => (
+          {paged.pageItems.map((b) => (
             // Disabled rows gray out — same visual language as removed
             // products, so "switched off" always reads the same way
             <li
@@ -238,6 +243,7 @@ const BarangayManagement = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="barangays" />
 
       {/* ── TOGGLE MODAL ── */}
       {/* tone follows direction: disabling is destructive-ish, enabling

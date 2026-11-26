@@ -11,6 +11,8 @@ import { fetchStaff, createStaff, setStaffActive } from "../../api/admin.api.js"
 import { fetchBarangays } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 import { LEVEL_LABEL } from "../../utils/adminAccess.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // What each level may do, shown beside the role picker
 const LEVEL_HINT = {
@@ -85,6 +87,9 @@ const StaffManagement = () => {
     }
   };
 
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(staff, "");
+
   return (
     <div className="page-enter">
       <PageHeader
@@ -142,7 +147,7 @@ const StaffManagement = () => {
         </div>
       ) : (
         <ul className="mt-6 rounded-xl border border-black/10 divide-y divide-black/5">
-          {staff.map((s) => {
+          {paged.pageItems.map((s) => {
             const on = s.accountStatus === "VERIFIED";
             return (
               <li key={s.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 font-body text-sm">
@@ -171,6 +176,7 @@ const StaffManagement = () => {
           })}
         </ul>
       )}
+      <Pagination paged={paged} label="staff accounts" />
 
       {/* Off logs them out at once; on lets them log in again */}
       <ConfirmModal

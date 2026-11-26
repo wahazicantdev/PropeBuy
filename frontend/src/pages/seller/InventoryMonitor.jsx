@@ -8,6 +8,8 @@ import { fetchMyProducts } from "../../api/product.api.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
 import Thumb from "../../components/Thumb.jsx";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // InventoryMonitor — full-stocking view of active listings.
 // Data from my-products (includes inactive), monitor only counts live ones.
@@ -35,6 +37,9 @@ const InventoryMonitor = () => {
   }, [live]);
 
   // Loading state
+  // At most 50 rows per page (11-26)
+  const paged = usePaged((products || []).filter((p) => p.isActive && { all: true, out: p.stock === 0, low: p.stock > 0 && p.stock <= 3, healthy: p.stock >= 4 }[filter]), filter);
+
   if (loading || !products) {
     return (
       <div className="py-16 flex items-center justify-center gap-3 font-body text-sm text-passive">
@@ -118,7 +123,7 @@ const InventoryMonitor = () => {
         </div>
       ) : (
         <ul className="mt-4 border border-black/10 rounded-xl overflow-hidden divide-y divide-black/10">
-          {rows.map((p) => (
+          {paged.pageItems.map((p) => (
             <li
               key={p.id}
               className="p-3 md:p-4 flex gap-3 items-center overflow-hidden"
@@ -153,6 +158,7 @@ const InventoryMonitor = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="products" />
 
       {/* Honest scope note */}
       <p className="mt-4 font-body text-xs text-passive">

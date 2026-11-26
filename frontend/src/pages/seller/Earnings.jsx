@@ -8,6 +8,8 @@ import Spinner from "../../components/Spinner.jsx";
 import Icon from "../../components/Icon.jsx";
 import { fetchMyEarnings, savePayoutAccount } from "../../api/payout.api.js";
 import { formatPeso } from "../../utils/format.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // Status chip text and colors for each earning
 const STATUS = {
@@ -58,6 +60,9 @@ const Earnings = () => {
       setSaving(false);
     }
   };
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(data?.earnings || [], "");
 
   if (!data) {
     return (
@@ -115,7 +120,7 @@ const Earnings = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {earnings.map((e) => (
+                  {paged.pageItems.map((e) => (
                     <tr key={e.id} className="border-t border-black/5">
                       <td className="px-4 py-3">
                         <Link to={`/seller/orders/${e.orderId}`} className="font-bold hover:underline">#{e.orderId}</Link>
@@ -137,7 +142,7 @@ const Earnings = () => {
               </table>
               {/* Phone cards */}
               <ul className="md:hidden divide-y divide-black/5">
-                {earnings.map((e) => (
+                {paged.pageItems.map((e) => (
                   <li key={e.id} className="p-4 font-body text-sm">
                     <div className="flex items-center justify-between gap-3">
                       <Link to={`/seller/orders/${e.orderId}`} className="font-bold">Order #{e.orderId}</Link>
@@ -152,6 +157,7 @@ const Earnings = () => {
               </ul>
             </div>
           )}
+          <Pagination paged={paged} label="sales" />
 
           {/* ── Payout history ── */}
           <h2 className="heading-body text-lg font-bold mt-8 mb-3">Payouts received</h2>

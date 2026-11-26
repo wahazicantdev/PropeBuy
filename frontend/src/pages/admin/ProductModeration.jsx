@@ -10,6 +10,8 @@ import Spinner from "../../components/Spinner.jsx";
 import { fetchAllProducts, removeProduct } from "../../api/admin.api.js";
 import { fetchBarangays, fetchCategories } from "../../api/product.api.js";
 import Thumb from "../../components/Thumb.jsx";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // ProductModeration — every listing on the platform, live and removed.
 // Removal is a SOFT delete (isActive false): the row stays in the
@@ -104,6 +106,9 @@ const ProductModeration = () => {
   // Counts for the header line — honest split of live versus removed
   const liveCount = products.filter((p) => p.isActive).length;
   const removedCount = products.length - liveCount;
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(visible, `${barangayId}|${categoryId}|${isActive}|${search}`);
 
   return (
     <div className="page-enter">
@@ -211,7 +216,7 @@ const ProductModeration = () => {
         </div>
       ) : (
         <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
-          {visible.map((p) => (
+          {paged.pageItems.map((p) => (
             // Removed rows gray out — history intact, honesty kept
             <li
               key={p.id}
@@ -284,6 +289,7 @@ const ProductModeration = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="products" />
 
       {/* ── REMOVE MODAL ── */}
       {/* The reason textarea rides in the children slot and gates the

@@ -12,6 +12,8 @@ import { fetchSellerOrders } from "../../api/order.api.js";
 import { formatPeso } from "../../utils/format.js";
 // Live tick — socket events refetch this page, no manual refresh
 import { useLiveTick } from "../../hooks/useSocket.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // Short local date, e.g. "Nov 15, 3:04 PM"
 const formatDate = (iso) =>
@@ -54,6 +56,9 @@ const OrdersReceived = () => {
       (filter === "ALL" || o.status === filter) &&
       (!q || String(o.id).includes(q) || (o.buyer?.name || "").toLowerCase().includes(q)),
   );
+
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(filtered, "");
 
   if (loading) {
     return (
@@ -112,7 +117,7 @@ const OrdersReceived = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((o) => (
+                  {paged.pageItems.map((o) => (
                     <tr
                       key={o.id}
                       onClick={() => navigate(`/seller/orders/${o.id}`)}
@@ -145,7 +150,7 @@ const OrdersReceived = () => {
             </div>
             {/* Phone cards */}
             <ul className="md:hidden flex flex-col gap-2.5">
-              {filtered.map((o) => (
+              {paged.pageItems.map((o) => (
                 <li key={o.id}>
                   <Link to={`/seller/orders/${o.id}`} className="block rounded-xl border border-black/10 p-4 active:bg-surface">
                     <div className="flex items-center justify-between gap-2">
@@ -167,6 +172,7 @@ const OrdersReceived = () => {
             </ul>
           </>
         )}
+        <Pagination paged={paged} label="orders" />
       </div>
     </div>
   );

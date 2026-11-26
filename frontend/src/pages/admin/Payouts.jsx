@@ -7,6 +7,8 @@ import FieldLabel from "../../components/FieldLabel.jsx";
 import Spinner from "../../components/Spinner.jsx";
 import { fetchPayoutOverview, recordPayout, markRefundDone } from "../../api/payout.api.js";
 import { formatPeso } from "../../utils/format.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // Percent label, e.g. 0.05 -> "5%"
 const pct = (r) => `${+(r * 100).toFixed(2)}%`;
@@ -64,6 +66,9 @@ const Payouts = () => {
     }
   };
 
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(data?.toPay || [], "");
+
   if (!data) {
     return (
       <div className="py-16 flex items-center justify-center gap-3 font-body text-sm text-passive">
@@ -102,7 +107,7 @@ const Payouts = () => {
             <div className="rounded-xl bg-surface p-8 text-center font-body text-sm text-passive">Nothing to pay right now.</div>
           ) : (
             <ul className="rounded-xl border border-black/10 divide-y divide-black/5">
-              {toPay.map((s) => (
+              {paged.pageItems.map((s) => (
                 <li key={s.sellerId} className="p-4 flex items-center gap-3 font-body text-sm">
                   <div className="min-w-0 flex-1">
                     <p className="font-bold truncate">{s.name}</p>
@@ -128,6 +133,7 @@ const Payouts = () => {
               ))}
             </ul>
           )}
+          <Pagination paged={paged} label="sellers" />
         </section>
 
         {/* ── Refunds due ── */}

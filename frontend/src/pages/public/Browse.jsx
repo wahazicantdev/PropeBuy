@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import PublicNav from "../../components/PublicNav.jsx";
@@ -32,6 +32,19 @@ const Browse = () => {
   const [categoryId, setCategoryId] = useState(urlParams.get("category") || "");
   // Loading flag for grid
   const [loading, setLoading] = useState(true);
+  // ── RANDOM FEED (11-26) ──
+  // No page limit: products load in a random order as the buyer scrolls.
+  // One seed per visit keeps the order steady while scrolling, so nothing
+  // repeats or gets skipped. A new visit gets a new seed and a new order.
+  const [seed] = useState(() => Math.random().toString(36).slice(2, 10));
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // Marker under the grid; when it scrolls into view the next batch loads
+  const sentinel = useRef(null);
+  // Bumped on every filter change, so a late answer for old filters is ignored
+  const requestId = useRef(0);
   // Phone filters panel — closed by default, the grid comes first
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Hyper-local default (manuscript p.6): logged-in buyers land on
@@ -92,16 +105,52 @@ const Browse = () => {
       () => {
         // Flag loading inside the timer, keeps effect body free of sync setState
         setLoading(true);
-        fetchProducts({ barangayId, categoryId, search })
-          .then((res) => setProducts(res.data || []))
+        const id = ++requestId.current;
+        // First batch for these filters
+        fetchProducts({ barangayId, categoryId, search, seed, page: 1 })
+          .then((res) => {
+            if (id !== requestId.current) return;
+            setProducts(res.data || []);
+            setPage(1);
+            setHasMore(!!res.hasMore);
+            setTotal(res.total ?? (res.data || []).length);
+          })
           .catch(() => toast.error("Failed to load products"))
-          .finally(() => setLoading(false));
+          .finally(() => id === requestId.current && setLoading(false));
       },
       search ? 300 : 0,
     );
     // Cleanup timer on the next change
     return () => clearTimeout(t);
-  }, [barangayId, categoryId, search, homeReady]);
+  }, [barangayId, categoryId, search, homeReady, seed]);
+
+  // Next batch when the marker under the grid comes into view
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !hasMore || loading) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting || loadingMore) return;
+        const id = requestId.current;
+        const next = page + 1;
+        setLoadingMore(true);
+        fetchProducts({ barangayId, categoryId, search, seed, page: next })
+          .then((res) => {
+            // Filters changed meanwhile: drop this batch
+            if (id !== requestId.current) return;
+            setProducts((list) => [...list, ...(res.data || [])]);
+            setPage(next);
+            setHasMore(!!res.hasMore);
+          })
+          .catch(() => toast.error("Failed to load more products"))
+          .finally(() => setLoadingMore(false));
+      },
+      // Start loading a little before the buyer reaches the bottom
+      { rootMargin: "400px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, page, barangayId, categoryId, search, seed]);
 
   // Page title follows the active category, like the reference ("Casual")
   const activeCategory = categories.find((c) => String(c.id) === String(categoryId));
@@ -201,7 +250,7 @@ const Browse = () => {
                   {activeCategory ? activeCategory.name : "Browse goods"}
                 </h1>
                 <p className="font-body text-sm text-black/60 mt-1">
-                  {loading ? "Loading goods..." : `Showing ${products.length} product${products.length === 1 ? "" : "s"} from verified sellers`}
+                  {loading ? "Loading goods..." : `${total} product${total === 1 ? "" : "s"} from verified sellers, in random order`}
                 </p>
               </div>
               {/* Phone filters toggle */}
@@ -238,11 +287,20 @@ const Browse = () => {
                 </p>
               </div>
             ) : (
-              <div className="mt-6 grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8">
-                {products.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
+              <>
+                <div className="mt-6 grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8">
+                  {products.map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                  ))}
+                </div>
+                {/* Scroll marker — loads the next random batch */}
+                <div ref={sentinel} className="py-10 flex justify-center">
+                  {loadingMore && <span className="spinner" />}
+                  {!hasMore && products.length > 0 && (
+                    <p className="font-body text-sm text-passive">You've seen all {total} products.</p>
+                  )}
+                </div>
+              </>
             )}
           </section>
         </div>

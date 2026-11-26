@@ -15,6 +15,8 @@ import { fetchBarangays } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 // Private documents open through a short-lived signed link
 import { openUserDocument } from "../../utils/openDocument.js";
+import Pagination from "../../components/Pagination.jsx";
+import { usePaged } from "../../hooks/usePaged.js";
 
 // Three work queues — OCR only sorts accounts, the admin decides each one
 const OCR_GROUPS = [
@@ -211,6 +213,9 @@ const PendingVerifications = () => {
   const activeHint = OCR_GROUPS.find((g) => g.key === activeGroup).hint;
 
   // Loading state
+  // At most 50 rows per page (11-26)
+  const paged = usePaged(visibleUsers, activeGroup);
+
   if (loading) {
     return (
       <div className="py-16 flex items-center justify-center gap-3 font-body text-sm text-passive">
@@ -283,7 +288,7 @@ const PendingVerifications = () => {
         </p>
       ) : (
         <ul className="mt-5 rounded-xl border border-black/10 divide-y divide-black/5 overflow-hidden">
-          {visibleUsers.map((u) => (
+          {paged.pageItems.map((u) => (
             // min-w-0 + overflow-hidden — the responsive trio on every card
             <li
               key={u.id}
@@ -420,6 +425,7 @@ const PendingVerifications = () => {
           ))}
         </ul>
       )}
+      <Pagination paged={paged} label="accounts" />
 
       {/* ── APPROVE MODAL ── */}
       {/* tone primary because approving creates access, it does not destroy.
