@@ -22,7 +22,7 @@ model User {
   certDocumentUrl String?
   address         String?       // saved delivery address, or the store address for sellers
   offersDelivery  Boolean       @default(false) // seller delivers orders
-  deliveryFee     Decimal       @default(0) @db.Decimal(10, 2) // seller's flat delivery fee
+  deliveryFee     Decimal       @default(0) @db.Decimal(10, 2) // old flat fee, replaced by products.deliveryFee (11-26)
   storeLat        Float?        // store pin, set by hand on the map
   storeLng        Float?
   termsAcceptedAt DateTime?     // when the user agreed to the Terms and Privacy Policy
@@ -56,6 +56,9 @@ model User {
   payoutsReceived Payout[]      @relation("PayoutSeller")
   payoutsSent     Payout[]      @relation("PayoutAdmin")
   adminLogs       AdminLog[]
+  reportsFiled    Report[]      @relation("ReportReporter")
+  reportsAgainst  Report[]      @relation("ReportSeller")
+  reportsHandled  Report[]      @relation("ReportHandler")
   barangay        Barangay?     @relation(fields: [barangayId], references: [id])
 
   @@map("users")
@@ -137,12 +140,17 @@ model Product {
   stock       Int         @default(0)
   imageUrl    String?     // cover photo, always images[0] when photos exist
   images      String[]    @default([]) // up to 4 photos, cover first
+  // Delivery (11-26): the seller sets a fee per product from its weight.
+  // The fee may not pass the fair maximum for that weight (config/delivery.js).
+  weightKg    Decimal     @default(1) @db.Decimal(6, 2)
+  deliveryFee Decimal     @default(0) @db.Decimal(10, 2)
   isActive    Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   orderItems  OrderItem[]
   reviews     Review[]
   variants    ProductVariant[]
+  reports     Report[]
   barangay    Barangay    @relation(fields: [barangayId], references: [id])
   category    Category    @relation(fields: [categoryId], references: [id])
   seller      User        @relation(fields: [sellerId], references: [id])
@@ -189,6 +197,7 @@ model Order {
   buyer           User          @relation(fields: [buyerId], references: [id])
   orderItems      OrderItem[]
   earnings        SellerEarning[]
+  reports         Report[]
 
   @@map("orders")
 }
@@ -319,6 +328,50 @@ model AdminLog {
   @@index([createdAt])
   @@index([adminId])
   @@map("admin_logs")
+}
+
+// A buyer's report about a product, its delivery fee, or a seller (11-26).
+// Staff review it and dismiss it, warn the seller, remove the product or
+// suspend the seller. Every decision goes to the activity log.
+model Report {
+  id          Int          @id @default(autoincrement())
+  reporterId  Int
+  sellerId    Int          // the store being reported, always set
+  productId   Int?         // set when reported from a product page
+  orderId     Int?         // set when reported from an order
+  reason      ReportReason
+  details     String?      // what the buyer saw, up to 500 characters
+  status      ReportStatus @default(OPEN)
+  action      String?      // DISMISSED, WARNED, PRODUCT_REMOVED, SELLER_SUSPENDED
+  adminNote   String?      // staff note, shown to the seller and reporter
+  handledById Int?
+  handledAt   DateTime?
+  createdAt   DateTime     @default(now())
+  reporter    User         @relation("ReportReporter", fields: [reporterId], references: [id])
+  seller      User         @relation("ReportSeller", fields: [sellerId], references: [id])
+  handledBy   User?        @relation("ReportHandler", fields: [handledById], references: [id])
+  product     Product?     @relation(fields: [productId], references: [id])
+  order       Order?       @relation(fields: [orderId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([sellerId])
+  @@map("reports")
+}
+
+enum ReportReason {
+  UNFAIR_DELIVERY_FEE // fee too high for the weight
+  WRONG_WEIGHT        // listed weight looks false
+  NOT_AS_DESCRIBED    // fake, or not what the listing says
+  PROHIBITED_ITEM     // not allowed on PropeBuy
+  SCAM                // took payment, never delivered, asked to pay outside
+  SELLER_CONDUCT      // rude, no-show, did not deliver
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED  // staff took action
+  DISMISSED // nothing wrong found
 }
 
 enum AccountStatus {

@@ -7,6 +7,8 @@ import { checkLowStock } from "../utils/checkLowStock.helper.js";
 import { parseVariants, saveVariants, activeVariants } from "../utils/variant.helper.js";
 // Buyers see the store name, never the real name
 import { toPublicSeller, withPublicSellers } from "../utils/seller.helper.js";
+// Delivery fee per product, capped by weight (11-26)
+import { deliveryProblem } from "../config/delivery.js";
 
 // ── PRODUCT PHOTOS ─────────────────────────────────────
 // Max photos per product, matching the 4 gallery slots on the product page
@@ -26,10 +28,36 @@ const hasNonImage = (files) => files.some((f) => !f.mimetype.startsWith("image/"
 const uploadPhotos = (files) =>
   Promise.all(files.map((f) => uploadToCloudinary(f.buffer, "products").then((u) => u.secure_url)));
 
+// ── RANDOM FEED HELPERS ────────────────────────────────
+// Products per scroll step on the Browse page
+const FEED_PAGE_SIZE = 24;
+
+// Same seed, same order. mulberry32 random numbers from a hash of the seed.
+const seededShuffle = (list, seed) => {
+  let h = 1779033703 ^ seed.length;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  let a = h >>> 0;
+  const rand = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const out = [...list].sort((x, y) => x - y);
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+};
+
 // ── CREATE PRODUCT ─────────────────────────────────────
 // Seller only
 export const createProduct = async (req, res) => {
-  const { name, description, price, stock, categoryId } = req.body;
+  const { name, description, price, stock, categoryId, weightKg, deliveryFee } = req.body;
 
   // Validate required fields
   if (!name || !price || !stock || !categoryId) {
@@ -38,6 +66,13 @@ export const createProduct = async (req, res) => {
       message: "Name, price, stock, and category are required",
     });
   }
+
+  // Weight and delivery fee, capped by the delivery fee guide
+  if (weightKg === undefined || weightKg === "" || deliveryFee === undefined || deliveryFee === "") {
+    return res.status(400).json({ success: false, message: "Weight and delivery fee are required" });
+  }
+  const feeError = deliveryProblem(weightKg, deliveryFee);
+  if (feeError) return res.status(400).json({ success: false, message: feeError });
 
   // Seller must be verified before listing products
   if (req.user.accountStatus !== "VERIFIED") {
@@ -100,6 +135,8 @@ export const createProduct = async (req, res) => {
       description: description || null,
       price: cleanPrice(price),
       stock: cleanInt(stock),
+      weightKg: Math.round(Number(weightKg) * 100) / 100,
+      deliveryFee: cleanPrice(deliveryFee),
       imageUrl,
       images,
     },
@@ -149,13 +186,15 @@ export const createProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   // Extract query params for filtering
   // Example: /api/products?barangayId=5&categoryId=1&search=rice
-  const { barangayId, categoryId, search, sellerId } = req.query;
+  const { barangayId, categoryId, search, sellerId, seed, page } = req.query;
 
   // Build filter object dynamically
   // Only add filters that are actually provided
   const where = {
     isActive: true,
     stock: { gt: 0 }, // only show products with stock
+    // A suspended or rejected seller's goods leave the feed (11-26)
+    seller: { accountStatus: "VERIFIED" },
   };
 
   if (barangayId) {
@@ -176,6 +215,20 @@ export const getProducts = async (req, res) => {
       contains: search,
       mode: "insensitive", // case-insensitive search
     };
+  }
+
+  // ── RANDOM FEED (11-26) ─────────────────────────────
+  // The Browse page sends a seed and a page number. Every matching id is
+  // shuffled the same way for the same seed, so the next page never
+  // repeats or skips a product, and a new visit gets a new order.
+  let pageInfo = null;
+  if (seed !== undefined && page !== undefined) {
+    const ids = (await prisma.product.findMany({ where, select: { id: true } })).map((p) => p.id);
+    const shuffled = seededShuffle(ids, String(seed));
+    const pageNo = Math.max(1, cleanInt(page) || 1);
+    const pageIds = shuffled.slice((pageNo - 1) * FEED_PAGE_SIZE, pageNo * FEED_PAGE_SIZE);
+    where.id = { in: pageIds };
+    pageInfo = { page: pageNo, total: ids.length, hasMore: pageNo * FEED_PAGE_SIZE < ids.length, order: pageIds };
   }
 
   const products = await prisma.product.findMany({
@@ -211,11 +264,18 @@ export const getProducts = async (req, res) => {
     },
   });
 
+  // Random feed: put the page back in its shuffled order
+  if (pageInfo) {
+    const pos = new Map(pageInfo.order.map((id, i) => [id, i]));
+    products.sort((a, b) => pos.get(a.id) - pos.get(b.id));
+  }
+
   res.status(200).json({
     success: true,
     count: products.length,
     // Product and seller ratings for the cards and store page
     data: withPublicSellers(await attachRatings(products)),
+    ...(pageInfo ? { page: pageInfo.page, total: pageInfo.total, hasMore: pageInfo.hasMore } : {}),
   });
 };
 
@@ -329,7 +389,7 @@ export const getMyProducts = async (req, res) => {
 // Seller only — edit own product
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, description, price, stock, categoryId } = req.body;
+  const { name, description, price, stock, categoryId, weightKg, deliveryFee } = req.body;
 
   // Check if product exists and belongs to this seller
   const product = await prisma.product.findUnique({
@@ -349,6 +409,15 @@ export const updateProduct = async (req, res) => {
       success: false,
       message: "Not authorized to edit this product",
     });
+  }
+
+  // Weight and fee: whatever is sent, checked together with what is kept
+  const sent = (x) => x !== undefined && x !== null && x !== "";
+  const newWeight = sent(weightKg) ? Math.round(Number(weightKg) * 100) / 100 : Number(product.weightKg);
+  const newFee = sent(deliveryFee) ? cleanPrice(deliveryFee) : Number(product.deliveryFee);
+  if (sent(weightKg) || sent(deliveryFee)) {
+    const feeError = deliveryProblem(newWeight, newFee);
+    if (feeError) return res.status(400).json({ success: false, message: feeError });
   }
 
   // Only moving into Others needs a new confirmation
@@ -443,6 +512,8 @@ export const updateProduct = async (req, res) => {
         categoryId !== undefined && categoryId !== null && categoryId !== ""
           ? cleanInt(categoryId)
           : product.categoryId,
+      weightKg: newWeight,
+      deliveryFee: newFee,
       imageUrl,
       images,
     },

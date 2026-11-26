@@ -84,7 +84,7 @@ export const notifyAccountStatus = (userId, status, role) => {
     message:
       status === "VERIFIED"
         ? "Your account is verified. You can now buy and sell on PropeBuy."
-        : "This account was rejected or suspended. Contact your barangay administrator.",
+        : "This account was rejected or suspended. Contact the PropeBuy team.",
     timestamp: new Date().toISOString(),
   });
   // Kept for the record — a rejected user sees it if the account returns
@@ -94,7 +94,7 @@ export const notifyAccountStatus = (userId, status, role) => {
     message:
       status === "VERIFIED"
         ? "Your documents were approved. You can now buy and sell on PropeBuy."
-        : "Your account was rejected or suspended. Contact your barangay administrator.",
+        : "Your account was rejected or suspended. Contact the PropeBuy team.",
     link: role === "SELLER" ? "/seller/profile" : "/profile",
   });
 };
@@ -283,4 +283,53 @@ export const notifyRefundGcashAdded = (orderId) => {
       ),
     )
     .catch((err) => console.error("Refund GCash alert failed:", err.message));
+};
+
+// ── REPORTS (11-26) ────────────────────────────────────
+// Super admins and moderators get a bell item for every new report
+export const notifyAdminsNewReport = (report, label) => {
+  prisma.user
+    .findMany({
+      where: { role: "ADMIN", accountStatus: "VERIFIED", adminLevel: { in: ["SUPER_ADMIN", "MODERATOR"] } },
+      select: { id: true },
+    })
+    .then((admins) =>
+      admins.forEach((admin) =>
+        saveNotification(admin.id, {
+          type: "REPORT",
+          title: "New report to review",
+          message: `A buyer reported ${label}.`,
+          link: "/admin/reports",
+        }),
+      ),
+    )
+    .catch((err) => console.error("Report alert failed:", err.message));
+};
+
+// The buyer who reported hears what staff decided
+export const notifyReporterDecision = (reporterId, label, upheld, note) => {
+  saveNotification(reporterId, {
+    type: "REPORT",
+    title: upheld ? "Your report was acted on" : "Your report was reviewed",
+    message: upheld
+      ? `Thank you. PropeBuy staff took action on your report about ${label}.${note ? ` Note: ${note}` : ""}`
+      : `PropeBuy staff reviewed your report about ${label} and found no rule broken.${note ? ` Note: ${note}` : ""}`,
+    link: "/orders",
+  });
+};
+
+// The seller hears about an upheld report: a warning, a removed product
+// or a suspension
+export const notifySellerReportAction = (sellerId, label, action, note) => {
+  const text = {
+    WARNED: "This is a warning. Repeated reports can lead to suspension of your account.",
+    PRODUCT_REMOVED: "The product was removed from PropeBuy.",
+    SELLER_SUSPENDED: "Your account was suspended.",
+  }[action];
+  saveNotification(sellerId, {
+    type: "REPORT",
+    title: action === "WARNED" ? "Warning from PropeBuy" : "Action on your store",
+    message: `A buyer report about ${label} was upheld. ${text}${note ? ` Staff note: ${note}` : ""}`,
+    link: "/seller/products",
+  });
 };

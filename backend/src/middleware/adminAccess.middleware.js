@@ -18,6 +18,7 @@ export const ADMIN_AREAS = {
   users: [SUPER, MOD], // user list and suspension
   products: [SUPER, MOD], // product moderation
   orders: [SUPER, MOD], // order oversight
+  reports: [SUPER, MOD], // buyer reports: dismiss, warn, remove, suspend (11-26)
   payouts: [SUPER], // seller payouts and buyer refunds
   settings: [SUPER], // barangays and categories
   staff: [SUPER], // staff accounts

@@ -30,6 +30,7 @@ import {
   getActivityLog,
   getBarangayInsights,
 } from "../controllers/staff.controller.js";
+import { getReports, decideReport } from "../controllers/report.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 import { allowAdmin } from "../middleware/adminAccess.middleware.js";
 import {
@@ -84,6 +85,11 @@ adminRoutes.put("/users/:id/suspend", ...staff("users"), validateIdParam, suspen
 adminRoutes.get("/products", ...staff("products"), getAllProducts);
 // Body: { reason: string }
 adminRoutes.put("/products/:id/remove", ...staff("products"), validateIdParam, removeProduct);
+
+// ── BUYER REPORTS (11-26) ─────────────────────────────
+// Queue by status; decide: dismiss, warn, remove product, suspend seller
+adminRoutes.get("/reports", ...staff("reports"), getReports);
+adminRoutes.patch("/reports/:id", ...staff("reports"), validateIdParam, decideReport);
 
 // ── ORDER OVERSIGHT ────────────────────────────────────
 adminRoutes.get("/orders", ...staff("orders"), getAllOrders);

@@ -28,6 +28,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
 import addressRoutes from "./routes/address.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 
 const app = express();
 
@@ -143,6 +144,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payouts", payoutRoutes);
 app.use("/api/addresses", addressRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Health check route
 app.get("/", (req, res) => {

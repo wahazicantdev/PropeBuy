@@ -15,6 +15,8 @@ import {
 import { checkLowStock } from "../utils/checkLowStock.helper.js";
 import { toPublicSeller } from "../utils/seller.helper.js";
 import { createEarnings, releaseEarnings, cancelEarnings } from "../utils/payout.helper.js";
+// One trip per order: the highest product delivery fee (11-26)
+import { orderDeliveryFee } from "../config/delivery.js";
 
 // Error the buyer or seller should read — 400 keeps the message visible
 // in production, where unknown 500 errors are hidden
@@ -38,6 +40,8 @@ export const processCheckout = async (
     const validatedItems = [];
     // Sellers in this order — delivery allows only one
     const sellerIds = new Set();
+    // Each product's own delivery fee (11-26)
+    const productFees = [];
 
     // Process each item in the order
     for (const item of items) {
@@ -53,7 +57,7 @@ export const processCheckout = async (
       // No concurrent transaction can touch it
       // until this transaction commits or rolls back
       const lockedProduct = await tx.$queryRaw`
-        SELECT id, name, stock, price, "sellerId"
+        SELECT id, name, stock, price, "sellerId", "deliveryFee"
         FROM products
         WHERE id = ${cleanInt(productId)}
         AND "isActive" = true
@@ -66,6 +70,8 @@ export const processCheckout = async (
 
       const product = lockedProduct[0];
       sellerIds.add(product.sellerId);
+      // Delivery fee of each product, for the one-trip order fee below
+      productFees.push({ deliveryFee: product.deliveryFee });
 
       // ── VARIANT — LOCKED THE SAME WAY ─────────────
       // A product with options needs one picked. Its row is locked too,
@@ -148,7 +154,7 @@ export const processCheckout = async (
       const [sellerId] = sellerIds;
       const seller = await tx.user.findUnique({
         where: { id: sellerId },
-        select: { offersDelivery: true, deliveryFee: true },
+        select: { offersDelivery: true },
       });
       if (!seller?.offersDelivery) {
         throw userError("This seller does not offer delivery. Please choose pickup.");
@@ -175,7 +181,9 @@ export const processCheckout = async (
         );
       }
       deliveryAddress = chosen;
-      deliveryFee = cleanPrice(seller.deliveryFee);
+      // Each product has a fee set from its weight (11-26). One trip
+      // carries the whole order, so the buyer pays the highest one.
+      deliveryFee = cleanPrice(orderDeliveryFee(productFees));
     }
 
     // ── CREATE ORDER RECORD ───────────────────────
