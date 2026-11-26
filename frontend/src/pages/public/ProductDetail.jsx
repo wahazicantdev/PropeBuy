@@ -8,6 +8,8 @@ import SiteFooter from "../../components/SiteFooter.jsx";
 import VerifiedBadge from "../../components/VerifiedBadge.jsx";
 import ProductCard from "../../components/ProductCard.jsx";
 import Icon from "../../components/Icon.jsx";
+// Buyers report a listing, its delivery fee or its weight (11-26)
+import ReportModal from "../../components/ReportModal.jsx";
 import { fetchProduct, fetchProducts } from "../../api/product.api.js";
 import { useAuthStore } from "../../stores/auth.store.js";
 import { useCartStore } from "../../stores/cart.store.js";
@@ -34,6 +36,9 @@ const ProductDetail = () => {
   const [variantId, setVariantId] = useState(null);
   // Auth check for the wall, cart writer, redirect
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // Only buyers can report; sellers and staff never see the link
+  const role = useAuthStore((s) => s.user?.role);
+  const [reportOpen, setReportOpen] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const navigate = useNavigate();
 
@@ -297,11 +302,37 @@ const ProductDetail = () => {
                 <Icon name="payments" size={20} />
                 Cash or GCash
               </div>
+              {/* Delivery fee and weight (11-26) — set per product from its weight */}
               <div className="bg-surface rounded-xl p-3 flex items-center gap-2 font-body text-xs text-black">
                 <Icon name="local_shipping" size={20} />
-                Pickup or delivery
+                <span>
+                  {product.seller?.offersDelivery
+                    ? Number(product.deliveryFee) > 0
+                      ? `Delivery ${formatPeso(product.deliveryFee)}`
+                      : "Free delivery"
+                    : "Pickup only"}
+                  <span className="block text-black/60">{Number(product.weightKg)} kg</span>
+                </span>
               </div>
             </div>
+
+            {/* Report — buyers and guests (guests log in first) */}
+            {(!isAuthenticated || role === "BUYER") && (
+              <button
+                type="button"
+                onClick={() => requireLogin() && setReportOpen(true)}
+                className="mt-4 font-body text-xs text-black/60 hover:text-black underline flex items-center gap-1"
+              >
+                <Icon name="flag" size={16} />
+                Report this product
+              </button>
+            )}
+            <ReportModal
+              open={reportOpen}
+              onClose={() => setReportOpen(false)}
+              productId={product.id}
+              title={`Report "${product.name}"`}
+            />
           </div>
         </div>
 

@@ -12,6 +12,45 @@ import { formatPeso } from "../utils/format.js";
 import { productPhotos } from "../utils/photos.js";
 // Commission preview: what the seller keeps from a sale
 import { COMMISSION_RATE, sellerNetOnline } from "../utils/fees.js";
+// Delivery fee guide: the fair maximum for each weight (11-26)
+import { DELIVERY_FEE_GUIDE, MAX_WEIGHT_KG, maxDeliveryFee } from "../utils/delivery.js";
+
+// The weight-to-fee table and the rules, folded under the fee field
+const DeliveryGuide = ({ weightKg }) => {
+  const w = parseFloat(weightKg);
+  // Highlight the row for the weight typed so far
+  const activeMax = w > 0 ? maxDeliveryFee(w) : null;
+  return (
+    <details className="bg-surface rounded-xl p-4 font-body text-sm">
+      <summary className="font-bold cursor-pointer">How delivery fees work</summary>
+      <ul className="mt-3 space-y-1.5 text-black/70 list-disc pl-5">
+        <li>Weigh the item as it will be delivered, with its packaging.</li>
+        <li>Set a fee that is fair for that weight. It cannot go above the maximum below.</li>
+        <li>If a buyer orders several items from you, they pay only the highest delivery fee among them, because it is one trip.</li>
+        <li>Set ₱0 to offer free delivery. Delivery fees are 100% yours, with no commission.</li>
+        <li>Buyers can report a fee or weight that looks wrong. A wrong weight or unfair fee can get the product removed or your account suspended.</li>
+      </ul>
+      <table className="mt-4 w-full text-left text-xs">
+        <thead>
+          <tr className="text-black/50">
+            <th className="py-1 font-medium">Weight</th>
+            <th className="py-1 font-medium">Max fee</th>
+            <th className="py-1 font-medium hidden sm:table-cell">Examples</th>
+          </tr>
+        </thead>
+        <tbody>
+          {DELIVERY_FEE_GUIDE.map((r) => (
+            <tr key={r.upToKg} className={`border-t border-black/10 ${activeMax === r.maxFee ? "font-bold text-black" : "text-black/70"}`}>
+              <td className="py-1.5 pr-2">{r.label}</td>
+              <td className="py-1.5 pr-2 tabular-nums">{formatPeso(r.maxFee)}</td>
+              <td className="py-1.5 hidden sm:table-cell">{r.example}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
+  );
+};
 
 // "You receive" line under a price, so the seller sees their take
 // before saving: cash sales keep 100%, GCash sales keep 95%.
@@ -29,7 +68,7 @@ const YouReceive = ({ price }) => {
 // The 4 steps of adding or editing a product
 const STEPS = ["Details", "Price & stock", "Photos", "Review"];
 // Fields checked before leaving each step
-const STEP_FIELDS = [["name", "description"], ["price", "stock"], [], []];
+const STEP_FIELDS = [["name", "description"], ["price", "stock", "weightKg", "deliveryFee"], [], []];
 
 // Shared step-by-step product form for Add Product and Edit Product.
 // mode "add": steps unlock in order, photo and description required.
@@ -51,6 +90,8 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
           price: String(product.price),
           stock: String(product.stock),
           description: product.description || "",
+          weightKg: product.weightKg != null ? String(Number(product.weightKg)) : "",
+          deliveryFee: product.deliveryFee != null ? String(Number(product.deliveryFee)) : "",
         }
       : {},
   });
@@ -103,7 +144,8 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
   // Checks one step; returns true when it is complete
   const checkStep = async (i) => {
     // With variations on, the rows are checked instead of price and stock
-    const fields = i === 1 && useVariants ? [] : STEP_FIELDS[i];
+    // Weight and delivery fee are checked either way
+    const fields = i === 1 && useVariants ? ["weightKg", "deliveryFee"] : STEP_FIELDS[i];
     if (!(await trigger(fields))) return false;
     if (i === 1 && useVariants) {
       const problem = variantProblem();
@@ -175,6 +217,8 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
         variants: rows,
         categoryId,
         description: v.description || "",
+        weightKg: v.weightKg,
+        deliveryFee: v.deliveryFee,
         deliverableConfirmed: needsConfirm && deliverable,
       },
       photos,
@@ -395,6 +439,65 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
               <Icon name="info" size={16} className="mt-px" />
               Stock goes down by itself after every order, and you get a notice when it runs low.
             </p>
+
+            {/* Weight and delivery fee (11-26) — the fee is capped by weight */}
+            <h3 className="heading-body text-base font-bold pt-2">Weight and delivery fee</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <FieldLabel htmlFor="weightKg">Weight with packaging (kg)</FieldLabel>
+                <input
+                  id="weightKg"
+                  {...register("weightKg", {
+                    required: "Weight is required",
+                    validate: (x) =>
+                      (parseFloat(x) >= 0.01 && parseFloat(x) <= MAX_WEIGHT_KG) ||
+                      `Weight must be between 0.01 and ${MAX_WEIGHT_KG} kg`,
+                  })}
+                  type="number"
+                  min="0.01"
+                  max={MAX_WEIGHT_KG}
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="Example: 0.5"
+                  className={inputCls}
+                />
+                {errors.weightKg && <p className="text-danger text-xs mt-1 pl-5">{errors.weightKg.message}</p>}
+              </div>
+              <div>
+                <FieldLabel htmlFor="deliveryFee">Delivery fee (₱)</FieldLabel>
+                <input
+                  id="deliveryFee"
+                  {...register("deliveryFee", {
+                    required: "Delivery fee is required. Type 0 for free delivery.",
+                    validate: (x) => {
+                      const f = parseFloat(x);
+                      if (!(f >= 0)) return "Delivery fee must be 0 or more";
+                      const w = parseFloat(getValues("weightKg"));
+                      if (w > 0 && f > maxDeliveryFee(w)) {
+                        return `At most ${formatPeso(maxDeliveryFee(w))} for ${w} kg`;
+                      }
+                      return true;
+                    },
+                  })}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  className={inputCls}
+                />
+                {errors.deliveryFee ? (
+                  <p className="text-danger text-xs mt-1 pl-5">{errors.deliveryFee.message}</p>
+                ) : (
+                  parseFloat(v.weightKg) > 0 && (
+                    <p className="font-body text-xs text-black/60 mt-1 pl-5">
+                      Fair maximum for {parseFloat(v.weightKg)} kg: <b className="text-black">{formatPeso(maxDeliveryFee(v.weightKg))}</b>
+                    </p>
+                  )
+                )}
+              </div>
+            </div>
+            <DeliveryGuide weightKg={v.weightKg} />
           </>
         )}
 
@@ -443,6 +546,14 @@ const ProductWizard = ({ mode = "add", product = null, saving, onSave }) => {
                   <div>
                     <dt className="text-black/50 text-xs">Photos</dt>
                     <dd>{photos.length}/4</dd>
+                  </div>
+                  <div>
+                    <dt className="text-black/50 text-xs">Weight</dt>
+                    <dd>{v.weightKg ? `${parseFloat(v.weightKg)} kg` : "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-black/50 text-xs">Delivery fee</dt>
+                    <dd>{v.deliveryFee === "" || v.deliveryFee == null ? "—" : Number(v.deliveryFee) === 0 ? "Free" : formatPeso(v.deliveryFee)}</dd>
                   </div>
                 </div>
                 {useVariants && (

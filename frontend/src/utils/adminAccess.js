@@ -15,6 +15,7 @@ export const ADMIN_AREAS = {
   users: [SUPER, MOD],
   products: [SUPER, MOD],
   orders: [SUPER, MOD],
+  reports: [SUPER, MOD],
   payouts: [SUPER],
   settings: [SUPER],
   staff: [SUPER],

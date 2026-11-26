@@ -6,6 +6,8 @@ import toast from "react-hot-toast";
 import { OrderPill, PaymentPill } from "../../components/OrderStatus.jsx";
 import { fetchOrder, checkPayment, cancelMyOrder, payOrderAgain } from "../../api/order.api.js";
 import ConfirmModal from "../../components/ConfirmModal.jsx";
+// Report the store behind this order (11-26)
+import ReportModal from "../../components/ReportModal.jsx";
 import Icon from "../../components/Icon.jsx";
 import { formatPeso } from "../../utils/format.js";
 // Live tick — socket events refetch this page, no manual refresh
@@ -24,6 +26,7 @@ const OrderDetail = () => {
   // Cancel confirmation modal and its busy flag
   const [askCancel, setAskCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   // Busy flag while a new payment page is prepared
   const [paying, setPaying] = useState(false);
 
@@ -225,6 +228,21 @@ const OrderDetail = () => {
           </button>
         </div>
       )}
+      {/* Report the store — any order, for scams, no-shows or rude sellers */}
+      <div className="mt-3 flex justify-end">
+        <button
+          onClick={() => setReportOpen(true)}
+          className="font-body text-xs text-black/60 hover:text-black underline flex items-center gap-1"
+        >
+          <Icon name="flag" size={16} /> Report a problem with this store
+        </button>
+      </div>
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        orderId={order.id}
+        title={`Report a problem with order #${order.id}`}
+      />
       <ConfirmModal
         open={askCancel}
         title="Cancel this order?"

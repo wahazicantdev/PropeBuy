@@ -25,7 +25,12 @@ export const fetchProducts = async (params = {}) => {
   if (params.search) clean.search = params.search;
   // Seller store page filter
   if (params.sellerId) clean.sellerId = params.sellerId;
-  // GET /products?barangayId=&categoryId=&search=&sellerId=
+  // Random feed: same seed keeps the same order, page goes 1, 2, 3...
+  if (params.seed) {
+    clean.seed = params.seed;
+    clean.page = params.page || 1;
+  }
+  // GET /products?barangayId=&categoryId=&search=&sellerId=&seed=&page=
   const res = await api.get("/products", { params: clean });
   // Returns { success, count, data: [...] }
   return res.data;
@@ -53,6 +58,9 @@ const buildProductForm = ({ data, image, photos }) => {
   // Description ALWAYS appended — empty string clears it on edit,
   // create maps "" to null server-side (STEP 1 patch handles this)
   form.append("description", data.description || "");
+  // Weight and the delivery fee set from it (11-26)
+  if (data.weightKg !== undefined) form.append("weightKg", data.weightKg);
+  if (data.deliveryFee !== undefined) form.append("deliveryFee", data.deliveryFee);
   // Sent only when the seller ticked the Others confirmation
   if (data.deliverableConfirmed) form.append("deliverableConfirmed", "true");
   // Variations as one JSON list — sent even when empty, so removing

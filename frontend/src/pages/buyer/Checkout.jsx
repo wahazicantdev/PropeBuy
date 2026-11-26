@@ -6,6 +6,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Spinner from "../../components/Spinner.jsx";
 import Icon from "../../components/Icon.jsx";
+import { orderDeliveryFee } from "../../utils/delivery.js";
 import { formatPeso } from "../../utils/format.js";
 import Select from "../../components/Select.jsx";
 import { useCartStore, lineKey, checkoutLines } from "../../stores/cart.store.js";
@@ -103,7 +104,9 @@ const Checkout = () => {
         });
         return;
       }
-      setDelivery({ checked: true, ok: true, fee: Number(seller.deliveryFee) || 0 });
+      // Each product has its own fee from its weight (11-26). One trip
+      // carries the order, so it costs the highest fee in the cart.
+      setDelivery({ checked: true, ok: true, fee: orderDeliveryFee(products.filter(Boolean)) });
     });
   }, [productKey]);
 

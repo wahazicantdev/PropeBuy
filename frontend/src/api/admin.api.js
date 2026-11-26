@@ -189,3 +189,16 @@ export const fetchInsights = async (barangayId) => {
   const res = await api.get("/admin/insights", { params: barangayId ? { barangayId } : {} });
   return res.data;
 };
+
+// ── REPORTS (11-26) ────────────────────────────────────
+// Queue by status: OPEN, RESOLVED or DISMISSED. Returns { counts, data }
+export const fetchReports = async (status = "OPEN") => {
+  const res = await api.get("/admin/reports", { params: { status } });
+  return res.data;
+};
+
+// action: DISMISS | WARN | REMOVE_PRODUCT | SUSPEND_SELLER
+export const decideReport = async (id, action, note) => {
+  const res = await api.patch(`/admin/reports/${id}`, { action, note });
+  return res.data;
+};

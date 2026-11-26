@@ -45,6 +45,7 @@ import PendingVerifications from "./pages/admin/PendingVerifications.jsx";
 import UserManagement from "./pages/admin/UserManagement.jsx";
 import ProductModeration from "./pages/admin/ProductModeration.jsx";
 import OrdersOverview from "./pages/admin/OrdersOverview.jsx";
+import Reports from "./pages/admin/Reports.jsx";
 import BarangayManagement from "./pages/admin/BarangayManagement.jsx";
 import CategoryManagement from "./pages/admin/CategoryManagement.jsx";
 import Payouts from "./pages/admin/Payouts.jsx";
@@ -117,6 +118,8 @@ const App = () => {
           <Route path="/admin/products" element={<AdminArea area="products"><ProductModeration /></AdminArea>} />
           {/* Oversight - read-only, no admin status override exists */}
           <Route path="/admin/orders" element={<AdminArea area="orders"><OrdersOverview /></AdminArea>} />
+          {/* Buyer reports: dismiss, warn, remove product, suspend seller (11-26) */}
+          <Route path="/admin/reports" element={<AdminArea area="reports"><Reports /></AdminArea>} />
           {/* Taxonomy - barangay coverage and the categories */}
           <Route path="/admin/barangays" element={<AdminArea area="settings"><BarangayManagement /></AdminArea>} />
           <Route path="/admin/categories" element={<AdminArea area="settings"><CategoryManagement /></AdminArea>} />

@@ -3,7 +3,7 @@ import PublicNav from "../../components/PublicNav.jsx";
 import SiteFooter from "../../components/SiteFooter.jsx";
 
 // Last change to either document
-const UPDATED = "November 24, 2026";
+const UPDATED = "November 26, 2026";
 
 // ── TERMS OF USE ───────────────────────────────────────
 // Plain-language rules. Each section is [heading, paragraphs[]].
@@ -23,7 +23,8 @@ const TERMS = [
   ]],
   ["Orders and stock", [
     "Placing an order reserves the items right away, so two buyers can never buy the same last item. The seller then processes and fulfils the order.",
-    "Delivery orders come from one seller at a time. The seller sets one flat delivery fee per order, paid online before the seller delivers.",
+    "Delivery orders come from one seller at a time. Each product shows its weight and a delivery fee that the seller sets from that weight, up to the fair maximum in PropeBuy's delivery fee guide. An order pays only the highest delivery fee among its products, because it is one trip. The fee is paid online before the seller delivers.",
+    "Sellers must list the true weight of each product with its packaging. A false weight or an unfair delivery fee can lead to the product being removed or the seller's account being suspended.",
     "After an order is fulfilled, the buyer rates each item before placing the next order. Ratings must be honest and about the item.",
   ]],
   ["Payments and fees", [
@@ -36,8 +37,10 @@ const TERMS = [
     "A buyer may cancel an order while it is still Reserved. A seller may cancel an order before it is fulfilled. Cancelled items go back to stock.",
     "If a cancelled order was already paid online, PropeBuy refunds the buyer through PayMongo. Cash orders have nothing to refund.",
   ]],
-  ["Complaints", [
-    "If something goes wrong with an order, report it to the PropeBuy team with the order number. PropeBuy staff can review the order, the payment and both accounts, and can suspend sellers who break these terms.",
+  ["Reports and complaints", [
+    "Buyers can report a product from its page (for example a delivery fee that is too high for the weight, a wrong weight, or a fake or prohibited item) or report a store from their order page (for example a scam or a seller who did not deliver).",
+    "PropeBuy staff review every report and the store's report history, then dismiss it, warn the seller, remove the product, or suspend the seller. The buyer and the seller both get a notice, and every decision is recorded. False reports can lead to action on the reporter's account.",
+    "If something goes wrong with an order, you can also contact the PropeBuy team with the order number. PropeBuy staff can review the order, the payment and both accounts.",
     "Under the Internet Transactions Act of 2023 (RA 11967), the seller is primarily responsible for the goods. PropeBuy keeps records of verified sellers and transactions to help settle complaints.",
   ]],
   ["Changes", [

@@ -21,9 +21,6 @@ const ProfileAddress = ({ isSeller = false }) => {
   const [pin, setPin] = useState(
     user?.storeLat != null ? { lat: user.storeLat, lng: user.storeLng } : null,
   );
-  const [deliveryFee, setDeliveryFee] = useState(
-    user?.deliveryFee != null ? String(Number(user.deliveryFee)) : "0",
-  );
   const [saving, setSaving] = useState(false);
 
   // Save, then sync the store so checkout sees the new address at once
@@ -36,7 +33,6 @@ const ProfileAddress = ({ isSeller = false }) => {
           ? {
               address,
               offersDelivery,
-              deliveryFee,
               storeLat: pin ? pin.lat : null,
               storeLng: pin ? pin.lng : null,
             }
@@ -98,7 +94,8 @@ const ProfileAddress = ({ isSeller = false }) => {
           </div>
         </div>
       )}
-      {/* Seller delivery settings — one flat fee per order */}
+      {/* Seller delivery switch. The fee is set on each product from its
+          weight (11-26), so there is no flat store fee any more. */}
       {isSeller && (
         <div className="space-y-3">
           <label className="flex items-center gap-3 font-body text-sm text-black cursor-pointer">
@@ -111,22 +108,10 @@ const ProfileAddress = ({ isSeller = false }) => {
             I deliver orders
           </label>
           {offersDelivery && (
-            <div>
-              <FieldLabel htmlFor="deliveryFee">Delivery fee per order (₱)</FieldLabel>
-              <input
-                id="deliveryFee"
-                type="number"
-                min="0"
-                max="5000"
-                step="1"
-                value={deliveryFee}
-                onChange={(e) => setDeliveryFee(e.target.value)}
-                className="w-full px-5 py-3.5 font-body text-sm"
-              />
-              <p className="font-body text-xs text-black/60 mt-1 pl-1">
-                Buyers pay this online before you deliver. It should cover your rider or your own trip.
-              </p>
-            </div>
+            <p className="font-body text-xs text-black/60 pl-1">
+              You set the delivery fee on each product, based on its weight. Buyers pay it online
+              before you deliver. Edit a product to change its fee.
+            </p>
           )}
         </div>
       )}

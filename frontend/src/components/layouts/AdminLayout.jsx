@@ -29,6 +29,7 @@ const GROUPS = [
     links: [
       { to: "/admin/products", label: "Products", icon: "inventory_2", area: "products" },
       { to: "/admin/orders", label: "Orders", icon: "receipt_long", area: "orders" },
+      { to: "/admin/reports", label: "Reports", icon: "gavel", area: "reports" },
       { to: "/admin/payouts", label: "Payouts", icon: "payments", area: "payouts" },
     ],
   },
